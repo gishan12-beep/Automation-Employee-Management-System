@@ -1,0 +1,10 @@
+{
+  "name": "kulasekara-ems-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/server.js",
+    "start": "node src/server.js",
+    "seed": "node src/scripts/seedAdminUsers.js"
+  }
+}
