@@ -1,0 +1,18 @@
+// src/services/managerEmployeeService.js
+import api from "./api";
+
+export const createEmployeeApi = async (payload) => {
+  const res = await api.post("/manager/employees", payload);
+  return res.data;
+};
+
+export const deactivateEmployeeApi = async (employee_id) => {
+  const res = await api.patch(`/manager/employees/${employee_id}/deactivate`);
+  return res.data;
+};
+
+// (Optional) if you add list endpoint later
+export const listEmployeesApi = async () => {
+  const res = await api.get("/manager/employees");
+  return res.data;
+};

@@ -1,6 +1,10 @@
 // src/pages/manager/employees/EmployeeManagement.jsx
 import React, { useMemo, useState } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
+import {
+  createEmployeeApi,
+  deactivateEmployeeApi,
+} from "../../../services/managerEmployeeService";
 
 const dummyEmployees = [
   {
@@ -10,6 +14,7 @@ const dummyEmployees = [
     department: "Production",
     email: "john@example.com",
     phone: "0711234567",
+    nic: "200012345678",
     status: "Active",
     joinDate: "2025-02-10",
     salaryType: "Monthly",
@@ -24,6 +29,7 @@ const dummyEmployees = [
     department: "Accounts",
     email: "jane@example.com",
     phone: "0719876543",
+    nic: "199912345678",
     status: "Active",
     joinDate: "2024-11-01",
     salaryType: "Monthly",
@@ -50,6 +56,10 @@ function EmployeeManagement() {
   const [removeTarget, setRemoveTarget] = useState(null);
   const [removeReason, setRemoveReason] = useState("");
 
+  // ✅ Credentials modal (shows username + temp password ONCE)
+  const [credsOpen, setCredsOpen] = useState(false);
+  const [newCreds, setNewCreds] = useState(null); // { employee_id, username, tempPassword }
+
   const selectedEmployee = useMemo(
     () => employees.find((e) => e.id === selectedEmpId) || employees[0],
     [employees, selectedEmpId]
@@ -68,7 +78,8 @@ function EmployeeManagement() {
         (e.status || "").toLowerCase().includes(q) ||
         (e.salaryType || "").toLowerCase().includes(q) ||
         (e.email || "").toLowerCase().includes(q) ||
-        (e.phone || "").toLowerCase().includes(q)
+        (e.phone || "").toLowerCase().includes(q) ||
+        (e.nic || "").toLowerCase().includes(q)
       );
     });
   }, [employees, search]);
@@ -81,7 +92,7 @@ function EmployeeManagement() {
   };
 
   const openAddModal = () => {
-    const nextId = employees.length > 0 ? Math.max(...employees.map((e) => e.id)) + 1 : 1;
+    const nextId = employees.length > 0 ? Math.max(...employees.map((e) => Number(e.id))) + 1 : 1;
 
     const initial = {
       id: nextId,
@@ -90,6 +101,7 @@ function EmployeeManagement() {
       department: "",
       email: "",
       phone: "",
+      nic: "",
       status: "Active",
       joinDate: "",
       salaryType: "Monthly",
@@ -121,24 +133,99 @@ function EmployeeManagement() {
     setFormData((prev) => ({ ...prev, image: url }));
   };
 
-  // ✅ Add + Edit Save
-  const handleSave = () => {
-    if (!formData.name?.trim() || !formData.department?.trim() || !formData.role?.trim()) {
-      alert("Please fill Name, Role, and Department.");
+  const closeCreds = () => {
+    setCredsOpen(false);
+    setNewCreds(null);
+  };
+
+  // ✅ Add Save -> CALL BACKEND (create employee + generate password)
+  const handleSave = async () => {
+    // CREATE only via API (edit updates UI only until you create update API)
+    const isExisting = employees.some((emp) => emp.id === formData.id);
+
+    if (!String(formData.id || "").trim()) {
+      alert("Please fill Employee ID.");
+      return;
+    }
+    if (!formData.name?.trim()) {
+      alert("Please fill Name.");
+      return;
+    }
+    if (!formData.nic?.trim()) {
+      alert("Please fill NIC.");
+      return;
+    }
+    if (!formData.email?.trim()) {
+      alert("Please fill Email.");
+      return;
+    }
+    if (!formData.phone?.trim()) {
+      alert("Please fill Phone.");
       return;
     }
 
-    setEmployees((prev) => {
-      const exists = prev.some((emp) => emp.id === formData.id);
-      if (exists) return prev.map((emp) => (emp.id === formData.id ? formData : emp));
-      return [...prev, formData];
-    });
+    if (isExisting) {
+      setEmployees((prev) => prev.map((emp) => (emp.id === formData.id ? formData : emp)));
+      setSelectedEmpId(formData.id);
+      closeModal();
+      return;
+    }
 
-    setSelectedEmpId(formData.id);
-    closeModal();
+    // backend expects: employee_id, first_name, last_name, nic, email, phone
+    const parts = formData.name.trim().split(" ");
+    const first_name = parts[0];
+    const last_name = parts.slice(1).join(" ") || "-";
+
+    const payload = {
+      employee_id: String(formData.id).trim(),
+      first_name,
+      last_name,
+      nic: String(formData.nic).trim(),
+      email: formData.email.trim(),
+      phone: String(formData.phone).trim(),
+    };
+
+    try {
+      const data = await createEmployeeApi(payload);
+
+      const newEmpUi = {
+        id: data.employee.employee_id,
+        name: `${data.employee.first_name} ${data.employee.last_name}`.trim(),
+        role: formData.role || "Employee",
+        department: formData.department || "Production",
+        email: data.employee.email,
+        phone: data.employee.phone,
+        nic: data.employee.nic,
+        status: "Active",
+        joinDate: formData.joinDate || "",
+        salaryType: formData.salaryType || "Monthly",
+        image: formData.image || "https://via.placeholder.com/140",
+        removedReason: "",
+        removedAt: "",
+      };
+
+      setEmployees((prev) => [...prev, newEmpUi]);
+      setSelectedEmpId(newEmpUi.id);
+
+      setNewCreds({
+        employee_id: data.employee.employee_id,
+        username: data.credentials.username,
+        tempPassword: data.credentials.tempPassword,
+      });
+      setCredsOpen(true);
+
+      closeModal();
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err.message ||
+        "Failed to create employee";
+      alert(msg);
+    }
   };
 
-  // ✅ Open remove modal (instead of window.confirm)
+  // ✅ Open remove modal
   const openRemoveModal = (emp) => {
     setRemoveTarget(emp);
     setRemoveReason("");
@@ -151,13 +238,8 @@ function EmployeeManagement() {
     setRemoveReason("");
   };
 
-  /**
-   * ✅ Confirm remove (SOFT REMOVE)
-   * - status becomes "Removed"
-   * - save reason + date in employee record
-   * - also write to localStorage so Employee Dashboard can show the reason
-   */
-  const confirmRemove = () => {
+  // ✅ Confirm remove -> CALL BACKEND deactivate
+  const confirmRemove = async () => {
     if (!removeTarget) return;
 
     const reason = removeReason.trim();
@@ -166,32 +248,34 @@ function EmployeeManagement() {
       return;
     }
 
-    const removedAt = new Date().toISOString();
+    try {
+      await deactivateEmployeeApi(removeTarget.id);
 
-    // Update list (soft remove, not delete)
-    setEmployees((prev) =>
-      prev.map((e) =>
-        e.id === removeTarget.id
-          ? {
-              ...e,
-              status: "Removed",
-              removedReason: reason,
-              removedAt,
-            }
-          : e
-      )
-    );
+      const removedAt = new Date().toISOString();
 
-    // Save to localStorage for Employee Dashboard
-    // key structure: { [employeeId]: { reason, removedAt } }
-    const key = "kulasekara_removed_employees";
-    const current = JSON.parse(localStorage.getItem(key) || "{}");
-    current[String(removeTarget.id)] = { reason, removedAt };
-    localStorage.setItem(key, JSON.stringify(current));
+      setEmployees((prev) =>
+        prev.map((e) =>
+          e.id === removeTarget.id
+            ? {
+                ...e,
+                status: "Removed",
+                removedReason: reason,
+                removedAt,
+              }
+            : e
+        )
+      );
 
-    // If the removed employee is selected, keep selected but it shows "Removed"
-    closeRemoveModal();
-    if (isModalOpen && formData?.id === removeTarget.id) closeModal();
+      closeRemoveModal();
+      if (isModalOpen && formData?.id === removeTarget.id) closeModal();
+    } catch (err) {
+      const msg =
+        err?.response?.data?.message ||
+        err?.response?.data?.error ||
+        err.message ||
+        "Failed to deactivate employee";
+      alert(msg);
+    }
   };
 
   return (
@@ -252,6 +336,10 @@ function EmployeeManagement() {
                     <div style={styles.infoValue}>{selectedEmployee.id}</div>
                   </div>
                   <div style={styles.infoItem}>
+                    <div style={styles.infoLabel}>NIC</div>
+                    <div style={styles.infoValue}>{selectedEmployee.nic || "-"}</div>
+                  </div>
+                  <div style={styles.infoItem}>
                     <div style={styles.infoLabel}>Salary Type</div>
                     <div style={styles.infoValue}>{selectedEmployee.salaryType}</div>
                   </div>
@@ -269,13 +357,10 @@ function EmployeeManagement() {
                   </div>
                 </div>
 
-                {/* If removed, show reason in manager view too */}
                 {selectedEmployee.status === "Removed" && (
                   <div style={styles.removedNote}>
                     <div style={styles.removedTitle}>Removed reason</div>
-                    <div style={styles.removedText}>
-                      {selectedEmployee.removedReason || "-"}
-                    </div>
+                    <div style={styles.removedText}>{selectedEmployee.removedReason || "-"}</div>
                   </div>
                 )}
               </div>
@@ -289,7 +374,6 @@ function EmployeeManagement() {
                 Edit
               </button>
 
-              {/* ✅ Only allow removal if not already removed */}
               {selectedEmployee.status !== "Removed" && (
                 <button
                   style={styles.btnDanger}
@@ -386,7 +470,6 @@ function EmployeeManagement() {
                         Edit
                       </button>
 
-                      {/* ✅ Remove with reason modal */}
                       {emp.status !== "Removed" && (
                         <button
                           style={styles.smallBtnDanger}
@@ -419,8 +502,12 @@ function EmployeeManagement() {
           <div style={styles.modalOverlay} onClick={closeModal}>
             <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
               <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>{isEditMode ? "Employee Form" : "Employee Details"}</h3>
-                <button style={styles.iconBtn} onClick={closeModal}>✕</button>
+                <h3 style={styles.modalTitle}>
+                  {isEditMode ? "Employee Form" : "Employee Details"}
+                </h3>
+                <button style={styles.iconBtn} onClick={closeModal}>
+                  ✕
+                </button>
               </div>
 
               <div style={styles.modalBody}>
@@ -455,9 +542,42 @@ function EmployeeManagement() {
 
                 <div style={styles.formGrid}>
                   <div>
+                    <label style={styles.label}>EMPLOYEE ID</label>
+                    {isEditMode ? (
+                      <input
+                        name="id"
+                        value={formData.id || ""}
+                        onChange={handleChange}
+                        style={styles.input}
+                      />
+                    ) : (
+                      <div style={styles.readValue}>{formData.id || "-"}</div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label style={styles.label}>NIC</label>
+                    {isEditMode ? (
+                      <input
+                        name="nic"
+                        value={formData.nic || ""}
+                        onChange={handleChange}
+                        style={styles.input}
+                      />
+                    ) : (
+                      <div style={styles.readValue}>{formData.nic || "-"}</div>
+                    )}
+                  </div>
+
+                  <div>
                     <label style={styles.label}>NAME</label>
                     {isEditMode ? (
-                      <input name="name" value={formData.name || ""} onChange={handleChange} style={styles.input} />
+                      <input
+                        name="name"
+                        value={formData.name || ""}
+                        onChange={handleChange}
+                        style={styles.input}
+                      />
                     ) : (
                       <div style={styles.readValue}>{formData.name || "-"}</div>
                     )}
@@ -466,7 +586,12 @@ function EmployeeManagement() {
                   <div>
                     <label style={styles.label}>ROLE</label>
                     {isEditMode ? (
-                      <input name="role" value={formData.role || ""} onChange={handleChange} style={styles.input} />
+                      <input
+                        name="role"
+                        value={formData.role || ""}
+                        onChange={handleChange}
+                        style={styles.input}
+                      />
                     ) : (
                       <div style={styles.readValue}>{formData.role || "-"}</div>
                     )}
@@ -475,7 +600,12 @@ function EmployeeManagement() {
                   <div>
                     <label style={styles.label}>DEPARTMENT</label>
                     {isEditMode ? (
-                      <input name="department" value={formData.department || ""} onChange={handleChange} style={styles.input} />
+                      <input
+                        name="department"
+                        value={formData.department || ""}
+                        onChange={handleChange}
+                        style={styles.input}
+                      />
                     ) : (
                       <div style={styles.readValue}>{formData.department || "-"}</div>
                     )}
@@ -484,7 +614,12 @@ function EmployeeManagement() {
                   <div>
                     <label style={styles.label}>EMAIL</label>
                     {isEditMode ? (
-                      <input name="email" value={formData.email || ""} onChange={handleChange} style={styles.input} />
+                      <input
+                        name="email"
+                        value={formData.email || ""}
+                        onChange={handleChange}
+                        style={styles.input}
+                      />
                     ) : (
                       <div style={styles.readValue}>{formData.email || "-"}</div>
                     )}
@@ -493,7 +628,12 @@ function EmployeeManagement() {
                   <div>
                     <label style={styles.label}>PHONE</label>
                     {isEditMode ? (
-                      <input name="phone" value={formData.phone || ""} onChange={handleChange} style={styles.input} />
+                      <input
+                        name="phone"
+                        value={formData.phone || ""}
+                        onChange={handleChange}
+                        style={styles.input}
+                      />
                     ) : (
                       <div style={styles.readValue}>{formData.phone || "-"}</div>
                     )}
@@ -502,7 +642,12 @@ function EmployeeManagement() {
                   <div>
                     <label style={styles.label}>STATUS</label>
                     {isEditMode ? (
-                      <select name="status" value={formData.status || "Active"} onChange={handleChange} style={styles.select}>
+                      <select
+                        name="status"
+                        value={formData.status || "Active"}
+                        onChange={handleChange}
+                        style={styles.select}
+                      >
                         <option value="Active">Active</option>
                         <option value="Resigned">Resigned</option>
                         <option value="Removed">Removed</option>
@@ -548,27 +693,85 @@ function EmployeeManagement() {
               </div>
 
               <div style={styles.modalActions}>
-                <button style={styles.btnSecondary} onClick={closeModal}>Close</button>
-                {isEditMode && <button style={styles.btnPrimary} onClick={handleSave}>Save</button>}
+                <button style={styles.btnSecondary} onClick={closeModal}>
+                  Close
+                </button>
+                {isEditMode && (
+                  <button style={styles.btnPrimary} onClick={handleSave}>
+                    Save
+                  </button>
+                )}
               </div>
             </div>
           </div>
         )}
 
-        {/* ✅ REMOVE CONFIRMATION MODAL (Reason required) */}
+        {/* ✅ Credentials Modal */}
+        {credsOpen && newCreds && (
+          <div style={styles.modalOverlay} onClick={closeCreds}>
+            <div style={styles.removeModal} onClick={(e) => e.stopPropagation()}>
+              <div style={styles.modalHeader}>
+                <h3 style={styles.modalTitle}>New Employee Credentials</h3>
+                <button style={styles.iconBtn} onClick={closeCreds}>
+                  ✕
+                </button>
+              </div>
+
+              <div style={styles.modalBody}>
+                <div style={styles.removeWarnBox}>
+                  Copy these credentials now. This password will not be shown again.
+                </div>
+
+                <div style={{ marginTop: "12px" }}>
+                  <label style={styles.label}>USERNAME</label>
+                  <div style={styles.readValue}>{newCreds.username}</div>
+                </div>
+
+                <div style={{ marginTop: "12px" }}>
+                  <label style={styles.label}>TEMP PASSWORD</label>
+                  <div style={styles.readValue}>{newCreds.tempPassword}</div>
+                </div>
+
+                <div style={{ display: "flex", gap: "10px", marginTop: "12px", flexWrap: "wrap" }}>
+                  <button
+                    style={styles.btnSecondary}
+                    onClick={() => navigator.clipboard.writeText(newCreds.username)}
+                  >
+                    Copy Username
+                  </button>
+                  <button
+                    style={styles.btnPrimary}
+                    onClick={() => navigator.clipboard.writeText(newCreds.tempPassword)}
+                  >
+                    Copy Password
+                  </button>
+                </div>
+              </div>
+
+              <div style={styles.modalActions}>
+                <button style={styles.btnPrimary} onClick={closeCreds}>
+                  Done
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ✅ REMOVE CONFIRMATION MODAL */}
         {isRemoveOpen && removeTarget && (
           <div style={styles.modalOverlay} onClick={closeRemoveModal}>
             <div style={styles.removeModal} onClick={(e) => e.stopPropagation()}>
               <div style={styles.modalHeader}>
                 <h3 style={styles.modalTitle}>Remove Employee</h3>
-                <button style={styles.iconBtn} onClick={closeRemoveModal}>✕</button>
+                <button style={styles.iconBtn} onClick={closeRemoveModal}>
+                  ✕
+                </button>
               </div>
 
               <div style={styles.modalBody}>
                 <div style={styles.removeWarnBox}>
                   You are about to remove <strong>{removeTarget.name}</strong> (ID:{" "}
-                  <strong>{removeTarget.id}</strong>).  
-                  The employee will see the reason in their dashboard.
+                  <strong>{removeTarget.id}</strong>). The employee login will be disabled.
                 </div>
 
                 <div style={{ marginTop: "12px" }}>
@@ -577,7 +780,7 @@ function EmployeeManagement() {
                     value={removeReason}
                     onChange={(e) => setRemoveReason(e.target.value)}
                     style={styles.textarea}
-                    placeholder="Example: Duplicate account / Left company / Policy violation / Wrong registration..."
+                    placeholder="Example: Left company / Duplicate account / Wrong registration..."
                   />
                 </div>
               </div>
@@ -867,7 +1070,6 @@ const styles = {
     boxShadow: "0 10px 30px rgba(15, 23, 42, 0.18)",
   },
 
-  // smaller modal for remove confirmation
   removeModal: {
     width: "min(620px, 100%)",
     background: "#fff",
