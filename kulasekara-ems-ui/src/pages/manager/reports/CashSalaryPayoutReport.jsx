@@ -1,69 +1,60 @@
-// src/pages/manager/reports/PayrollReports.jsx
+// src/pages/manager/reports/CashSalaryPayoutReport.jsx
 import React, { useMemo, useState } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
 
 const formatLKR = (n) =>
   new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(Number(n || 0));
 
-export default function PayrollReports() {
+export default function CashSalaryPayoutReport() {
   const [month, setMonth] = useState(getMonthKey(new Date()));
-  const [department, setDepartment] = useState("ALL");
+  const [status, setStatus] = useState("ALL"); // ALL | PAID | PENDING
+  const [paidBy, setPaidBy] = useState("ALL"); // ALL | Manager | Bank Accountant
   const [q, setQ] = useState("");
 
-  const data = useMemo(() => makeDummyPayroll(month), [month]);
+  const data = useMemo(() => makeDummyCashData(month), [month]);
 
   const rows = useMemo(() => {
-    let list = [...data.employeePayroll];
+    let list = data.payouts.filter((p) => p.method === "CASH");
 
-    if (department !== "ALL") list = list.filter((r) => r.department === department);
+    if (status !== "ALL") list = list.filter((p) => p.status === status);
+    if (paidBy !== "ALL") list = list.filter((p) => (p.paidBy || "") === paidBy);
 
     if (q.trim()) {
       const s = q.trim().toLowerCase();
       list = list.filter(
-        (r) =>
-          r.employeeId.toLowerCase().includes(s) ||
-          r.employeeName.toLowerCase().includes(s) ||
-          r.salaryType.toLowerCase().includes(s)
+        (p) =>
+          p.employeeId.toLowerCase().includes(s) ||
+          p.employeeName.toLowerCase().includes(s) ||
+          (p.voucherNo || "").toLowerCase().includes(s)
       );
     }
 
     return list;
-  }, [data, department, q]);
+  }, [data, status, paidBy, q]);
 
-  const kpis = useMemo(() => {
-    const gross = rows.reduce((s, r) => s + r.grossPay, 0);
-    const net = rows.reduce((s, r) => s + r.netPay, 0);
-    const ot = rows.reduce((s, r) => s + r.overtimePay, 0);
-    const incentives = rows.reduce((s, r) => s + r.incentives, 0);
-    const deductions = rows.reduce((s, r) => s + r.deductions, 0);
-
-    const paidCount = rows.filter((r) => r.status === "PAID").length;
-    const pendingCount = rows.filter((r) => r.status !== "PAID").length;
-
-    return { gross, net, ot, incentives, deductions, paidCount, pendingCount };
+  const totals = useMemo(() => {
+    const paid = rows.filter((r) => r.status === "PAID").reduce((s, r) => s + r.netPay, 0);
+    const pending = rows.filter((r) => r.status !== "PAID").reduce((s, r) => s + r.netPay, 0);
+    return { paid, pending, count: rows.length };
   }, [rows]);
+
+  const onExport = () => alert("Export will be added after backend integration");
+  const onPrint = () => window.print();
 
   return (
     <AppLayout>
       <div style={styles.container}>
         <div style={styles.headerRow}>
           <div>
-            <h2 style={styles.heading}>Payroll Reports</h2>
+            <h2 style={styles.heading}>Cash Salary Payout Report</h2>
             <p style={styles.subText}>
-              Monthly payroll summary + employee-wise payroll listing (dummy data now).
+              List employees paid via cash, pending payments, and voucher/receipt tracking.
             </p>
           </div>
 
           <div style={styles.actions}>
-            <button
-              style={styles.secondaryBtn}
-              onClick={() => alert("Export will be added ")}
-            >
-              Export (PDF/Excel)
-            </button>
-            <button style={styles.secondaryBtn} onClick={() => window.print()}>
-              Print
-            </button>
+            <button style={styles.secondaryBtn} onClick={onExport}>Export (PDF/Excel)</button>
+            <button style={styles.secondaryBtn} onClick={onPrint}>Print</button>
           </div>
         </div>
 
@@ -80,12 +71,20 @@ export default function PayrollReports() {
           </div>
 
           <div style={styles.filterItem}>
-            <div style={styles.label}>Department</div>
-            <select value={department} onChange={(e) => setDepartment(e.target.value)} style={styles.input}>
+            <div style={styles.label}>Status</div>
+            <select value={status} onChange={(e) => setStatus(e.target.value)} style={styles.input}>
               <option value="ALL">All</option>
-              <option value="Production">Production</option>
-              <option value="Packing">Packing</option>
-              <option value="peeling">Accounts</option>
+              <option value="PAID">Paid</option>
+              <option value="PENDING">Pending</option>
+            </select>
+          </div>
+
+          <div style={styles.filterItem}>
+            <div style={styles.label}>Paid By</div>
+            <select value={paidBy} onChange={(e) => setPaidBy(e.target.value)} style={styles.input}>
+              <option value="ALL">All</option>
+              <option value="Manager">Manager</option>
+              <option value="Bank Accountant">Bank Accountant</option>
             </select>
           </div>
 
@@ -94,72 +93,85 @@ export default function PayrollReports() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Search by name, ID, salary type..."
+              placeholder="Search by name, ID, voucher..."
               style={styles.input}
             />
           </div>
         </div>
 
-        {/* KPI cards */}
-        <div style={styles.kpiGrid}>
-          <KpiCard title="Total Gross Payroll" value={formatLKR(kpis.gross)} hint={`Month: ${month}`} />
-          <KpiCard title="Total Net Payroll" value={formatLKR(kpis.net)} hint="After deductions" />
-          <KpiCard title="Overtime Cost" value={formatLKR(kpis.ot)} hint="Total OT pay" />
-          <KpiCard title="Incentives" value={formatLKR(kpis.incentives)} hint="Bonuses/incentives" />
-          <KpiCard title="Deductions" value={formatLKR(kpis.deductions)} hint="Loans/No-pay etc." />
-          <KpiCard title="Payment Status" value={`${kpis.paidCount} Paid / ${kpis.pendingCount} Pending`} hint="Payroll state" />
+        {/* Summary strip */}
+        <div style={styles.summaryStrip}>
+          <div style={styles.summaryItem}>
+            <div style={styles.summaryLabel}>Rows</div>
+            <div style={styles.summaryValue}>{totals.count}</div>
+          </div>
+          <div style={styles.summaryItem}>
+            <div style={styles.summaryLabel}>Paid Total</div>
+            <div style={styles.summaryValue}>{formatLKR(totals.paid)}</div>
+          </div>
+          <div style={styles.summaryItem}>
+            <div style={styles.summaryLabel}>Pending Total</div>
+            <div style={styles.summaryValue}>{formatLKR(totals.pending)}</div>
+          </div>
         </div>
 
         {/* Table */}
         <div style={styles.panel}>
-          <div style={styles.panelTitle}>Employee-wise Payroll</div>
           <div style={styles.tableWrap}>
             <table style={styles.table}>
               <thead>
                 <tr>
                   <th style={styles.th}>Employee</th>
-                  <th style={styles.th}>Department</th>
                   <th style={styles.th}>Salary Type</th>
-                  <th style={styles.thRight}>Gross</th>
-                  <th style={styles.thRight}>Deductions</th>
-                  <th style={styles.thRight}>Net</th>
+                  <th style={styles.thRight}>Net Pay</th>
                   <th style={styles.th}>Status</th>
+                  <th style={styles.th}>Paid On</th>
+                  <th style={styles.th}>Paid By</th>
+                  <th style={styles.th}>Voucher No</th>
                   <th style={styles.th}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id}>
+                {rows.map((p) => (
+                  <tr key={p.id}>
                     <td style={styles.td}>
-                      <div style={{ fontWeight: 900 }}>{r.employeeName}</div>
-                      <div style={{ opacity: 0.7, fontSize: 12 }}>{r.employeeId}</div>
+                      <div style={{ fontWeight: 900 }}>{p.employeeName}</div>
+                      <div style={{ opacity: 0.7, fontSize: 12 }}>{p.employeeId}</div>
                     </td>
-                    <td style={styles.td}>{r.department}</td>
-                    <td style={styles.td}>{r.salaryType}</td>
-                    <td style={styles.tdRight}>{formatLKR(r.grossPay)}</td>
-                    <td style={styles.tdRight}>{formatLKR(r.deductions)}</td>
-                    <td style={styles.tdRight}>{formatLKR(r.netPay)}</td>
+                    <td style={styles.td}>{p.salaryType}</td>
+                    <td style={styles.tdRight}>{formatLKR(p.netPay)}</td>
                     <td style={styles.td}>
-                      {r.status === "PAID" ? (
+                      {p.status === "PAID" ? (
                         <span style={{ ...styles.badge, ...styles.badgePaid }}>Paid</span>
                       ) : (
                         <span style={{ ...styles.badge, ...styles.badgePending }}>Pending</span>
                       )}
                     </td>
+                    <td style={styles.td}>{p.paidOn || "-"}</td>
+                    <td style={styles.td}>{p.paidBy || "-"}</td>
+                    <td style={styles.td}>{p.voucherNo || "-"}</td>
                     <td style={styles.td}>
                       <button
                         style={styles.smallBtn}
-                        onClick={() => alert("Hook this to Payroll Preview page later")}
+                        onClick={() => alert("Hook this to payroll preview later")}
                       >
-                        View Slip
+                        View Payroll
                       </button>
+                      {p.status !== "PAID" && (
+                        <button
+                          style={{ ...styles.smallBtn, ...styles.smallBtnPrimary }}
+                          onClick={() => alert("Mark as paid will be added after backend integration")}
+                        >
+                          Mark Paid
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
                 {rows.length === 0 && (
                   <tr>
                     <td style={styles.td} colSpan={8}>
-                      No payroll data for selected filters.
+                      No cash payouts found for selected filters.
                     </td>
                   </tr>
                 )}
@@ -173,67 +185,65 @@ export default function PayrollReports() {
   );
 }
 
-function KpiCard({ title, value, hint }) {
-  return (
-    <div style={styles.kpiCard}>
-      <div style={styles.kpiTitle}>{title}</div>
-      <div style={styles.kpiValue}>{value}</div>
-      <div style={styles.kpiHint}>{hint}</div>
-    </div>
-  );
-}
-
 function getMonthKey(d) {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   return `${yyyy}-${mm}`;
 }
 
-function makeDummyPayroll(monthKey) {
-  // later replace with API calls
-  const employeePayroll = [
+function makeDummyCashData(monthKey) {
+  const payouts = [
     {
-      id: "PR1",
+      id: "P1",
       employeeId: "EMP001",
       employeeName: "Kamal Perera",
-      department: "Production",
       salaryType: "Daily Wage",
-      overtimePay: 3500,
-      incentives: 1000,
-      deductions: 500,
-      grossPay: 32000,
-      netPay: 31500,
+      netPay: 28500,
+      method: "CASH",
       status: "PENDING",
+      paidOn: "",
+      paidBy: "",
+      voucherNo: "",
     },
     {
-      id: "PR2",
-      employeeId: "EMP002",
-      employeeName: "Nimal Silva",
-      department: "Accounts",
-      salaryType: "Monthly",
-      overtimePay: 0,
-      incentives: 2000,
-      deductions: 1500,
-      grossPay: 70000,
-      netPay: 68500,
-      status: "PAID",
-    },
-    {
-      id: "PR3",
+      id: "P3",
       employeeId: "EMP003",
-      employeeName: "Chamari Silva",
-      department: "Packing",
+      employeeName: "Saman Jay",
       salaryType: "Daily Wage",
-      overtimePay: 2500,
-      incentives: 0,
-      deductions: 0,
-      grossPay: 30000,
-      netPay: 30000,
+      netPay: 31200,
+      method: "CASH",
       status: "PAID",
+      paidOn: `${monthKey}-28`,
+      paidBy: "Bank Accountant",
+      voucherNo: "VCH-0198",
+    },
+    {
+      id: "P4",
+      employeeId: "EMP004",
+      employeeName: "Chamari Silva",
+      salaryType: "Daily Wage",
+      netPay: 29500,
+      method: "CASH",
+      status: "PAID",
+      paidOn: `${monthKey}-28`,
+      paidBy: "Bank Accountant",
+      voucherNo: "VCH-0199",
+    },
+    {
+      id: "P5",
+      employeeId: "EMP005",
+      employeeName: "Sunil Fernando",
+      salaryType: "Monthly",
+      netPay: 55000,
+      method: "CASH",
+      status: "PAID",
+      paidOn: `${monthKey}-26`,
+      paidBy: "Manager",
+      voucherNo: "VCH-0180",
     },
   ];
 
-  return { month: monthKey, employeePayroll };
+  return { payouts };
 }
 
 const styles = {
@@ -266,22 +276,22 @@ const styles = {
   label: { fontWeight: 900, opacity: 0.8, fontSize: 12 },
   input: { border: "1px solid rgba(0,0,0,0.12)", borderRadius: 12, padding: "10px 12px" },
 
-  kpiGrid: {
+  summaryStrip: {
     marginTop: 12,
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    display: "flex",
     gap: 12,
+    flexWrap: "wrap",
   },
-  kpiCard: {
+  summaryItem: {
     background: "#fff",
     border: "1px solid rgba(0,0,0,0.08)",
     borderRadius: 16,
-    padding: 14,
+    padding: "10px 12px",
+    minWidth: 160,
     boxShadow: "0 10px 25px rgba(0,0,0,0.04)",
   },
-  kpiTitle: { fontWeight: 900, opacity: 0.8, marginBottom: 8 },
-  kpiValue: { fontSize: 20, fontWeight: 900, marginBottom: 6 },
-  kpiHint: { opacity: 0.7, fontWeight: 700 },
+  summaryLabel: { fontWeight: 900, opacity: 0.7, fontSize: 12 },
+  summaryValue: { fontWeight: 900, fontSize: 16, marginTop: 4 },
 
   panel: {
     marginTop: 12,
@@ -291,7 +301,6 @@ const styles = {
     padding: 12,
     boxShadow: "0 10px 25px rgba(0,0,0,0.04)",
   },
-  panelTitle: { fontWeight: 900, marginBottom: 10 },
   tableWrap: { overflowX: "auto" },
   table: { width: "100%", borderCollapse: "collapse" },
   th: { textAlign: "left", padding: "10px 8px", fontSize: 12, opacity: 0.75, borderBottom: "1px solid rgba(0,0,0,0.08)" },
@@ -310,5 +319,12 @@ const styles = {
     borderRadius: 10,
     cursor: "pointer",
     fontWeight: 900,
+    marginRight: 8,
+    marginBottom: 6,
+  },
+  smallBtnPrimary: {
+    background: "#111827",
+    color: "#fff",
+    border: "none",
   },
 };

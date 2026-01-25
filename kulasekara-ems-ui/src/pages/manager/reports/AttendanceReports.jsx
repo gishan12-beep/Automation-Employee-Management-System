@@ -1,18 +1,19 @@
-// src/pages/manager/reports/EPFETFReports.jsx
+// src/pages/manager/reports/AttendanceReports.jsx
 import React, { useMemo, useState } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
 
-const formatLKR = (n) =>
-  new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(Number(n || 0));
-
-export default function EPFETFReports() {
+export default function AttendanceReports() {
   const [month, setMonth] = useState(getMonthKey(new Date()));
+  const [type, setType] = useState("ALL"); // ALL | Permanent | Daily Wage
   const [q, setQ] = useState("");
 
-  const data = useMemo(() => makeDummyContrib(month), [month]);
+  const data = useMemo(() => makeDummyAttendance(month), [month]);
 
   const rows = useMemo(() => {
     let list = [...data.rows];
+
+    if (type !== "ALL") list = list.filter((r) => r.employeeType === type);
+
     if (q.trim()) {
       const s = q.trim().toLowerCase();
       list = list.filter(
@@ -21,15 +22,19 @@ export default function EPFETFReports() {
           r.employeeName.toLowerCase().includes(s)
       );
     }
+
     return list;
-  }, [data, q]);
+  }, [data, type, q]);
 
   const kpis = useMemo(() => {
-    const empEpf = rows.reduce((s, r) => s + r.employeeEPF, 0);
-    const erEpf = rows.reduce((s, r) => s + r.employerEPF, 0);
-    const etf = rows.reduce((s, r) => s + r.etf, 0);
-    const total = empEpf + erEpf + etf;
-    return { empEpf, erEpf, etf, total, employees: rows.length };
+    const totalEmp = rows.length;
+    const totalPresent = rows.reduce((s, r) => s + r.presentDays, 0);
+    const totalAbsent = rows.reduce((s, r) => s + r.absentDays, 0);
+    const totalLate = rows.reduce((s, r) => s + r.lateDays, 0);
+    const totalOT = rows.reduce((s, r) => s + r.overtimeHours, 0);
+    const avgPresenceRate = totalEmp > 0 ? Math.round((totalPresent / (totalPresent + totalAbsent)) * 100) : 0;
+
+    return { totalEmp, totalPresent, totalAbsent, totalLate, totalOT, avgPresenceRate };
   }, [rows]);
 
   return (
@@ -37,9 +42,9 @@ export default function EPFETFReports() {
       <div style={styles.container}>
         <div style={styles.headerRow}>
           <div>
-            <h2 style={styles.heading}>EPF / ETF Reports</h2>
+            <h2 style={styles.heading}>Attendance Reports</h2>
             <p style={styles.subText}>
-              Monthly compliance summary and employee-wise EPF/ETF breakdown.
+              Monthly attendance summary + employee-wise attendance listing.
             </p>
           </div>
 
@@ -56,10 +61,20 @@ export default function EPFETFReports() {
           </div>
         </div>
 
+        {/* Filters */}
         <div style={styles.filters}>
           <div style={styles.filterItem}>
             <div style={styles.label}>Month</div>
             <input type="month" value={month} onChange={(e) => setMonth(e.target.value)} style={styles.input} />
+          </div>
+
+          <div style={styles.filterItem}>
+            <div style={styles.label}>Employee Type</div>
+            <select value={type} onChange={(e) => setType(e.target.value)} style={styles.input}>
+              <option value="ALL">All</option>
+              <option value="Permanent">Permanent</option>
+              <option value="Daily Wage">Daily Wage</option>
+            </select>
           </div>
 
           <div style={{ ...styles.filterItem, flex: 1 }}>
@@ -73,47 +88,51 @@ export default function EPFETFReports() {
           </div>
         </div>
 
+        {/* KPI cards */}
         <div style={styles.kpiGrid}>
-          <KpiCard title="Employees" value={kpis.employees} hint={`Month: ${month}`} />
-          <KpiCard title="Employee EPF Total" value={formatLKR(kpis.empEpf)} hint="Employee contribution" />
-          <KpiCard title="Employer EPF Total" value={formatLKR(kpis.erEpf)} hint="Employer contribution" />
-          <KpiCard title="ETF Total" value={formatLKR(kpis.etf)} hint="ETF contribution" />
-          <KpiCard title="Total Contribution" value={formatLKR(kpis.total)} hint="EPF + ETF total" />
+          <KpiCard title="Employees (Filtered)" value={kpis.totalEmp} hint={`Month: ${month}`} />
+          <KpiCard title="Total Present Days" value={kpis.totalPresent} hint="Sum of present days" />
+          <KpiCard title="Total Absent Days" value={kpis.totalAbsent} hint="Sum of absent days" />
+          <KpiCard title="Late Days" value={kpis.totalLate} hint="Late arrivals count" />
+          <KpiCard title="Overtime Hours" value={kpis.totalOT} hint="Total OT hours" />
+          <KpiCard title="Avg Presence Rate" value={`${kpis.avgPresenceRate}%`} hint="Present / (Present+Absent)" />
         </div>
 
+        {/* Table */}
         <div style={styles.panel}>
-          <div style={styles.panelTitle}>Employee-wise EPF/ETF</div>
+          <div style={styles.panelTitle}>Employee-wise Attendance</div>
           <div style={styles.tableWrap}>
             <table style={styles.table}>
               <thead>
                 <tr>
                   <th style={styles.th}>Employee</th>
-                  <th style={styles.thRight}>Employee EPF</th>
-                  <th style={styles.thRight}>Employer EPF</th>
-                  <th style={styles.thRight}>ETF</th>
-                  <th style={styles.thRight}>Total</th>
+                  <th style={styles.th}>Type</th>
+                  <th style={styles.thRight}>Present</th>
+                  <th style={styles.thRight}>Absent</th>
+                  <th style={styles.thRight}>Late</th>
+                  <th style={styles.thRight}>Work Hours</th>
+                  <th style={styles.thRight}>OT Hours</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map((r) => {
-                  const total = r.employeeEPF + r.employerEPF + r.etf;
-                  return (
-                    <tr key={r.id}>
-                      <td style={styles.td}>
-                        <div style={{ fontWeight: 900 }}>{r.employeeName}</div>
-                        <div style={{ opacity: 0.7, fontSize: 12 }}>{r.employeeId}</div>
-                      </td>
-                      <td style={styles.tdRight}>{formatLKR(r.employeeEPF)}</td>
-                      <td style={styles.tdRight}>{formatLKR(r.employerEPF)}</td>
-                      <td style={styles.tdRight}>{formatLKR(r.etf)}</td>
-                      <td style={styles.tdRight}>{formatLKR(total)}</td>
-                    </tr>
-                  );
-                })}
+                {rows.map((r) => (
+                  <tr key={r.id}>
+                    <td style={styles.td}>
+                      <div style={{ fontWeight: 900 }}>{r.employeeName}</div>
+                      <div style={{ opacity: 0.7, fontSize: 12 }}>{r.employeeId}</div>
+                    </td>
+                    <td style={styles.td}>{r.employeeType}</td>
+                    <td style={styles.tdRight}>{r.presentDays}</td>
+                    <td style={styles.tdRight}>{r.absentDays}</td>
+                    <td style={styles.tdRight}>{r.lateDays}</td>
+                    <td style={styles.tdRight}>{r.workHours}</td>
+                    <td style={styles.tdRight}>{r.overtimeHours}</td>
+                  </tr>
+                ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td style={styles.td} colSpan={5}>
-                      No EPF/ETF rows for selected filters.
+                    <td style={styles.td} colSpan={7}>
+                      No attendance rows for selected filters.
                     </td>
                   </tr>
                 )}
@@ -143,12 +162,43 @@ function getMonthKey(d) {
   return `${yyyy}-${mm}`;
 }
 
-function makeDummyContrib(monthKey) {
+function makeDummyAttendance(monthKey) {
   const rows = [
-    { id: "C1", employeeId: "EMP002", employeeName: "Nimal Silva", employeeEPF: 5600, employerEPF: 8400, etf: 2100 },
-    { id: "C2", employeeId: "EMP006", employeeName: "Ruwan Perera", employeeEPF: 4200, employerEPF: 6300, etf: 1575 },
-    { id: "C3", employeeId: "EMP007", employeeName: "Shanika Jay", employeeEPF: 3800, employerEPF: 5700, etf: 1425 },
+    {
+      id: "AT1",
+      employeeId: "EMP001",
+      employeeName: "Kamal Perera",
+      employeeType: "Daily Wage",
+      presentDays: 22,
+      absentDays: 2,
+      lateDays: 3,
+      workHours: 176,
+      overtimeHours: 8,
+    },
+    {
+      id: "AT2",
+      employeeId: "EMP002",
+      employeeName: "Nimal Silva",
+      employeeType: "Permanent",
+      presentDays: 24,
+      absentDays: 0,
+      lateDays: 0,
+      workHours: 192,
+      overtimeHours: 0,
+    },
+    {
+      id: "AT3",
+      employeeId: "EMP003",
+      employeeName: "Chamari Silva",
+      employeeType: "Daily Wage",
+      presentDays: 20,
+      absentDays: 4,
+      lateDays: 1,
+      workHours: 160,
+      overtimeHours: 6,
+    },
   ];
+
   return { month: monthKey, rows };
 }
 

@@ -42,3 +42,34 @@ export function routeByRole(role) {
   if (r === "EMPLOYEE") return "/employee/dashboard";
   return "/";
 }
+
+
+// src/services/authService.js
+
+const API_BASE = import.meta?.env?.VITE_API_BASE_URL || "http://localhost:5000";
+
+// ✅ Request password reset email/link
+export async function requestPasswordResetApi(email) {
+  const res = await fetch(`${API_BASE}/api/auth/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.message || "Failed to request password reset.");
+  return data;
+}
+
+// ✅ Reset password using token
+export async function resetPasswordApi(token, newPassword) {
+  const res = await fetch(`${API_BASE}/api/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, newPassword }),
+  });
+
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok) throw new Error(data?.message || "Failed to reset password.");
+  return data;
+}

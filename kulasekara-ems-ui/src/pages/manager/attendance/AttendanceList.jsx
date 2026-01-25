@@ -9,10 +9,10 @@ const employeesData = [
   {
     id: 1,
     employeeID: "EMP001",
-    name: "John Doe",
+    name: "Pasindu Suranga",
     role: "Employee",
     department: "Production",
-    email: "john@example.com",
+    email: "Pasindusuranga@gmail.com",
     status: "Active",
     salaryType: "Monthly",
     lastCheckIn: "08:00",
@@ -22,10 +22,10 @@ const employeesData = [
   {
     id: 2,
     employeeID: "EMP002",
-    name: "Jane Smith",
+    name: "Janith wickramasinghe",
     role: "Employee",
     department: "Production",
-    email: "jane@example.com",
+    email: "janith@gmail.com",
     status: "Active",
     salaryType: "Daily Wage",
     lastCheckIn: "08:15",
@@ -46,7 +46,7 @@ const workDetailsDummy = [
   },
   {
     workDetailID: "WD20251010-EMP002-002",
-    employeeID: "EMP002",
+    employeeID: "EMP003",
     date: "2025-10-10",
     taskDescription: "Packed bottles",
     quantity: 55,
@@ -54,7 +54,7 @@ const workDetailsDummy = [
   },
   {
     workDetailID: "WD20251011-EMP002-001",
-    employeeID: "EMP002",
+    employeeID: "EMP004",
     date: "2025-10-11",
     taskDescription: "Cleaning area",
     quantity: 1,

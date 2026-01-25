@@ -9,10 +9,10 @@ import {
 const dummyEmployees = [
   {
     id: 1,
-    name: "John Doe",
+    name: "Kamal Perera",
     role: "Employee",
     department: "Production",
-    email: "john@example.com",
+    email: "kamalperera@gmail.com",
     phone: "0711234567",
     nic: "200012345678",
     status: "Active",
@@ -24,10 +24,10 @@ const dummyEmployees = [
   },
   {
     id: 2,
-    name: "Jane Smith",
+    name: "Nimal Silva",
     role: "Accountant",
     department: "Accounts",
-    email: "jane@example.com",
+    email: "nimalsilva@gmail.com",
     phone: "0719876543",
     nic: "199912345678",
     status: "Active",

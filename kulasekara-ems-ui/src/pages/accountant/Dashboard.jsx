@@ -1,275 +1,212 @@
 import React, { useEffect, useMemo, useState } from "react";
+import AppLayout from "../../components/layout/AppLayout";
 import { useNavigate } from "react-router-dom";
-import AppLayout from "../../components/layout/AppLayout"; // ✅ ADD THIS
-import { getAccountantDashboardSummary } from "../../services/accountantService";
 import { formatLKR } from "../../utils/salaryUtils";
 
-export default function AccountantDashboard() {
-  const [data, setData] = useState(null);
-  const [error, setError] = useState("");
+export default function Dashboard() {
   const navigate = useNavigate();
 
+  // ✅ role protection (optional)
+  const role = (localStorage.getItem("role") || "ACCOUNTANT").toUpperCase();
   useEffect(() => {
-    let mounted = true;
+    if (role !== "ACCOUNTANT") navigate("/");
+  }, [role, navigate]);
 
-    getAccountantDashboardSummary()
-      .then((res) => {
-        if (mounted) setData(res);
-      })
-      .catch((e) => {
-        console.error(e);
-        if (mounted) setError("Failed to load dashboard data.");
-      });
-
-    return () => {
-      mounted = false;
-    };
-  }, []);
+  // ✅ mock summary (replace with API)
+  const [summary] = useState({
+    month: "Jan",
+    year: 2026,
+    totals: {
+      employees: 18,
+      totalPayrollNet: 785000,
+      totalEPF: 52000,
+      totalETF: 12000,
+      pendingAudits: 3,
+    },
+  });
 
   const cards = useMemo(() => {
-    if (!data?.totals) return [];
+    const t = summary.totals;
     return [
-      { label: "Employees", value: data.totals.employees ?? 0, hint: "Active employees" },
-      { label: "Total Payroll", value: formatLKR(data.totals.totalPayroll ?? 0), hint: `Month: ${data.month ?? "-"}` },
-      { label: "EPF Total", value: formatLKR(data.totals.totalEPF ?? 0), hint: "Employer + Employee EPF" },
-      { label: "ETF Total", value: formatLKR(data.totals.totalETF ?? 0), hint: "ETF contribution" },
-      { label: "Pending Audits", value: data.totals.pendingAudits ?? 0, hint: "Need review" },
+      { label: "Employees", value: t.employees, hint: "Active employees" },
+      { label: "Total Payroll (Net)", value: formatLKR(t.totalPayrollNet), hint: `${summary.month} ${summary.year}` },
+      { label: "EPF Total", value: formatLKR(t.totalEPF), hint: "Employee + Employer" },
+      { label: "ETF Total", value: formatLKR(t.totalETF), hint: "ETF contribution" },
+      { label: "Pending Audits", value: t.pendingAudits, hint: "Need review" },
     ];
-  }, [data]);
+  }, [summary]);
 
   return (
     <AppLayout>
-      <div style={{ maxWidth: 1200, margin: "0 auto" }}>
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
-            flexWrap: "wrap",
-          }}
-        >
-          <h2 style={{ marginTop: 0 }}>Accountant Dashboard</h2>
+      <div style={styles.page}>
+        <div style={styles.header}>
+          <div>
+            <h2 style={styles.title}>Accountant Dashboard</h2>
+            <p style={styles.subtitle}>
+              Overview of payroll, EPF/ETF, and audit status.
+            </p>
+          </div>
 
-          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-            <button
-              type="button"
-              onClick={() => navigate("/accountant/payroll-summary")}
-              style={btnPrimary}
-            >
-              Payroll Summary
+          <div style={styles.quickRow}>
+            <button style={styles.btnSecondary} onClick={() => navigate("/accountant/payroll/management")}>
+              Payroll Management
             </button>
-
-            <button
-              type="button"
-              onClick={() => navigate("/accountant/epf-etf")}
-              style={btnSecondary}
-            >
-              EPF/ETF Reports
+            <button style={styles.btnPrimary} onClick={() => navigate("/accountant/reports")}>
+              Reports
             </button>
           </div>
         </div>
 
-        {error ? (
-          <div style={card}>
-            <p style={{ margin: 0, color: "#b91c1c", fontWeight: 700 }}>{error}</p>
+        <div style={styles.cardGrid}>
+          {cards.map((c) => (
+            <div key={c.label} style={styles.card}>
+              <div style={styles.cardLabel}>{c.label}</div>
+              <div style={styles.cardValue}>{c.value}</div>
+              <div style={styles.cardHint}>{c.hint}</div>
+            </div>
+          ))}
+        </div>
+
+        <div style={styles.panelGrid}>
+          <div style={styles.panel}>
+            <div style={styles.panelHeader}>
+              <h3 style={styles.panelTitle}>Quick Actions</h3>
+            </div>
+            <div style={styles.actionGrid}>
+              <ActionCard
+                title="Payroll Summary"
+                desc="View monthly payroll totals & breakdown."
+                onClick={() => navigate("/accountant/reports/payroll-summary")}
+              />
+              <ActionCard
+                title="Payroll Audit"
+                desc="Review payroll changes and approvals."
+                onClick={() => navigate("/accountant/payroll/audit")}
+              />
+              <ActionCard
+                title="EPF/ETF"
+                desc="Manage contributions and generate reports."
+                onClick={() => navigate("/accountant/epf-etf/management")}
+              />
+            </div>
           </div>
-        ) : !data ? (
-          <div style={card}>
-            <p>Loading dashboard...</p>
-          </div>
-        ) : (
-          <>
-            {/* Summary Cards */}
-            <div style={gridCards}>
-              {cards.map((c) => (
-                <div key={c.label} style={statCard}>
-                  <p style={statLabel}>{c.label}</p>
-                  <p style={statValue}>{c.value}</p>
-                  <p style={statHint}>{c.hint}</p>
+
+          <div style={styles.panel}>
+            <div style={styles.panelHeader}>
+              <h3 style={styles.panelTitle}>Recent Activity</h3>
+            </div>
+
+            <div style={styles.list}>
+              {[
+                { t: "Payroll processed for Production Dept", d: "Today • 10:20 AM" },
+                { t: "EPF report generated", d: "Yesterday • 4:05 PM" },
+                { t: "Audit pending for 3 employees", d: "Yesterday • 2:30 PM" },
+              ].map((x, i) => (
+                <div key={i} style={styles.listItem}>
+                  <div style={styles.listTitle}>{x.t}</div>
+                  <div style={styles.listMeta}>{x.d}</div>
                 </div>
               ))}
             </div>
-
-            {/* Tables */}
-            <div style={{ display: "grid", gridTemplateColumns: "1.2fr 1fr", gap: 12, marginTop: 12 }}>
-              {/* Recent payroll */}
-              <div style={card}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <h3 style={{ marginTop: 0 }}>Recent Payroll Runs</h3>
-                  <button type="button" style={linkBtn} onClick={() => navigate("/accountant/payroll-audit")}>
-                    View All
-                  </button>
-                </div>
-
-                <table style={table}>
-                  <thead>
-                    <tr style={thead}>
-                      <th style={thLeft}>Payroll ID</th>
-                      <th style={thLeft}>Period</th>
-                      <th style={thLeft}>Status</th>
-                      <th style={thRight}>Total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(data.recentPayroll ?? []).map((r) => (
-                      <tr key={r.id} style={tr}>
-                        <td style={tdLeft}>{r.id}</td>
-                        <td style={tdLeft}>{r.period}</td>
-                        <td style={tdLeft}>
-                          <StatusPill value={r.status} />
-                        </td>
-                        <td style={tdRight}>{formatLKR(r.total ?? 0)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* EPF/ETF due */}
-              <div style={card}>
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                  <h3 style={{ marginTop: 0 }}>EPF/ETF Due</h3>
-                  <button type="button" style={linkBtn} onClick={() => navigate("/accountant/epf-etf")}>
-                    View All
-                  </button>
-                </div>
-
-                <table style={table}>
-                  <thead>
-                    <tr style={thead}>
-                      <th style={thLeft}>Ref</th>
-                      <th style={thLeft}>Due Date</th>
-                      <th style={thLeft}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(data.epfEtfDue ?? []).map((x) => (
-                      <tr key={x.ref} style={tr}>
-                        <td style={tdLeft}>
-                          <div style={{ fontWeight: 700 }}>{x.ref}</div>
-                          <div style={{ fontSize: 12, color: "#64748b" }}>
-                            EPF {formatLKR(x.epf ?? 0)} | ETF {formatLKR(x.etf ?? 0)}
-                          </div>
-                        </td>
-                        <td style={tdLeft}>{x.dueDate}</td>
-                        <td style={tdLeft}>
-                          <StatusPill value={x.status} />
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            {/* Quick actions */}
-            <div style={{ ...card, marginTop: 12 }}>
-              <h3 style={{ marginTop: 0 }}>Quick Actions</h3>
-
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10 }}>
-                <button type="button" style={quickBtn} onClick={() => navigate("/accountant/payroll-summary")}>
-                  Generate Payroll Summary
-                </button>
-                <button type="button" style={quickBtn} onClick={() => navigate("/accountant/epf-etf")}>
-                  Export EPF/ETF Report
-                </button>
-                <button type="button" style={quickBtn} onClick={() => navigate("/accountant/payroll-audit")}>
-                  Review Payroll Audit
-                </button>
-              </div>
-
-              <p style={{ marginTop: 10, color: "#64748b", fontSize: 12 }}>
-                These buttons can connect to accountant features next.
-              </p>
-            </div>
-          </>
-        )}
+          </div>
+        </div>
       </div>
     </AppLayout>
   );
 }
 
-function StatusPill({ value }) {
-  const v = String(value || "").toLowerCase();
-  const base = {
-    display: "inline-block",
-    padding: "4px 10px",
-    borderRadius: 999,
-    fontSize: 12,
-    fontWeight: 700,
-    border: "1px solid #ddd",
-    background: "#fff",
-  };
-
-  if (v === "completed" || v === "paid")
-    return <span style={{ ...base, borderColor: "#86efac", background: "#f0fdf4" }}>{value}</span>;
-  if (v === "pending")
-    return <span style={{ ...base, borderColor: "#fde68a", background: "#fffbeb" }}>{value}</span>;
-  return <span style={{ ...base, borderColor: "#cbd5e1", background: "#f8fafc" }}>{value}</span>;
+function ActionCard({ title, desc, onClick }) {
+  return (
+    <div style={styles.actionCard} onClick={onClick} role="button" tabIndex={0}>
+      <div style={styles.actionTitle}>{title}</div>
+      <div style={styles.actionDesc}>{desc}</div>
+    </div>
+  );
 }
 
-// Styles
-const card = { background: "#fff", padding: 16, borderRadius: 10 };
+const styles = {
+  page: { padding: 18, maxWidth: 1200, margin: "0 auto" },
+  header: {
+    display: "flex",
+    alignItems: "flex-end",
+    justifyContent: "space-between",
+    gap: 12,
+    flexWrap: "wrap",
+    marginBottom: 14,
+  },
+  title: { margin: 0, fontSize: 22, fontWeight: 900 },
+  subtitle: { margin: "6px 0 0", opacity: 0.75, fontSize: 13 },
 
-const gridCards = {
-  display: "grid",
-  gridTemplateColumns: "repeat(5, 1fr)",
-  gap: 12,
-  marginTop: 12,
+  quickRow: { display: "flex", gap: 10 },
+  btnPrimary: {
+    border: "none",
+    background: "#111827",
+    color: "#fff",
+    padding: "10px 14px",
+    borderRadius: 12,
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+  btnSecondary: {
+    border: "1px solid #e5e7eb",
+    background: "#fff",
+    padding: "10px 14px",
+    borderRadius: 12,
+    fontWeight: 800,
+    cursor: "pointer",
+  },
+
+  cardGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(5, minmax(160px, 1fr))",
+    gap: 12,
+    marginTop: 10,
+    marginBottom: 14,
+  },
+  card: {
+    background: "#fff",
+    border: "1px solid #eef0f4",
+    borderRadius: 16,
+    padding: 14,
+    boxShadow: "0 6px 18px rgba(16,24,40,0.06)",
+  },
+  cardLabel: { fontSize: 12, opacity: 0.7, marginBottom: 8 },
+  cardValue: { fontSize: 18, fontWeight: 900 },
+  cardHint: { fontSize: 12, opacity: 0.6, marginTop: 6 },
+
+  panelGrid: {
+    display: "grid",
+    gridTemplateColumns: "1.2fr 0.8fr",
+    gap: 12,
+  },
+  panel: {
+    background: "#fff",
+    border: "1px solid #eef0f4",
+    borderRadius: 16,
+    overflow: "hidden",
+    boxShadow: "0 6px 18px rgba(16,24,40,0.06)",
+  },
+  panelHeader: { padding: 14, borderBottom: "1px solid #f0f2f6" },
+  panelTitle: { margin: 0, fontSize: 16, fontWeight: 900 },
+
+  actionGrid: {
+    padding: 14,
+    display: "grid",
+    gridTemplateColumns: "repeat(3, minmax(160px, 1fr))",
+    gap: 12,
+  },
+  actionCard: {
+    border: "1px solid #eef0f4",
+    borderRadius: 14,
+    padding: 14,
+    cursor: "pointer",
+    background: "#fff",
+  },
+  actionTitle: { fontWeight: 900, marginBottom: 6 },
+  actionDesc: { opacity: 0.75, fontSize: 13 },
+
+  list: { padding: 14, display: "flex", flexDirection: "column", gap: 10 },
+  listItem: { border: "1px solid #eef0f4", borderRadius: 14, padding: 12 },
+  listTitle: { fontWeight: 900 },
+  listMeta: { opacity: 0.65, fontSize: 12, marginTop: 4 },
 };
-
-const statCard = {
-  background: "#fff",
-  padding: 16,
-  borderRadius: 10,
-  border: "1px solid #eef2f7",
-};
-
-const statLabel = { margin: 0, color: "#64748b", fontSize: 12, fontWeight: 700, textTransform: "uppercase" };
-const statValue = { margin: "8px 0 4px", fontSize: 18, fontWeight: 800, color: "#0f172a" };
-const statHint = { margin: 0, color: "#64748b", fontSize: 12 };
-
-const btnPrimary = {
-  padding: "10px 12px",
-  borderRadius: 10,
-  border: "none",
-  background: "#111",
-  color: "#fff",
-  cursor: "pointer",
-  fontWeight: 700,
-};
-
-const btnSecondary = {
-  padding: "10px 12px",
-  borderRadius: 10,
-  border: "1px solid #ddd",
-  background: "#fff",
-  cursor: "pointer",
-  fontWeight: 700,
-};
-
-const linkBtn = {
-  border: "none",
-  background: "transparent",
-  color: "#2563eb",
-  cursor: "pointer",
-  fontWeight: 700,
-};
-
-const quickBtn = {
-  padding: 12,
-  borderRadius: 10,
-  border: "1px solid #e2e8f0",
-  background: "#fff",
-  cursor: "pointer",
-  fontWeight: 700,
-};
-
-const table = { width: "100%", borderCollapse: "collapse" };
-const thead = { background: "#f2f2f2" };
-const tr = { borderTop: "1px solid #eee", verticalAlign: "top" };
-const thLeft = { textAlign: "left", padding: 10, fontSize: 13 };
-const thRight = { textAlign: "right", padding: 10, fontSize: 13 };
-const tdLeft = { textAlign: "left", padding: 10, fontSize: 13 };
-const tdRight = { textAlign: "right", padding: 10, fontSize: 13 };

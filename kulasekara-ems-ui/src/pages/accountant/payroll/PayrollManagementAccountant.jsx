@@ -1,134 +1,123 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
-import { getPayrollListAccountant, generatePayrollAccountant } from "../../../services/accountantService";
+import { useNavigate } from "react-router-dom";
 import { formatLKR } from "../../../utils/salaryUtils";
 
+const mockPayroll = [
+  { id: "PAY-001", month: "Jan 2026", employees: 18, net: 785000, status: "Processed", updated: "2026-01-20" },
+  { id: "PAY-002", month: "Dec 2025", employees: 17, net: 742000, status: "Processed", updated: "2025-12-20" },
+  { id: "PAY-003", month: "Nov 2025", employees: 17, net: 730000, status: "Draft", updated: "2025-11-19" },
+];
+
 export default function PayrollManagementAccountant() {
-  const [rows, setRows] = useState([]);
-  const [search, setSearch] = useState("");
-  const [showModal, setShowModal] = useState(false);
+  const navigate = useNavigate();
+  const [q, setQ] = useState("");
 
-  useEffect(() => {
-    getPayrollListAccountant().then(setRows);
-  }, []);
-
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return rows;
-    return rows.filter((r) => `${r.payrollId} ${r.period} ${r.status}`.toLowerCase().includes(q));
-  }, [rows, search]);
+  const rows = useMemo(() => {
+    const s = q.trim().toLowerCase();
+    if (!s) return mockPayroll;
+    return mockPayroll.filter((r) =>
+      [r.id, r.month, r.status].some((v) => String(v).toLowerCase().includes(s))
+    );
+  }, [q]);
 
   return (
     <AppLayout>
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <div style={styles.headRow}>
-          <h2 style={{ marginTop: 0 }}>Payroll Management</h2>
-          <button style={styles.primaryBtn} onClick={() => setShowModal(true)}>+ Generate Payroll</button>
+      <div style={styles.page}>
+        <div style={styles.headerRow}>
+          <div>
+            <h2 style={styles.title}>Payroll Management</h2>
+            <p style={styles.subTitle}>Manage processed payroll periods and access reports.</p>
+          </div>
+
+          <div style={styles.searchWrap}>
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Search by month, id, status…"
+              style={styles.search}
+            />
+            <button
+              style={styles.btnPrimary}
+              onClick={() => navigate("/accountant/reports/payroll-summary")}
+            >
+              Open Payroll Summary
+            </button>
+          </div>
         </div>
 
-        <div style={styles.card}>
-          <label style={styles.label}>Search</label>
-          <input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="PAY-2025-10 / Completed / Pending"
-            style={styles.input}
-          />
-        </div>
-
-        <div style={{ ...styles.card, marginTop: 12 }}>
-          {filtered.length === 0 ? (
-            <p style={{ color: "#64748b" }}>No payroll records found.</p>
-          ) : (
+        <div style={styles.panel}>
+          <div style={styles.tableWrap}>
             <table style={styles.table}>
               <thead>
-                <tr style={styles.thead}>
-                  <th style={styles.thLeft}>Payroll ID</th>
-                  <th style={styles.thLeft}>Period</th>
-                  <th style={styles.thLeft}>Status</th>
-                  <th style={styles.thRight}>Total</th>
-                  <th style={styles.thLeft}>Created</th>
+                <tr>
+                  <th style={styles.th}>Payroll ID</th>
+                  <th style={styles.th}>Period</th>
+                  <th style={styles.th}>Employees</th>
+                  <th style={styles.th}>Net Total</th>
+                  <th style={styles.th}>Status</th>
+                  <th style={styles.th}>Last Updated</th>
+                  <th style={styles.th}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r) => (
-                  <tr key={r.payrollId} style={styles.tr}>
-                    <td style={styles.tdLeft}>{r.payrollId}</td>
-                    <td style={styles.tdLeft}>{r.period}</td>
-                    <td style={styles.tdLeft}>{r.status}</td>
-                    <td style={styles.tdRight}>{formatLKR(r.total || 0)}</td>
-                    <td style={styles.tdLeft}>{r.createdAt}</td>
-                  </tr>
-                ))}
+                {rows.length === 0 ? (
+                  <tr><td style={styles.td} colSpan={7}>No payroll records found.</td></tr>
+                ) : (
+                  rows.map((r) => (
+                    <tr key={r.id}>
+                      <td style={styles.td}><b>{r.id}</b></td>
+                      <td style={styles.td}>{r.month}</td>
+                      <td style={styles.td}>{r.employees}</td>
+                      <td style={styles.td}>{formatLKR(r.net)}</td>
+                      <td style={styles.td}><StatusPill status={r.status} /></td>
+                      <td style={styles.td}>{r.updated}</td>
+                      <td style={styles.td}>
+                        <button style={styles.btnSecondary} onClick={() => navigate("/accountant/payroll/audit")}>
+                          Audit
+                        </button>
+                        <button style={styles.btnSecondary} onClick={() => navigate("/accountant/reports/payroll-summary")}>
+                          Summary
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
-          )}
+          </div>
         </div>
-
-        {showModal ? (
-          <GeneratePayrollModal
-            onClose={() => setShowModal(false)}
-            onCreate={async (period) => {
-              const newItem = await generatePayrollAccountant(period);
-              setRows((prev) => [newItem, ...prev]);
-              setShowModal(false);
-            }}
-          />
-        ) : null}
       </div>
     </AppLayout>
   );
 }
 
-function GeneratePayrollModal({ onClose, onCreate }) {
-  const [period, setPeriod] = useState("");
-
-  const submit = (e) => {
-    e.preventDefault();
-    const p = period.trim();
-    if (!/^\d{4}-\d{2}$/.test(p)) {
-      alert("Enter period in YYYY-MM format (example: 2025-11)");
-      return;
-    }
-    onCreate(p);
-  };
-
-  return (
-    <div style={styles.overlay}>
-      <div style={styles.modal}>
-        <h3 style={{ marginTop: 0 }}>Generate Payroll</h3>
-
-        <form onSubmit={submit}>
-          <label style={styles.label}>Payroll Period (YYYY-MM)</label>
-          <input value={period} onChange={(e) => setPeriod(e.target.value)} placeholder="2025-11" style={styles.input} />
-
-          <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <button type="submit" style={styles.primaryBtn}>Generate</button>
-            <button type="button" onClick={onClose} style={styles.secondaryBtn}>Cancel</button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
+function StatusPill({ status }) {
+  const s = String(status).toLowerCase();
+  const isProcessed = s === "processed";
+  const isDraft = s === "draft";
+  const bg = isProcessed ? "#E9F8EE" : isDraft ? "#EEF2FF" : "#FFF6E5";
+  const fg = isProcessed ? "#1C7C3D" : isDraft ? "#2B3A8A" : "#8A5A00";
+  return <span style={{ ...styles.pill, background: bg, color: fg }}>{status}</span>;
 }
 
 const styles = {
-  headRow: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" },
-  card: { background: "#fff", padding: 16, borderRadius: 10 },
-  label: { display: "block", fontSize: 14, fontWeight: 800, marginBottom: 6 },
-  input: { width: "100%", padding: 10, borderRadius: 8, border: "1px solid #ddd", outline: "none" },
+  page: { padding: 18, maxWidth: 1200, margin: "0 auto" },
+  headerRow: { display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 12, flexWrap: "wrap", marginBottom: 14 },
+  title: { margin: 0, fontSize: 22, fontWeight: 900 },
+  subTitle: { margin: "6px 0 0", opacity: 0.75, fontSize: 13 },
 
-  primaryBtn: { padding: "10px 12px", borderRadius: 10, border: "none", background: "#111", color: "#fff", cursor: "pointer", fontWeight: 800 },
-  secondaryBtn: { padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd", background: "#fff", cursor: "pointer", fontWeight: 800 },
+  searchWrap: { display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" },
+  search: { border: "1px solid #e5e7eb", borderRadius: 12, padding: "10px 12px", minWidth: 280, outline: "none" },
 
-  table: { width: "100%", borderCollapse: "collapse" },
-  thead: { background: "#f2f2f2" },
-  tr: { borderTop: "1px solid #eee" },
-  thLeft: { textAlign: "left", padding: 10, fontSize: 13 },
-  thRight: { textAlign: "right", padding: 10, fontSize: 13 },
-  tdLeft: { textAlign: "left", padding: 10, fontSize: 13 },
-  tdRight: { textAlign: "right", padding: 10, fontSize: 13 },
+  btnPrimary: { border: "none", background: "#111827", color: "#fff", padding: "10px 14px", borderRadius: 12, fontWeight: 800, cursor: "pointer" },
+  btnSecondary: { border: "1px solid #e5e7eb", background: "#fff", padding: "8px 10px", borderRadius: 12, fontWeight: 800, cursor: "pointer", marginRight: 8 },
 
-  overlay: { position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", display: "flex", alignItems: "center", justifyContent: "center", padding: 16 },
-  modal: { width: "100%", maxWidth: 420, background: "#fff", borderRadius: 12, padding: 16 },
+  panel: { background: "#fff", border: "1px solid #eef0f4", borderRadius: 16, overflow: "hidden", boxShadow: "0 6px 18px rgba(16,24,40,0.06)" },
+  tableWrap: { overflowX: "auto" },
+  table: { width: "100%", borderCollapse: "separate", borderSpacing: 0 },
+  th: { textAlign: "left", fontSize: 12, padding: "12px 14px", background: "#fafafa", borderBottom: "1px solid #f0f2f6", opacity: 0.8, whiteSpace: "nowrap" },
+  td: { padding: "12px 14px", borderBottom: "1px solid #f5f6f8", fontSize: 13, whiteSpace: "nowrap" },
+
+  pill: { display: "inline-flex", alignItems: "center", padding: "6px 10px", borderRadius: 999, fontSize: 12, fontWeight: 900 },
 };
