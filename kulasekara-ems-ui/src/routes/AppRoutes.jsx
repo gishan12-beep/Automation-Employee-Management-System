@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 // Pages
 import Login from "../pages/auth/Login";
 import ForgotPassword from "../pages/auth/ForgotPassword";
+import ResetPassword from "../pages/auth/ResetPassword"; // ✅ NEW
 
 import ManagerDashboard from "../pages/manager/Dashboard";
 import EmployeeList from "../pages/manager/employees/EmployeeList";
@@ -34,17 +35,14 @@ import SalarySlipView from "../pages/employee/payroll/SalarySlipView";
 import RaiseIssue from "../pages/employee/issues/RaiseIssue";
 import IssueStatus from "../pages/employee/issues/IssueStatus";
 
-
 import FinalSettlement from "../pages/employee/settlement/FinalSettlement";
 
 import AccountantDashboard from "../pages/accountant/Dashboard";
 
-// ✅ Accountant Payroll (NEW)
+// ✅ Accountant Payroll
 import PayrollEditor from "../pages/accountant/payroll/PayrollEditor";
 import PayrollSummary from "../pages/accountant/payroll/PayrollSummary";
 import EPFETF from "../pages/accountant/reports/EPFETF";
-
-
 
 import PrivateRoute from "./PrivateRoute";
 
@@ -54,6 +52,7 @@ function AppRoutes() {
       {/* Auth */}
       <Route path="/" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} /> {/* ✅ NEW */}
 
       {/* Manager (Protected) */}
       <Route
@@ -170,9 +169,7 @@ function AppRoutes() {
         }
       />
 
-
-      
-      {/* ✅ NEW: Leave Requests */}
+      {/* ✅ Leave Requests */}
       <Route
         path="/manager/leaves"
         element={
@@ -181,7 +178,6 @@ function AppRoutes() {
           </PrivateRoute>
         }
       />
-
 
       {/* ✅ Final Settlement (Manager) */}
       <Route
@@ -217,17 +213,15 @@ function AppRoutes() {
             <CheckInOut />
           </PrivateRoute>
         }
-        
       />
       <Route
-  path="/employee/leave"
-  element={
-    <PrivateRoute allowedRoles={["EMPLOYEE"]}>
-      <ApplyLeave />
-    </PrivateRoute>
-  }
-/>
-
+        path="/employee/leave"
+        element={
+          <PrivateRoute allowedRoles={["EMPLOYEE"]}>
+            <ApplyLeave />
+          </PrivateRoute>
+        }
+      />
       <Route
         path="/employee/payroll/salary-history"
         element={
@@ -260,17 +254,14 @@ function AppRoutes() {
           </PrivateRoute>
         }
       />
-
-
       <Route
-  path="/employee/leaves"
-  element={
-    <PrivateRoute allowedRoles={["EMPLOYEE"]}>
-      <ApplyLeave />
-    </PrivateRoute>
-  }
-/>
-
+        path="/employee/leaves"
+        element={
+          <PrivateRoute allowedRoles={["EMPLOYEE"]}>
+            <ApplyLeave />
+          </PrivateRoute>
+        }
+      />
       <Route
         path="/employee/settlement"
         element={
@@ -289,8 +280,6 @@ function AppRoutes() {
           </PrivateRoute>
         }
       />
-
-      {/* ✅ Accountant Payroll (NEW) */}
       <Route
         path="/accountant/payroll"
         element={
@@ -299,44 +288,22 @@ function AppRoutes() {
           </PrivateRoute>
         }
       />
-
-      {/* Accountant (Protected) */}
-<Route
-  path="/accountant/dashboard"
-  element={
-    <PrivateRoute allowedRoles={["ACCOUNTANT"]}>
-      <AccountantDashboard />
-    </PrivateRoute>
-  }
-/>
-
-<Route
-  path="/accountant/payroll"
-  element={
-    <PrivateRoute allowedRoles={["ACCOUNTANT"]}>
-      <PayrollEditor />
-    </PrivateRoute>
-  }
-/>
-
-<Route
-  path="/accountant/payroll-summary"
-  element={
-    <PrivateRoute allowedRoles={["ACCOUNTANT"]}>
-      <PayrollSummary />
-    </PrivateRoute>
-  }
-/>
-
-<Route
-  path="/accountant/epf-etf"
-  element={
-    <PrivateRoute allowedRoles={["ACCOUNTANT"]}>
-      <EPFETF />
-    </PrivateRoute>
-  }
-/>
-
+      <Route
+        path="/accountant/payroll-summary"
+        element={
+          <PrivateRoute allowedRoles={["ACCOUNTANT"]}>
+            <PayrollSummary />
+          </PrivateRoute>
+        }
+      />
+      <Route
+        path="/accountant/epf-etf"
+        element={
+          <PrivateRoute allowedRoles={["ACCOUNTANT"]}>
+            <EPFETF />
+          </PrivateRoute>
+        }
+      />
 
       {/* ✅ Optional direct employee payroll route */}
       <Route
@@ -347,7 +314,6 @@ function AppRoutes() {
           </PrivateRoute>
         }
       />
-
 
       {/* Optional: redirect unknown routes */}
       <Route path="*" element={<Navigate to="/" replace />} />
