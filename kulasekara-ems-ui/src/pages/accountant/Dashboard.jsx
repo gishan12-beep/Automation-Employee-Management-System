@@ -91,24 +91,6 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div style={styles.panel}>
-            <div style={styles.panelHeader}>
-              <h3 style={styles.panelTitle}>Recent Activity</h3>
-            </div>
-
-            <div style={styles.list}>
-              {[
-                { t: "Payroll processed for Production Dept", d: "Today • 10:20 AM" },
-                { t: "EPF report generated", d: "Yesterday • 4:05 PM" },
-                { t: "Audit pending for 3 employees", d: "Yesterday • 2:30 PM" },
-              ].map((x, i) => (
-                <div key={i} style={styles.listItem}>
-                  <div style={styles.listTitle}>{x.t}</div>
-                  <div style={styles.listMeta}>{x.d}</div>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       </div>
     </AppLayout>

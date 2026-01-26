@@ -314,7 +314,7 @@ export default function EmployeeDashboard() {
           <div style={styles.card}>
             <div style={styles.cardHead}>
               <h2 style={styles.cardTitle}>Quick Actions</h2>
-              <span style={styles.tag}>UI only</span>
+              <span style={styles.tag}></span>
             </div>
 
             <div style={styles.actions}>

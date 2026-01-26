@@ -19,8 +19,9 @@ function AppLayout({ children }) {
       { name: "Reports", path: "/manager/reports" },
       { name: "Issues", path: "/manager/issues" },
       { name: "Leave Requests", path: "/manager/leaves" },
-
       { name: "Final Settlement", path: "/manager/settlement" },
+      { name: "Settings", path: "/manager/settings" },
+
     ],
     EMPLOYEE: [
       { name: "Dashboard", path: "/employee/dashboard" },
@@ -41,6 +42,8 @@ function AppLayout({ children }) {
       // Keep your existing ones (make sure routes exist)
       { name: "Payroll Summary", path: "/accountant/payroll-summary" },
       { name: "EPF/ETF", path: "/accountant/epf-etf" },
+      { name: "Bank Withdrawals", path: "/accountant/withdrawals" },
+
     ],
   };
 

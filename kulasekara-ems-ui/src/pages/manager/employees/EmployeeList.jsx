@@ -1,47 +1,72 @@
 // src/pages/manager/employees/EmployeeManagement.jsx
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
 import {
   createEmployeeApi,
   deactivateEmployeeApi,
+  // getDepartmentsApi,
+  // getEmployeesApi,
 } from "../../../services/managerEmployeeService";
+
+/**
+ * ✅ Employee table:
+ * employee(employee_id, department_id, first_name, last_name, nic, email, phone, status, created_at)
+ *
+ * ✅ Salary configurations table:
+ * salary_configurations(config_id, employee_id, salary_type, basic_rate, is_epf_eligible, effective_date)
+ */
+
+const fallbackDepartments = [
+  { id: 1, name: "Production", description: null },
+  { id: 2, name: "Packaging", description: null },
+  { id: 3, name: "Logistics", description: null },
+];
 
 const dummyEmployees = [
   {
-    id: 1,
-    name: "Kamal Perera",
-    role: "Employee",
-    department: "Production",
-    email: "kamalperera@gmail.com",
-    phone: "0711234567",
+    employee_id: "1001",
+    department_id: 1,
+    first_name: "Kamal",
+    last_name: "Perera",
     nic: "200012345678",
-    status: "Active",
-    joinDate: "2025-02-10",
-    salaryType: "Monthly",
-    image: "https://via.placeholder.com/140",
-    removedReason: "",
-    removedAt: "",
+    email: "kamal1001@gmail.com",
+    phone: "0771234567",
+    status: "INACTIVE",
+    created_at: "2026-01-20 19:22:29",
+
+    // ✅ Salary config (optional demo fields)
+    salary_type: "DAILY",
+    basic_rate: 2500.0,
+    is_epf_eligible: 0,
+    effective_date: "2026-01-01",
   },
   {
-    id: 2,
-    name: "Nimal Silva",
-    role: "Accountant",
-    department: "Accounts",
-    email: "nimalsilva@gmail.com",
-    phone: "0719876543",
-    nic: "199912345678",
-    status: "Active",
-    joinDate: "2024-11-01",
-    salaryType: "Monthly",
-    image: "https://via.placeholder.com/140",
-    removedReason: "",
-    removedAt: "",
+    employee_id: "1002",
+    department_id: 2,
+    first_name: "Bandara",
+    last_name: "-",
+    nic: "200327911040",
+    email: "gishanb27@gmail.com",
+    phone: "0719364037",
+    status: "ACTIVE",
+    created_at: "2026-01-20 19:50:56",
+
+    salary_type: "MONTHLY",
+    basic_rate: 75000.0,
+    is_epf_eligible: 1,
+    effective_date: "2026-01-01",
   },
 ];
 
 function EmployeeManagement() {
   const [employees, setEmployees] = useState(dummyEmployees);
-  const [selectedEmpId, setSelectedEmpId] = useState(dummyEmployees?.[0]?.id || null);
+
+  // eslint-disable-next-line no-unused-vars
+  const [departments, setDepartments] = useState(fallbackDepartments);
+
+  const [selectedEmpId, setSelectedEmpId] = useState(
+    dummyEmployees?.[0]?.employee_id || null
+  );
 
   const [search, setSearch] = useState("");
 
@@ -49,21 +74,60 @@ function EmployeeManagement() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditMode, setIsEditMode] = useState(false);
   const [formData, setFormData] = useState({});
-  const [imagePreview, setImagePreview] = useState("");
 
-  // ✅ Remove modal (confirmation + reason)
+  // Remove modal
   const [isRemoveOpen, setIsRemoveOpen] = useState(false);
   const [removeTarget, setRemoveTarget] = useState(null);
   const [removeReason, setRemoveReason] = useState("");
 
-  // ✅ Credentials modal (shows username + temp password ONCE)
+  // Credentials modal
   const [credsOpen, setCredsOpen] = useState(false);
-  const [newCreds, setNewCreds] = useState(null); // { employee_id, username, tempPassword }
+  const [newCreds, setNewCreds] = useState(null);
 
-  const selectedEmployee = useMemo(
-    () => employees.find((e) => e.id === selectedEmpId) || employees[0],
-    [employees, selectedEmpId]
+  useEffect(() => {
+    // (async () => {
+    //   try {
+    //     const d = await getDepartmentsApi();
+    //     setDepartments(Array.isArray(d) ? d : d.departments || []);
+    //   } catch (e) {
+    //     setDepartments(fallbackDepartments);
+    //   }
+    //
+    //   try {
+    //     const emps = await getEmployeesApi();
+    //     setEmployees(Array.isArray(emps) ? emps : emps.employees || []);
+    //   } catch (e) {}
+    // })();
+  }, []);
+
+  const deptMap = useMemo(() => {
+    const m = new Map();
+    (departments || []).forEach((d) => m.set(Number(d.id), d));
+    return m;
+  }, [departments]);
+
+  const getDeptName = useCallback(
+    (department_id) => {
+      const d = deptMap.get(Number(department_id));
+      return d?.name || "-";
+    },
+    [deptMap]
   );
+
+  const fullName = (e) => {
+    const fn = (e?.first_name || "").trim();
+    const ln = (e?.last_name || "").trim();
+    const n = `${fn} ${ln}`.trim();
+    return n || "-";
+  };
+
+  const selectedEmployee = useMemo(() => {
+    return (
+      employees.find((e) => String(e.employee_id) === String(selectedEmpId)) ||
+      employees[0] ||
+      null
+    );
+  }, [employees, selectedEmpId]);
 
   const filteredEmployees = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -71,47 +135,47 @@ function EmployeeManagement() {
 
     return employees.filter((e) => {
       return (
-        String(e.id).includes(q) ||
-        (e.name || "").toLowerCase().includes(q) ||
-        (e.role || "").toLowerCase().includes(q) ||
-        (e.department || "").toLowerCase().includes(q) ||
+        String(e.employee_id || "").toLowerCase().includes(q) ||
+        String(e.department_id || "").toLowerCase().includes(q) ||
+        getDeptName(e.department_id).toLowerCase().includes(q) ||
+        (e.first_name || "").toLowerCase().includes(q) ||
+        (e.last_name || "").toLowerCase().includes(q) ||
+        fullName(e).toLowerCase().includes(q) ||
         (e.status || "").toLowerCase().includes(q) ||
-        (e.salaryType || "").toLowerCase().includes(q) ||
         (e.email || "").toLowerCase().includes(q) ||
         (e.phone || "").toLowerCase().includes(q) ||
         (e.nic || "").toLowerCase().includes(q)
       );
     });
-  }, [employees, search]);
+  }, [employees, search, getDeptName]);
 
   const openModal = (emp, edit = false) => {
-    setFormData(emp);
-    setImagePreview(emp?.image || "");
+    setFormData({ ...emp });
     setIsEditMode(edit);
     setIsModalOpen(true);
   };
 
   const openAddModal = () => {
-    const nextId = employees.length > 0 ? Math.max(...employees.map((e) => Number(e.id))) + 1 : 1;
-
+    const todayISO = new Date().toISOString().slice(0, 10);
     const initial = {
-      id: nextId,
-      name: "",
-      role: "",
-      department: "",
+      employee_id: "",
+      department_id: departments?.[0]?.id || 1,
+      first_name: "",
+      last_name: "-",
+      nic: "",
       email: "",
       phone: "",
-      nic: "",
-      status: "Active",
-      joinDate: "",
-      salaryType: "Monthly",
-      image: "",
-      removedReason: "",
-      removedAt: "",
+      status: "ACTIVE",
+      created_at: new Date().toISOString().slice(0, 19).replace("T", " "),
+
+      // ✅ Salary config defaults
+      salary_type: "MONTHLY", // MONTHLY | DAILY
+      basic_rate: "",
+      is_epf_eligible: 1, // 1/0
+      effective_date: todayISO,
     };
 
     setFormData(initial);
-    setImagePreview("");
     setIsEditMode(true);
     setIsModalOpen(true);
   };
@@ -120,17 +184,18 @@ function EmployeeManagement() {
     setIsModalOpen(false);
     setIsEditMode(false);
     setFormData({});
-    setImagePreview("");
   };
 
-  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
 
-  const handleImageFile = (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setImagePreview(url);
-    setFormData((prev) => ({ ...prev, image: url }));
+    // ✅ checkbox support
+    if (type === "checkbox") {
+      setFormData((p) => ({ ...p, [name]: checked ? 1 : 0 }));
+      return;
+    }
+
+    setFormData((p) => ({ ...p, [name]: value }));
   };
 
   const closeCreds = () => {
@@ -138,81 +203,114 @@ function EmployeeManagement() {
     setNewCreds(null);
   };
 
-  // ✅ Add Save -> CALL BACKEND (create employee + generate password)
+  const moneyText = (v) => {
+    if (v === null || v === undefined || v === "") return "-";
+    const n = Number(v);
+    if (Number.isNaN(n)) return String(v);
+    return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  };
+
+  // ✅ Save (create or UI-edit)
   const handleSave = async () => {
-    // CREATE only via API (edit updates UI only until you create update API)
-    const isExisting = employees.some((emp) => emp.id === formData.id);
+    const isExisting = employees.some(
+      (emp) => String(emp.employee_id) === String(formData.employee_id)
+    );
 
-    if (!String(formData.id || "").trim()) {
-      alert("Please fill Employee ID.");
-      return;
-    }
-    if (!formData.name?.trim()) {
-      alert("Please fill Name.");
-      return;
-    }
-    if (!formData.nic?.trim()) {
-      alert("Please fill NIC.");
-      return;
-    }
-    if (!formData.email?.trim()) {
-      alert("Please fill Email.");
-      return;
-    }
-    if (!formData.phone?.trim()) {
-      alert("Please fill Phone.");
-      return;
-    }
+    // ---- basic validation (employee) ----
+    if (!String(formData.employee_id || "").trim()) return alert("Please fill Employee ID.");
+    if (!String(formData.department_id || "").trim()) return alert("Please select Department.");
+    if (!formData.first_name?.trim()) return alert("Please fill First Name.");
+    if (!formData.last_name?.trim()) return alert("Please fill Last Name (use '-' if not available).");
+    if (!formData.nic?.trim()) return alert("Please fill NIC.");
+    if (!formData.email?.trim()) return alert("Please fill Email.");
+    if (!formData.phone?.trim()) return alert("Please fill Phone.");
 
+    // ---- validation (salary configuration) ----
+    if (!String(formData.salary_type || "").trim()) return alert("Please select Salary Type.");
+    if (formData.basic_rate === "" || formData.basic_rate === null || formData.basic_rate === undefined)
+      return alert("Please fill Basic Rate.");
+    if (Number.isNaN(Number(formData.basic_rate)) || Number(formData.basic_rate) <= 0)
+      return alert("Basic Rate must be a valid number greater than 0.");
+    if (!String(formData.effective_date || "").trim())
+      return alert("Please select Effective Date.");
+
+    // ✅ If you don’t have update API yet, keep edit as UI-only
     if (isExisting) {
-      setEmployees((prev) => prev.map((emp) => (emp.id === formData.id ? formData : emp)));
-      setSelectedEmpId(formData.id);
+      setEmployees((prev) =>
+        prev.map((emp) =>
+          String(emp.employee_id) === String(formData.employee_id)
+            ? {
+                ...emp,
+                ...formData,
+                department_id: Number(formData.department_id),
+                basic_rate: formData.basic_rate === "" ? "" : Number(formData.basic_rate),
+                is_epf_eligible: Number(formData.is_epf_eligible) ? 1 : 0,
+              }
+            : emp
+        )
+      );
+      setSelectedEmpId(formData.employee_id);
       closeModal();
       return;
     }
 
-    // backend expects: employee_id, first_name, last_name, nic, email, phone
-    const parts = formData.name.trim().split(" ");
-    const first_name = parts[0];
-    const last_name = parts.slice(1).join(" ") || "-";
-
+    // ✅ CREATE via backend (employee + salary configuration)
     const payload = {
-      employee_id: String(formData.id).trim(),
-      first_name,
-      last_name,
+      employee_id: String(formData.employee_id).trim(),
+      department_id: Number(formData.department_id),
+      first_name: String(formData.first_name).trim(),
+      last_name: String(formData.last_name || "-").trim(),
       nic: String(formData.nic).trim(),
-      email: formData.email.trim(),
+      email: String(formData.email).trim(),
       phone: String(formData.phone).trim(),
+      status: String(formData.status || "ACTIVE").trim(),
+
+      // ✅ salary_configurations table fields (nested)
+      salary_configuration: {
+        salary_type: String(formData.salary_type).trim(), // MONTHLY | DAILY
+        basic_rate: Number(formData.basic_rate),
+        is_epf_eligible: Number(formData.is_epf_eligible) ? 1 : 0,
+        effective_date: String(formData.effective_date).trim(), // YYYY-MM-DD
+      },
     };
 
     try {
       const data = await createEmployeeApi(payload);
 
-      const newEmpUi = {
-        id: data.employee.employee_id,
-        name: `${data.employee.first_name} ${data.employee.last_name}`.trim(),
-        role: formData.role || "Employee",
-        department: formData.department || "Production",
-        email: data.employee.email,
-        phone: data.employee.phone,
-        nic: data.employee.nic,
-        status: "Active",
-        joinDate: formData.joinDate || "",
-        salaryType: formData.salaryType || "Monthly",
-        image: formData.image || "https://via.placeholder.com/140",
-        removedReason: "",
-        removedAt: "",
+      // ✅ Accept either {employee: {...}, salary_configuration: {...}, credentials: {...}} OR direct employee
+      const createdEmp = data?.employee || data;
+      const createdSal = data?.salary_configuration || data?.salary_configuration || null;
+
+      const newEmp = {
+        employee_id: createdEmp.employee_id ?? payload.employee_id,
+        department_id: createdEmp.department_id ?? payload.department_id,
+        first_name: createdEmp.first_name ?? payload.first_name,
+        last_name: createdEmp.last_name ?? payload.last_name,
+        nic: createdEmp.nic ?? payload.nic,
+        email: createdEmp.email ?? payload.email,
+        phone: createdEmp.phone ?? payload.phone,
+        status: createdEmp.status ?? payload.status,
+        created_at: createdEmp.created_at ?? formData.created_at,
+
+        // ✅ store salary config on UI object too
+        salary_type: createdSal?.salary_type ?? payload.salary_configuration.salary_type,
+        basic_rate: createdSal?.basic_rate ?? payload.salary_configuration.basic_rate,
+        is_epf_eligible: createdSal?.is_epf_eligible ?? payload.salary_configuration.is_epf_eligible,
+        effective_date: createdSal?.effective_date ?? payload.salary_configuration.effective_date,
       };
 
-      setEmployees((prev) => [...prev, newEmpUi]);
-      setSelectedEmpId(newEmpUi.id);
+      setEmployees((prev) => [...prev, newEmp]);
+      setSelectedEmpId(newEmp.employee_id);
 
-      setNewCreds({
-        employee_id: data.employee.employee_id,
-        username: data.credentials.username,
-        tempPassword: data.credentials.tempPassword,
-      });
-      setCredsOpen(true);
+      // ✅ show credentials if backend returns them
+      if (data?.credentials?.username && data?.credentials?.tempPassword) {
+        setNewCreds({
+          employee_id: newEmp.employee_id,
+          username: data.credentials.username,
+          tempPassword: data.credentials.tempPassword,
+        });
+        setCredsOpen(true);
+      }
 
       closeModal();
     } catch (err) {
@@ -225,7 +323,6 @@ function EmployeeManagement() {
     }
   };
 
-  // ✅ Open remove modal
   const openRemoveModal = (emp) => {
     setRemoveTarget(emp);
     setRemoveReason("");
@@ -238,36 +335,30 @@ function EmployeeManagement() {
     setRemoveReason("");
   };
 
-  // ✅ Confirm remove -> CALL BACKEND deactivate
   const confirmRemove = async () => {
     if (!removeTarget) return;
 
     const reason = removeReason.trim();
-    if (!reason) {
-      alert("Please enter the removal reason.");
-      return;
-    }
+    if (!reason) return alert("Please enter the reason.");
 
     try {
-      await deactivateEmployeeApi(removeTarget.id);
-
-      const removedAt = new Date().toISOString();
+      await deactivateEmployeeApi(removeTarget.employee_id);
 
       setEmployees((prev) =>
         prev.map((e) =>
-          e.id === removeTarget.id
-            ? {
-                ...e,
-                status: "Removed",
-                removedReason: reason,
-                removedAt,
-              }
+          String(e.employee_id) === String(removeTarget.employee_id)
+            ? { ...e, status: "INACTIVE" }
             : e
         )
       );
 
       closeRemoveModal();
-      if (isModalOpen && formData?.id === removeTarget.id) closeModal();
+      if (
+        isModalOpen &&
+        String(formData?.employee_id) === String(removeTarget.employee_id)
+      ) {
+        closeModal();
+      }
     } catch (err) {
       const msg =
         err?.response?.data?.message ||
@@ -284,16 +375,14 @@ function EmployeeManagement() {
         <div style={styles.pageHeader}>
           <div>
             <h2 style={styles.heading}>Employee Management</h2>
-            <p style={styles.subheading}>
-              Selected employee profile is shown at the top. Search and manage employees below.
-            </p>
+            <p style={styles.subheading}>Employee management add or remove</p>
           </div>
 
           <div style={styles.headerActions}>
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by ID, name, department, role, status..."
+              placeholder="Search by ID, name, department, status..."
               style={styles.search}
             />
             <button style={styles.btnPrimary} onClick={openAddModal}>
@@ -306,23 +395,27 @@ function EmployeeManagement() {
         {selectedEmployee ? (
           <div style={styles.profileCard}>
             <div style={styles.profileLeft}>
-              <img src={selectedEmployee.image} alt="Employee" style={styles.profileImage} />
+              <div style={styles.avatarBlock}>
+                {String(selectedEmployee.first_name || "")
+                  .trim()
+                  .slice(0, 1)
+                  .toUpperCase() || "E"}
+              </div>
+
               <div style={{ flex: 1 }}>
                 <div style={styles.profileTopRow}>
                   <div>
-                    <div style={styles.profileName}>{selectedEmployee.name}</div>
+                    <div style={styles.profileName}>{fullName(selectedEmployee)}</div>
                     <div style={styles.profileMeta}>
-                      {selectedEmployee.role} • {selectedEmployee.department}
+                      Department: <strong>{getDeptName(selectedEmployee.department_id)}</strong>
                     </div>
                   </div>
 
                   <span
                     style={{
                       ...styles.statusPill,
-                      ...(selectedEmployee.status === "Active"
+                      ...(selectedEmployee.status === "ACTIVE"
                         ? styles.statusActive
-                        : selectedEmployee.status === "Removed"
-                        ? styles.statusRemoved
                         : styles.statusInactive),
                     }}
                   >
@@ -333,60 +426,89 @@ function EmployeeManagement() {
                 <div style={styles.profileGrid}>
                   <div style={styles.infoItem}>
                     <div style={styles.infoLabel}>Employee ID</div>
-                    <div style={styles.infoValue}>{selectedEmployee.id}</div>
+                    <div style={styles.infoValue}>{selectedEmployee.employee_id}</div>
                   </div>
+
                   <div style={styles.infoItem}>
                     <div style={styles.infoLabel}>NIC</div>
                     <div style={styles.infoValue}>{selectedEmployee.nic || "-"}</div>
                   </div>
-                  <div style={styles.infoItem}>
-                    <div style={styles.infoLabel}>Salary Type</div>
-                    <div style={styles.infoValue}>{selectedEmployee.salaryType}</div>
-                  </div>
-                  <div style={styles.infoItem}>
-                    <div style={styles.infoLabel}>Join Date</div>
-                    <div style={styles.infoValue}>{selectedEmployee.joinDate || "-"}</div>
-                  </div>
-                  <div style={styles.infoItem}>
-                    <div style={styles.infoLabel}>Phone</div>
-                    <div style={styles.infoValue}>{selectedEmployee.phone || "-"}</div>
-                  </div>
+
                   <div style={styles.infoItem}>
                     <div style={styles.infoLabel}>Email</div>
                     <div style={styles.infoValue}>{selectedEmployee.email || "-"}</div>
                   </div>
-                </div>
 
-                {selectedEmployee.status === "Removed" && (
-                  <div style={styles.removedNote}>
-                    <div style={styles.removedTitle}>Removed reason</div>
-                    <div style={styles.removedText}>{selectedEmployee.removedReason || "-"}</div>
+                  <div style={styles.infoItem}>
+                    <div style={styles.infoLabel}>Phone</div>
+                    <div style={styles.infoValue}>{selectedEmployee.phone || "-"}</div>
                   </div>
-                )}
+
+                  <div style={styles.infoItem}>
+                    <div style={styles.infoLabel}>Created At</div>
+                    <div style={styles.infoValue}>{selectedEmployee.created_at || "-"}</div>
+                  </div>
+
+                  <div style={styles.infoItem}>
+                    <div style={styles.infoLabel}>Department ID</div>
+                    <div style={styles.infoValue}>{selectedEmployee.department_id ?? "-"}</div>
+                  </div>
+
+                  {/* ✅ Salary config display */}
+                  <div style={styles.infoItem}>
+                    <div style={styles.infoLabel}>Salary Type</div>
+                    <div style={styles.infoValue}>{selectedEmployee.salary_type || "-"}</div>
+                  </div>
+
+                  <div style={styles.infoItem}>
+                    <div style={styles.infoLabel}>Basic Rate</div>
+                    <div style={styles.infoValue}>{moneyText(selectedEmployee.basic_rate)}</div>
+                  </div>
+
+                  <div style={styles.infoItem}>
+                    <div style={styles.infoLabel}>EPF Eligible</div>
+                    <div style={styles.infoValue}>
+                      {Number(selectedEmployee.is_epf_eligible) ? "YES" : "NO"}
+                    </div>
+                  </div>
+
+                  <div style={styles.infoItem}>
+                    <div style={styles.infoLabel}>Effective Date</div>
+                    <div style={styles.infoValue}>{selectedEmployee.effective_date || "-"}</div>
+                  </div>
+                </div>
               </div>
             </div>
 
             <div style={styles.profileActions}>
-              <button style={styles.btnSecondary} onClick={() => openModal(selectedEmployee, false)}>
+              <button
+                style={styles.btnSecondary}
+                onClick={() => openModal(selectedEmployee, false)}
+              >
                 View
               </button>
-              <button style={styles.btnPrimary} onClick={() => openModal(selectedEmployee, true)}>
+              <button
+                style={styles.btnPrimary}
+                onClick={() => openModal(selectedEmployee, true)}
+              >
                 Edit
               </button>
 
-              {selectedEmployee.status !== "Removed" && (
+              {selectedEmployee.status !== "INACTIVE" && (
                 <button
                   style={styles.btnDanger}
                   onClick={() => openRemoveModal(selectedEmployee)}
-                  title="Remove employee"
+                  title="Set employee status to INACTIVE"
                 >
-                  Remove
+                  Deactivate
                 </button>
               )}
             </div>
           </div>
         ) : (
-          <div style={styles.emptyTop}>No employee selected. Click “Add Employee” to create one.</div>
+          <div style={styles.emptyTop}>
+            No employee selected. Click “Add Employee” to create one.
+          </div>
         )}
 
         {/* LIST CARD */}
@@ -401,7 +523,6 @@ function EmployeeManagement() {
               <tr>
                 <th style={styles.th}>ID</th>
                 <th style={styles.th}>Name</th>
-                <th style={styles.th}>Role</th>
                 <th style={styles.th}>Department</th>
                 <th style={styles.th}>Status</th>
                 <th style={{ ...styles.th, textAlign: "right" }}>Actions</th>
@@ -410,38 +531,40 @@ function EmployeeManagement() {
 
             <tbody>
               {filteredEmployees.map((emp) => {
-                const isSelected = emp.id === selectedEmpId;
+                const isSelected = String(emp.employee_id) === String(selectedEmpId);
 
                 return (
                   <tr
-                    key={emp.id}
+                    key={emp.employee_id}
                     style={{ ...styles.tr, ...(isSelected ? styles.trSelected : {}) }}
-                    onClick={() => setSelectedEmpId(emp.id)}
+                    onClick={() => setSelectedEmpId(emp.employee_id)}
                     title="Click to show this profile on top"
                   >
-                    <td style={styles.td}>{emp.id}</td>
+                    <td style={styles.td}>{emp.employee_id}</td>
 
                     <td style={styles.tdName}>
                       <div style={styles.nameCell}>
-                        <img src={emp.image} alt="" style={styles.rowAvatar} />
+                        <div style={styles.rowAvatar}>
+                          {String(emp.first_name || "")
+                            .trim()
+                            .slice(0, 1)
+                            .toUpperCase() || "E"}
+                        </div>
                         <div>
-                          <div style={styles.rowName}>{emp.name}</div>
+                          <div style={styles.rowName}>{fullName(emp)}</div>
                           <div style={styles.rowSub}>{emp.email}</div>
                         </div>
                       </div>
                     </td>
 
-                    <td style={styles.td}>{emp.role}</td>
-                    <td style={styles.td}>{emp.department}</td>
+                    <td style={styles.td}>{getDeptName(emp.department_id)}</td>
 
                     <td style={styles.td}>
                       <span
                         style={{
                           ...styles.statusSmall,
-                          ...(emp.status === "Active"
+                          ...(emp.status === "ACTIVE"
                             ? { background: "#dcfce7" }
-                            : emp.status === "Removed"
-                            ? { background: "#fef3c7" }
                             : { background: "#fee2e2" }),
                         }}
                       >
@@ -454,7 +577,7 @@ function EmployeeManagement() {
                         style={isSelected ? styles.selectBtnActive : styles.selectBtn}
                         onClick={(e) => {
                           e.stopPropagation();
-                          setSelectedEmpId(emp.id);
+                          setSelectedEmpId(emp.employee_id);
                         }}
                       >
                         {isSelected ? "Selected" : "Select"}
@@ -470,7 +593,7 @@ function EmployeeManagement() {
                         Edit
                       </button>
 
-                      {emp.status !== "Removed" && (
+                      {emp.status !== "INACTIVE" && (
                         <button
                           style={styles.smallBtnDanger}
                           onClick={(e) => {
@@ -478,7 +601,7 @@ function EmployeeManagement() {
                             openRemoveModal(emp);
                           }}
                         >
-                          Remove
+                          Deactivate
                         </button>
                       )}
                     </td>
@@ -488,7 +611,7 @@ function EmployeeManagement() {
 
               {filteredEmployees.length === 0 && (
                 <tr>
-                  <td style={styles.empty} colSpan={6}>
+                  <td style={styles.empty} colSpan={5}>
                     No employees found for “{search}”
                   </td>
                 </tr>
@@ -512,31 +635,20 @@ function EmployeeManagement() {
 
               <div style={styles.modalBody}>
                 <div style={styles.modalProfile}>
-                  <img
-                    src={imagePreview || formData.image || "https://via.placeholder.com/140"}
-                    alt="profile"
-                    style={styles.modalImg}
-                  />
+                  <div style={styles.bigAvatar}>
+                    {String(formData.first_name || "")
+                      .trim()
+                      .slice(0, 1)
+                      .toUpperCase() || "E"}
+                  </div>
+
                   <div style={{ flex: 1 }}>
                     <div style={styles.modalName}>
-                      {formData.name?.trim() ? formData.name : "New Employee"}
+                      {fullName(formData)?.trim() !== "-" ? fullName(formData) : "New Employee"}
                     </div>
                     <div style={styles.modalSub}>
-                      {(formData.role || "Role")} • {(formData.department || "Department")}
+                      Department: {getDeptName(formData.department_id)}
                     </div>
-
-                    {isEditMode && (
-                      <div style={{ marginTop: "10px" }}>
-                        <label style={styles.label}>PROFILE IMAGE</label>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageFile}
-                          style={styles.fileInput}
-                        />
-                        <div style={styles.fileHint}>PNG / JPG recommended</div>
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -545,13 +657,61 @@ function EmployeeManagement() {
                     <label style={styles.label}>EMPLOYEE ID</label>
                     {isEditMode ? (
                       <input
-                        name="id"
-                        value={formData.id || ""}
+                        name="employee_id"
+                        value={formData.employee_id || ""}
                         onChange={handleChange}
                         style={styles.input}
                       />
                     ) : (
-                      <div style={styles.readValue}>{formData.id || "-"}</div>
+                      <div style={styles.readValue}>{formData.employee_id || "-"}</div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label style={styles.label}>DEPARTMENT</label>
+                    {isEditMode ? (
+                      <select
+                        name="department_id"
+                        value={formData.department_id ?? ""}
+                        onChange={handleChange}
+                        style={styles.select}
+                      >
+                        {(departments || []).map((d) => (
+                          <option key={d.id} value={d.id}>
+                            {d.name}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      <div style={styles.readValue}>{getDeptName(formData.department_id)}</div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label style={styles.label}>FIRST NAME</label>
+                    {isEditMode ? (
+                      <input
+                        name="first_name"
+                        value={formData.first_name || ""}
+                        onChange={handleChange}
+                        style={styles.input}
+                      />
+                    ) : (
+                      <div style={styles.readValue}>{formData.first_name || "-"}</div>
+                    )}
+                  </div>
+
+                  <div>
+                    <label style={styles.label}>LAST NAME</label>
+                    {isEditMode ? (
+                      <input
+                        name="last_name"
+                        value={formData.last_name || ""}
+                        onChange={handleChange}
+                        style={styles.input}
+                      />
+                    ) : (
+                      <div style={styles.readValue}>{formData.last_name || "-"}</div>
                     )}
                   </div>
 
@@ -566,48 +726,6 @@ function EmployeeManagement() {
                       />
                     ) : (
                       <div style={styles.readValue}>{formData.nic || "-"}</div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label style={styles.label}>NAME</label>
-                    {isEditMode ? (
-                      <input
-                        name="name"
-                        value={formData.name || ""}
-                        onChange={handleChange}
-                        style={styles.input}
-                      />
-                    ) : (
-                      <div style={styles.readValue}>{formData.name || "-"}</div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label style={styles.label}>ROLE</label>
-                    {isEditMode ? (
-                      <input
-                        name="role"
-                        value={formData.role || ""}
-                        onChange={handleChange}
-                        style={styles.input}
-                      />
-                    ) : (
-                      <div style={styles.readValue}>{formData.role || "-"}</div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label style={styles.label}>DEPARTMENT</label>
-                    {isEditMode ? (
-                      <input
-                        name="department"
-                        value={formData.department || ""}
-                        onChange={handleChange}
-                        style={styles.input}
-                      />
-                    ) : (
-                      <div style={styles.readValue}>{formData.department || "-"}</div>
                     )}
                   </div>
 
@@ -644,49 +762,90 @@ function EmployeeManagement() {
                     {isEditMode ? (
                       <select
                         name="status"
-                        value={formData.status || "Active"}
+                        value={formData.status || "ACTIVE"}
                         onChange={handleChange}
                         style={styles.select}
                       >
-                        <option value="Active">Active</option>
-                        <option value="Resigned">Resigned</option>
-                        <option value="Removed">Removed</option>
+                        <option value="ACTIVE">ACTIVE</option>
+                        <option value="INACTIVE">INACTIVE</option>
                       </select>
                     ) : (
                       <div style={styles.readValue}>{formData.status || "-"}</div>
                     )}
                   </div>
 
+                  {/* ✅ NEW: SALARY TYPE */}
                   <div>
                     <label style={styles.label}>SALARY TYPE</label>
                     {isEditMode ? (
                       <select
-                        name="salaryType"
-                        value={formData.salaryType || "Monthly"}
+                        name="salary_type"
+                        value={formData.salary_type || "MONTHLY"}
                         onChange={handleChange}
                         style={styles.select}
                       >
-                        <option value="Daily">Daily</option>
-                        <option value="Weekly">Weekly</option>
-                        <option value="Monthly">Monthly</option>
+                        <option value="MONTHLY">MONTHLY</option>
+                        <option value="DAILY">DAILY</option>
                       </select>
                     ) : (
-                      <div style={styles.readValue}>{formData.salaryType || "-"}</div>
+                      <div style={styles.readValue}>{formData.salary_type || "-"}</div>
                     )}
                   </div>
 
+                  {/* ✅ NEW: BASIC RATE */}
                   <div>
-                    <label style={styles.label}>JOIN DATE</label>
+                    <label style={styles.label}>BASIC RATE</label>
+                    {isEditMode ? (
+                      <input
+                        name="basic_rate"
+                        value={formData.basic_rate ?? ""}
+                        onChange={handleChange}
+                        style={styles.input}
+                        placeholder="e.g., 75000 or 2500"
+                        inputMode="decimal"
+                      />
+                    ) : (
+                      <div style={styles.readValue}>{moneyText(formData.basic_rate)}</div>
+                    )}
+                  </div>
+
+                 {/* ✅ NEW: EPF/ETF ELIGIBLE (YES/NO) */}
+<div>
+  <label style={styles.label}>EPF/ETF ELIGIBLE</label>
+
+  {isEditMode ? (
+    <select
+      name="is_epf_eligible"
+      value={String(formData.is_epf_eligible ?? 1)}  // keep as "1" or "0"
+      onChange={(e) =>
+        setFormData((p) => ({ ...p, is_epf_eligible: Number(e.target.value) }))
+      }
+      style={styles.select}
+    >
+      <option value="1">YES</option>
+      <option value="0">NO</option>
+    </select>
+  ) : (
+    <div style={styles.readValue}>
+      {Number(formData.is_epf_eligible) === 1 ? "YES" : "NO"}
+    </div>
+  )}
+</div>
+
+
+                  {/* ✅ NEW: EFFECTIVE DATE */}
+                  <div>
+                    <label style={styles.label}>EFFECTIVE DATE</label>
                     {isEditMode ? (
                       <input
                         type="date"
-                        name="joinDate"
-                        value={formData.joinDate || ""}
+                        name="effective_date"
+                        value={formData.effective_date || ""}
                         onChange={handleChange}
                         style={styles.input}
                       />
                     ) : (
-                      <div style={styles.readValue}>{formData.joinDate || "-"}</div>
+                      <div style={styles.readValue}>{formData.effective_date || "-"}</div>
                     )}
                   </div>
                 </div>
@@ -762,7 +921,7 @@ function EmployeeManagement() {
           <div style={styles.modalOverlay} onClick={closeRemoveModal}>
             <div style={styles.removeModal} onClick={(e) => e.stopPropagation()}>
               <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>Remove Employee</h3>
+                <h3 style={styles.modalTitle}>Deactivate Employee</h3>
                 <button style={styles.iconBtn} onClick={closeRemoveModal}>
                   ✕
                 </button>
@@ -770,12 +929,12 @@ function EmployeeManagement() {
 
               <div style={styles.modalBody}>
                 <div style={styles.removeWarnBox}>
-                  You are about to remove <strong>{removeTarget.name}</strong> (ID:{" "}
-                  <strong>{removeTarget.id}</strong>). The employee login will be disabled.
+                  You are about to deactivate <strong>{fullName(removeTarget)}</strong> (ID:{" "}
+                  <strong>{removeTarget.employee_id}</strong>). The login will be disabled.
                 </div>
 
                 <div style={{ marginTop: "12px" }}>
-                  <label style={styles.label}>REMOVAL REASON (Required)</label>
+                  <label style={styles.label}>REASON (Required)</label>
                   <textarea
                     value={removeReason}
                     onChange={(e) => setRemoveReason(e.target.value)}
@@ -790,7 +949,7 @@ function EmployeeManagement() {
                   Cancel
                 </button>
                 <button style={styles.btnDanger} onClick={confirmRemove}>
-                  Confirm Remove
+                  Confirm Deactivate
                 </button>
               </div>
             </div>
@@ -848,14 +1007,34 @@ const styles = {
     marginBottom: "14px",
   },
   profileLeft: { display: "flex", gap: "14px", flex: 1 },
-  profileImage: {
+  avatarBlock: {
     width: "92px",
     height: "92px",
     borderRadius: "14px",
     border: "1px solid #e2e8f0",
-    objectFit: "cover",
     background: "#f8fafc",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: 1000,
+    fontSize: "28px",
+    color: "#0f172a",
   },
+
+  bigAvatar: {
+    width: "64px",
+    height: "64px",
+    borderRadius: "14px",
+    border: "1px solid #e2e8f0",
+    background: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: 1000,
+    fontSize: "22px",
+    color: "#0f172a",
+  },
+
   profileTopRow: {
     display: "flex",
     alignItems: "flex-start",
@@ -875,7 +1054,6 @@ const styles = {
   },
   statusActive: { background: "#dcfce7", color: "#166534" },
   statusInactive: { background: "#fee2e2", color: "#991b1b" },
-  statusRemoved: { background: "#fef3c7", color: "#92400e" },
 
   profileGrid: {
     marginTop: "12px",
@@ -897,16 +1075,6 @@ const styles = {
     textTransform: "uppercase",
   },
   infoValue: { marginTop: "4px", color: "#0f172a", fontWeight: 800, fontSize: "13px" },
-
-  removedNote: {
-    marginTop: "12px",
-    background: "#fffbeb",
-    border: "1px solid #fde68a",
-    borderRadius: "12px",
-    padding: "12px",
-  },
-  removedTitle: { fontWeight: 900, color: "#92400e", fontSize: "12px", textTransform: "uppercase" },
-  removedText: { marginTop: "6px", color: "#92400e", fontWeight: 700, fontSize: "13px" },
 
   profileActions: { display: "flex", gap: "10px", flexWrap: "wrap" },
 
@@ -967,7 +1135,11 @@ const styles = {
     borderRadius: "10px",
     border: "1px solid #e2e8f0",
     background: "#f8fafc",
-    objectFit: "cover",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: 1000,
+    color: "#0f172a",
   },
   rowName: { fontWeight: 900, color: "#0f172a", fontSize: "13.5px" },
   rowSub: { color: "#64748b", fontSize: "12px", marginTop: "2px" },
@@ -1108,14 +1280,6 @@ const styles = {
     border: "1px solid #e2e8f0",
     marginBottom: "14px",
   },
-  modalImg: {
-    width: "64px",
-    height: "64px",
-    borderRadius: "14px",
-    border: "1px solid #e2e8f0",
-    background: "#fff",
-    objectFit: "cover",
-  },
   modalName: { fontWeight: 1000, color: "#0f172a" },
   modalSub: { marginTop: "2px", color: "#64748b", fontSize: "12.5px", fontWeight: 700 },
 
@@ -1129,16 +1293,11 @@ const styles = {
     lineHeight: 1.5,
   },
 
-  fileInput: {
-    width: "100%",
-    border: "1px solid #e2e8f0",
-    borderRadius: "12px",
-    padding: "8px 10px",
-    background: "#fff",
+  formGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+    gap: "12px",
   },
-  fileHint: { marginTop: "6px", color: "#64748b", fontSize: "12px" },
-
-  formGrid: { display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: "12px" },
 
   label: {
     display: "block",
@@ -1195,4 +1354,16 @@ const styles = {
     gap: "10px",
     flexWrap: "wrap",
   },
+
+  // ✅ EPF toggle row
+  switchRow: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "10px 12px",
+    borderRadius: "12px",
+    border: "1px solid #e2e8f0",
+    background: "#fff",
+  },
+  switchText: { fontWeight: 900, color: "#0f172a" },
 };

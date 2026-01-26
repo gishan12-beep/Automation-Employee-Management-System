@@ -1,19 +1,63 @@
+// src/controllers/managerEmployeeController.js
 import { pool } from "../config/db.js";
 import bcrypt from "bcrypt";
 import { generateTempPassword } from "../utils/passwordUtils.js";
 
 /**
  * POST /api/manager/employees
- * Body must include employee_id (NO AUTO INCREMENT)
+ * - Creates employee row (manual employee_id)
+ * - Creates salary_configurations row (basic_rate, salary_type, EPF/ETF eligible, effective_date)
+ * - Creates user login with temp password (role EMPLOYEE)
  */
 export const createEmployee = async (req, res) => {
-  const { employee_id, first_name, last_name, nic, email, phone } = req.body;
+  const {
+    employee_id,
+    department_id, // optional (only used if employee table has department_id)
+    first_name,
+    last_name,
+    nic,
+    email,
+    phone,
+    salary_configuration, // { salary_type, basic_rate, is_epf_eligible, effective_date }
+  } = req.body;
 
+  // ---- Validate employee fields ----
   if (!employee_id || !first_name || !last_name || !nic || !email || !phone) {
     return res.status(400).json({
       message: "Missing required fields",
       required: ["employee_id", "first_name", "last_name", "nic", "email", "phone"],
     });
+  }
+
+  // ---- Validate salary config fields ----
+  if (
+    !salary_configuration ||
+    !salary_configuration.salary_type ||
+    salary_configuration.basic_rate === undefined ||
+    salary_configuration.basic_rate === null ||
+    !salary_configuration.effective_date
+  ) {
+    return res.status(400).json({
+      message: "Missing salary configuration fields",
+      required: [
+        "salary_configuration.salary_type",
+        "salary_configuration.basic_rate",
+        "salary_configuration.effective_date",
+        "salary_configuration.is_epf_eligible (optional)",
+      ],
+    });
+  }
+
+  const salary_type = String(salary_configuration.salary_type).toUpperCase(); // MONTHLY/DAILY
+  const basic_rate = Number(salary_configuration.basic_rate);
+  const is_epf_eligible = Number(salary_configuration.is_epf_eligible) ? 1 : 0;
+  const effective_date = String(salary_configuration.effective_date);
+
+  if (!["MONTHLY", "DAILY"].includes(salary_type)) {
+    return res.status(400).json({ message: "salary_type must be MONTHLY or DAILY" });
+  }
+  if (Number.isNaN(basic_rate) || basic_rate <= 0) {
+    return res.status(400).json({ message: "basic_rate must be a number > 0" });
   }
 
   const conn = await pool.getConnection();
@@ -30,19 +74,36 @@ export const createEmployee = async (req, res) => {
       return res.status(409).json({ message: "Employee ID already exists" });
     }
 
-    // 2) Insert employee (manual ID)
+    // 2) Insert employee
+    // If your employee table contains department_id, this will work.
+    // If not, it will throw "Unknown column 'department_id'" -> then remove department_id usage.
+    if (department_id !== undefined && department_id !== null && department_id !== "") {
+      await conn.query(
+        `INSERT INTO employee (employee_id, department_id, first_name, last_name, nic, email, phone, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE')`,
+        [String(employee_id), Number(department_id), String(first_name), String(last_name), String(nic), String(email), String(phone)]
+      );
+    } else {
+      await conn.query(
+        `INSERT INTO employee (employee_id, first_name, last_name, nic, email, phone, status)
+         VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE')`,
+        [String(employee_id), String(first_name), String(last_name), String(nic), String(email), String(phone)]
+      );
+    }
+
+    // 3) Insert salary configuration (basic salary + EPF/ETF eligibility)
     await conn.query(
-      `INSERT INTO employee (employee_id, first_name, last_name, nic, email, phone, status)
-       VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE')`,
-      [employee_id, first_name, last_name, nic, email, phone]
+      `INSERT INTO salary_configurations (employee_id, salary_type, basic_rate, is_epf_eligible, effective_date)
+       VALUES (?, ?, ?, ?, ?)`,
+      [String(employee_id), salary_type, basic_rate, is_epf_eligible, effective_date]
     );
 
-    // 3) Auto-generate password + create user
-    const username = `EMP${employee_id}`; // You can change rule if you want
+    // 4) Auto-generate password + create user
+    const username = `EMP${employee_id}`;
     const tempPassword = generateTempPassword();
     const password_hash = await bcrypt.hash(tempPassword, 10);
 
-    // Make sure username/email not already used in user table
+    // Ensure username/email not already used in user table
     const [existingUser] = await conn.query(
       `SELECT user_id FROM user WHERE username = ? OR email = ? LIMIT 1`,
       [username, email]
@@ -55,15 +116,31 @@ export const createEmployee = async (req, res) => {
     await conn.query(
       `INSERT INTO user (employee_id, username, email, password_hash, role, is_active)
        VALUES (?, ?, ?, ?, 'EMPLOYEE', 1)`,
-      [employee_id, username, email, password_hash]
+      [String(employee_id), String(username), String(email), String(password_hash)]
     );
 
     await conn.commit();
 
-    // ✅ Return password ONCE to manager
+    // ✅ Return temp password ONCE to manager
     return res.status(201).json({
       message: "Employee created successfully",
-      employee: { employee_id, first_name, last_name, nic, email, phone, status: "ACTIVE" },
+      employee: {
+        employee_id,
+        department_id: department_id ?? null,
+        first_name,
+        last_name,
+        nic,
+        email,
+        phone,
+        status: "ACTIVE",
+      },
+      salary_configuration: {
+        employee_id,
+        salary_type,
+        basic_rate,
+        is_epf_eligible,
+        effective_date,
+      },
       credentials: { username, tempPassword },
     });
   } catch (err) {

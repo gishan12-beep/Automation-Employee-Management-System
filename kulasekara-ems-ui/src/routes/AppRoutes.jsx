@@ -12,6 +12,9 @@ import ProcessPayroll from "../pages/manager/payroll/ProcessPayroll";
 import IssueList from "../pages/manager/issues/IssueList";
 import IssueDetail from "../pages/manager/issues/IssueDetail"; // ✅ added
 
+// ✅ Manager Settings (NEW)
+import ManagerSettings from "../pages/manager/settings/ManagerSettings";
+
 // ✅ Settlement (Manager)
 import SettlementCalculator from "../pages/manager/Settlement/SettlementCalculator";
 import SettlementSummary from "../pages/manager/Settlement/SettlementSummary";
@@ -44,6 +47,9 @@ import PayrollEditor from "../pages/accountant/payroll/PayrollEditor";
 import PayrollSummary from "../pages/accountant/payroll/PayrollSummary";
 import EPFETF from "../pages/accountant/reports/EPFETF";
 
+// ✅ Accountant Withdrawals (NEW)
+import BankWithdrawals from "../pages/accountant/withdrawals/BankWithdrawals";
+
 import PrivateRoute from "./PrivateRoute";
 
 function AppRoutes() {
@@ -52,7 +58,7 @@ function AppRoutes() {
       {/* Auth */}
       <Route path="/" element={<Login />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
-      <Route path="/reset-password" element={<ResetPassword />} /> {/* ✅ NEW */}
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Manager (Protected) */}
       <Route
@@ -84,6 +90,16 @@ function AppRoutes() {
         element={
           <PrivateRoute allowedRoles={["MANAGER"]}>
             <ProcessPayroll />
+          </PrivateRoute>
+        }
+      />
+
+      {/* ✅ Manager Settings */}
+      <Route
+        path="/manager/settings"
+        element={
+          <PrivateRoute allowedRoles={["MANAGER"]}>
+            <ManagerSettings />
           </PrivateRoute>
         }
       />
@@ -301,6 +317,16 @@ function AppRoutes() {
         element={
           <PrivateRoute allowedRoles={["ACCOUNTANT"]}>
             <EPFETF />
+          </PrivateRoute>
+        }
+      />
+
+      {/* ✅ Accountant Withdrawals (NEW) */}
+      <Route
+        path="/accountant/withdrawals"
+        element={
+          <PrivateRoute allowedRoles={["ACCOUNTANT"]}>
+            <BankWithdrawals />
           </PrivateRoute>
         }
       />
