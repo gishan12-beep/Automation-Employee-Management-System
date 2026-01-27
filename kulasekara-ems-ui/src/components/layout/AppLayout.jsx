@@ -21,29 +21,21 @@ function AppLayout({ children }) {
       { name: "Leave Requests", path: "/manager/leaves" },
       { name: "Final Settlement", path: "/manager/settlement" },
       { name: "Settings", path: "/manager/settings" },
-
     ],
     EMPLOYEE: [
       { name: "Dashboard", path: "/employee/dashboard" },
       { name: "Attendance", path: "/employee/attendance" },
       { name: "Leave Requests", path: "/employee/leave" },
-
-
       { name: "Salary", path: "/employee/payroll/salary-history" },
       { name: "Issues", path: "/employee/issues/status" },
       { name: "Final Settlement", path: "/employee/settlement" },
     ],
     ACCOUNTANT: [
       { name: "Dashboard", path: "/accountant/dashboard" },
-
-      // ✅ NEW: Accountant can create/finalize payslips here
       { name: "Payroll", path: "/accountant/payroll" },
-
-      // Keep your existing ones (make sure routes exist)
       { name: "Payroll Summary", path: "/accountant/payroll-summary" },
       { name: "EPF/ETF", path: "/accountant/epf-etf" },
       { name: "Bank Withdrawals", path: "/accountant/withdrawals" },
-
     ],
   };
 
@@ -65,11 +57,12 @@ function AppLayout({ children }) {
 
   return (
     <div style={styles.container}>
+      {/* SIDEBAR */}
       <aside
         style={{
           ...styles.sidebar,
-          width: isSidebarOpen ? "260px" : "0",
-          overflow: "hidden",
+          width: isSidebarOpen ? "270px" : "0",
+          opacity: isSidebarOpen ? 1 : 0,
         }}
       >
         <div style={styles.sidebarContent}>
@@ -78,14 +71,16 @@ function AppLayout({ children }) {
             <div style={styles.brandIcon}>K</div>
             <div>
               <div style={styles.brandTitle}>KULASEKARA</div>
-              <div style={styles.brandSub}>Oil Mills</div>
+              <div style={styles.brandSub}>Oil Mills ERP</div>
             </div>
           </div>
 
-          {/* Role chip */}
-          <div style={styles.roleChip}>
-            <span style={styles.roleDot} />
-            <span style={styles.roleChipText}>{roleLabel}</span>
+          {/* Role Pill */}
+          <div style={styles.roleContainer}>
+            <div style={styles.roleChip}>
+              <span style={styles.roleDot} />
+              <span style={styles.roleText}>{roleLabel} Workspace</span>
+            </div>
           </div>
 
           {/* Menu */}
@@ -96,13 +91,10 @@ function AppLayout({ children }) {
                 <li key={item.path} style={styles.menuItem}>
                   <Link
                     to={item.path}
-                    style={{
-                      ...styles.link,
-                      ...(active ? styles.linkActive : {}),
-                    }}
+                    style={active ? styles.linkActive : styles.link}
                   >
-                    <span>{item.name}</span>
-                    {active && <span style={styles.activePill} />}
+                    <span style={styles.linkText}>{item.name}</span>
+                    {active && <div style={styles.activeIndicator} />}
                   </Link>
                 </li>
               );
@@ -110,26 +102,30 @@ function AppLayout({ children }) {
           </ul>
 
           {/* Logout */}
-          <button style={styles.logoutButton} onClick={handleLogout}>
-            Logout
-          </button>
+          <div style={styles.footer}>
+            <button style={styles.logoutButton} onClick={handleLogout}>
+              <span style={{ fontSize: "16px" }}>↪</span> Sign Out
+            </button>
+          </div>
         </div>
       </aside>
 
+      {/* MAIN CONTENT */}
       <div style={styles.mainWrapper}>
-        {/* Header */}
         <header style={styles.header}>
-          <button
-            style={styles.toggleButton}
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            aria-label="Toggle sidebar"
-          >
-            {isSidebarOpen ? "✕" : "☰"}
-          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+            <button
+              style={styles.toggleButton}
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              title="Toggle Menu"
+            >
+              {isSidebarOpen ? "✕" : "☰"}
+            </button>
+          </div>
 
           <div style={styles.userSection}>
             <div style={styles.userInfo}>
-              <p style={styles.welcomeText}>Welcome back</p>
+              <p style={styles.welcomeText}>Logged in as</p>
               <p style={styles.userName}>{roleLabel}</p>
             </div>
             <div style={styles.avatar}>{roleLabel.charAt(0).toUpperCase()}</div>
@@ -145,173 +141,216 @@ function AppLayout({ children }) {
 export default AppLayout;
 
 /**
- * Sidebar matches dashboard (clean, ERP-style)
+ * STYLES - Updated to match "Calm Professional" Green Theme (#4a7c4e)
  */
 const styles = {
   container: {
     display: "flex",
     minHeight: "100vh",
-    fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif",
+    fontFamily: "'Inter', 'Segoe UI', sans-serif", // Modern font stack
     background: "#F3F6FB",
   },
+  
+  // Sidebar Styling
   sidebar: {
     background: "#FFFFFF",
-    transition: "all 0.25s ease-in-out",
+    transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease",
     borderRight: "1px solid #E6EDF5",
-    boxShadow: "0 2px 16px rgba(15, 23, 42, 0.04)",
+    boxShadow: "4px 0 24px rgba(0,0,0,0.02)",
+    overflow: "hidden",
+    whiteSpace: "nowrap",
+    position: "relative",
+    zIndex: 50,
   },
   sidebarContent: {
-    padding: "18px 16px",
-    width: "260px",
-    height: "100%",
     display: "flex",
     flexDirection: "column",
+    height: "100%",
+    width: "270px", // Fixed width content to prevent squash during transition
   },
+  
+  // Brand Section
   brand: {
+    padding: "24px 24px 20px",
     display: "flex",
     alignItems: "center",
-    gap: "12px",
-    padding: "8px 10px 16px 10px",
-    borderBottom: "1px solid #EEF2F7",
-    marginBottom: "14px",
+    gap: "14px",
+    borderBottom: "1px solid #f1f5f9",
   },
   brandIcon: {
-    width: "44px",
-    height: "44px",
-    borderRadius: "14px",
-    background: "#0F172A",
+    width: "40px",
+    height: "40px",
+    background: "linear-gradient(135deg, #4a7c4e 0%, #2d4f2f 100%)", // The Theme Gradient
+    borderRadius: "10px",
+    color: "#fff",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: "#fff",
-    fontWeight: 800,
-    letterSpacing: "0.5px",
+    fontSize: "18px",
+    fontWeight: "900",
+    boxShadow: "0 4px 10px rgba(74, 124, 78, 0.2)",
   },
   brandTitle: {
-    color: "#0F172A",
-    fontSize: "14px",
-    fontWeight: 800,
-    letterSpacing: "0.6px",
+    fontSize: "15px",
+    fontWeight: "900",
+    color: "#0b1220",
+    letterSpacing: "-0.3px",
   },
   brandSub: {
-    color: "#64748B",
-    fontSize: "12px",
+    fontSize: "11px",
+    fontWeight: "600",
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
     marginTop: "2px",
   },
+
+  // Role Chip
+  roleContainer: { padding: "16px 20px 8px" },
   roleChip: {
-    display: "inline-flex",
+    display: "flex",
     alignItems: "center",
     gap: "10px",
-    padding: "10px 14px",
-    borderRadius: "999px",
-    background: "#F6FAFF",
-    border: "1px solid #E6F0FF",
-    width: "fit-content",
-    margin: "0 10px 16px 10px",
-    boxShadow: "0 1px 6px rgba(15, 23, 42, 0.04)",
+    background: "#f0f7f1", // Light green bg
+    border: "1px solid #dcfce7",
+    padding: "8px 12px",
+    borderRadius: "10px",
   },
   roleDot: {
-    width: "10px",
-    height: "10px",
+    width: "8px",
+    height: "8px",
+    background: "#4a7c4e", // Theme Green
     borderRadius: "50%",
-    background: "#22C55E",
-    boxShadow: "0 0 0 4px rgba(34, 197, 94, 0.12)",
+    boxShadow: "0 0 0 3px rgba(74, 124, 78, 0.15)",
   },
-  roleChipText: {
-    color: "#0F172A",
-    fontSize: "12.5px",
-    fontWeight: 700,
+  roleText: {
+    fontSize: "12px",
+    fontWeight: "700",
+    color: "#14532d", // Dark Green text
+    textTransform: "uppercase",
+    letterSpacing: "0.4px",
   },
-  menu: { listStyle: "none", padding: 0, margin: "0 0 14px 0", flex: 1 },
-  menuItem: { marginBottom: "8px" },
+
+  // Navigation Menu
+  menu: {
+    listStyle: "none",
+    padding: "10px 14px",
+    margin: 0,
+    flex: 1,
+    overflowY: "auto",
+  },
+  menuItem: {
+    marginBottom: "4px",
+  },
   link: {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    color: "#0F172A",
+    padding: "12px 16px",
     textDecoration: "none",
-    fontWeight: 700,
-    padding: "12px 14px",
     borderRadius: "12px",
-    transition: "background 0.18s ease, color 0.18s ease, border 0.18s ease",
-    fontSize: "14px",
-    margin: "0 6px",
+    color: "#64748b",
+    transition: "all 0.2s ease",
     background: "transparent",
-    border: "1px solid transparent",
+    fontWeight: "600",
+    fontSize: "14px",
   },
   linkActive: {
-    background: "#EEF5FF",
-    color: "#0F172A",
-    border: "1px solid #D9E9FF",
-    boxShadow: "0 1px 10px rgba(37, 99, 235, 0.08)",
-  },
-  activePill: {
-    width: "10px",
-    height: "10px",
-    borderRadius: "999px",
-    background: "#2563EB",
-    boxShadow: "0 0 0 5px rgba(37, 99, 235, 0.16)",
-  },
-  logoutButton: {
-    width: "calc(100% - 12px)",
-    margin: "0 6px 6px 6px",
-    background: "#FFFFFF",
-    color: "#0F172A",
-    border: "1px solid #E6EDF5",
-    padding: "12px 14px",
-    fontWeight: 800,
-    cursor: "pointer",
-    borderRadius: "12px",
-    fontSize: "14px",
-    transition: "background 0.18s ease, box-shadow 0.18s ease",
-    boxShadow: "0 2px 14px rgba(15, 23, 42, 0.06)",
-  },
-  mainWrapper: { flex: 1, display: "flex", flexDirection: "column" },
-  header: {
-    background: "transparent",
-    borderBottom: "none",
-    padding: "18px 22px 10px 22px",
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
+    padding: "12px 16px",
+    textDecoration: "none",
+    borderRadius: "12px",
+    background: "#4a7c4e", // Theme Green Active
+    color: "#ffffff",
+    fontWeight: "700",
+    fontSize: "14px",
+    boxShadow: "0 8px 16px rgba(74, 124, 78, 0.2)",
   },
-  toggleButton: {
-    background: "#FFFFFF",
-    border: "1px solid #E6EDF5",
-    fontSize: "18px",
-    cursor: "pointer",
-    color: "#0F172A",
-    padding: "10px 14px",
-    borderRadius: "14px",
-    boxShadow: "0 2px 14px rgba(15, 23, 42, 0.06)",
+  linkText: {
+    zIndex: 1,
   },
-  userSection: { display: "flex", alignItems: "center", gap: "12px" },
-  userInfo: { textAlign: "right" },
-  welcomeText: {
-    fontSize: "12px",
-    color: "#64748B",
-    margin: "0 0 2px 0",
-    fontWeight: 600,
+  activeIndicator: {
+    width: "6px",
+    height: "6px",
+    background: "#fff",
+    borderRadius: "50%",
   },
-  userName: {
-    fontSize: "15px",
-    fontWeight: "800",
-    color: "#0F172A",
-    margin: 0,
-    textTransform: "capitalize",
+
+  // Footer / Logout
+  footer: {
+    padding: "16px",
+    borderTop: "1px solid #f1f5f9",
   },
-  avatar: {
-    width: "42px",
-    height: "42px",
-    borderRadius: "999px",
-    background: "#2563EB",
+  logoutButton: {
+    width: "100%",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: "#fff",
-    fontWeight: "900",
-    fontSize: "15px",
-    boxShadow: "0 10px 18px rgba(37, 99, 235, 0.18)",
+    gap: "8px",
+    padding: "12px",
+    background: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: "12px",
+    color: "#64748b",
+    fontWeight: "700",
+    fontSize: "13px",
+    cursor: "pointer",
+    transition: "all 0.2s",
   },
-  main: { flex: 1, padding: "18px 22px 28px 22px", overflowY: "auto" },
+
+  // Main Content Area
+  mainWrapper: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden", // Prevents double scrollbars
+  },
+  header: {
+    padding: "16px 30px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    background: "transparent", // Clean look
+  },
+  toggleButton: {
+    background: "#fff",
+    border: "1px solid #e2e8f0",
+    width: "40px",
+    height: "40px",
+    borderRadius: "12px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "18px",
+    cursor: "pointer",
+    color: "#1e293b",
+    boxShadow: "0 2px 5px rgba(0,0,0,0.03)",
+  },
+  
+  // User Profile in Header
+  userSection: { display: "flex", alignItems: "center", gap: "14px" },
+  userInfo: { textAlign: "right" },
+  welcomeText: { margin: 0, fontSize: "11px", color: "#94a3b8", fontWeight: "600", textTransform: "uppercase" },
+  userName: { margin: "2px 0 0", fontSize: "14px", fontWeight: "800", color: "#1e293b" },
+  avatar: {
+    width: "44px",
+    height: "44px",
+    borderRadius: "14px",
+    background: "#4a7c4e", // Theme Green
+    color: "#fff",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "16px",
+    fontWeight: "800",
+    boxShadow: "0 4px 12px rgba(74, 124, 78, 0.25)",
+  },
+
+  main: {
+    flex: 1,
+    padding: "0 30px 30px",
+    overflowY: "auto",
+  },
 };

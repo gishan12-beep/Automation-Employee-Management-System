@@ -128,6 +128,8 @@ export default function AttendanceList() {
 
   return (
     <AppLayout>
+      <style>{animations}</style>
+
       {/* Header */}
       <div style={ui.pageHeader}>
         <div>
@@ -143,7 +145,7 @@ export default function AttendanceList() {
             <input
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by ID, name, department, role, status..."
+              placeholder="Search by ID, name, department..."
               style={ui.searchInput}
             />
           </div>
@@ -251,10 +253,10 @@ export default function AttendanceList() {
                       </tr>
                     ) : (
                       selectedWorkDetails.map((w) => (
-                        <tr key={w.workDetailID}>
+                        <tr key={w.workDetailID} style={ui.tr}>
                           <td style={ui.td}>{w.date}</td>
                           <td style={ui.td}>
-                            <div style={{ fontWeight: 900 }}>{w.taskDescription}</div>
+                            <div style={{ fontWeight: 800, color: "#1e293b" }}>{w.taskDescription}</div>
                             <div style={ui.subTextSmall}>{w.workDetailID}</div>
                           </td>
                           <td style={ui.td}>{w.quantity}</td>
@@ -287,7 +289,7 @@ export default function AttendanceList() {
       </div>
 
       {/* Employee List */}
-      <div style={{ ...ui.card, marginTop: 16 }}>
+      <div style={{ ...ui.card, marginTop: 24 }}>
         <div style={ui.cardHeaderRow}>
           <h2 style={ui.cardTitle}>Employee List</h2>
           <div style={ui.countPill}>{filteredEmployees.length} employees</div>
@@ -318,7 +320,11 @@ export default function AttendanceList() {
                 filteredEmployees.map((emp) => {
                   const selected = selectedEmployee?.id === emp.id;
                   return (
-                    <tr key={emp.id} style={selected ? ui.selectedRow : undefined}>
+                    <tr
+                      key={emp.id}
+                      style={selected ? ui.selectedRow : ui.tr}
+                      onClick={() => setSelectedEmployee(emp)}
+                    >
                       <td style={ui.td}>{emp.id}</td>
                       <td style={ui.td}>
                         <div style={ui.nameCell}>
@@ -343,14 +349,23 @@ export default function AttendanceList() {
                       <td style={{ ...ui.td, textAlign: "right" }}>
                         <div style={ui.actionRow}>
                           <button
-                            style={selected ? ui.darkBtn : ui.lightBtn}
-                            onClick={() => setSelectedEmployee(emp)}
+                            style={selected ? ui.primaryBtnSmall : ui.lightBtn}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedEmployee(emp);
+                            }}
                           >
                             {selected ? "Selected" : "Select"}
                           </button>
 
                           {isDayWorker(emp) ? (
-                            <button style={ui.darkBtn} onClick={() => setSelectedEmployee(emp)}>
+                            <button
+                              style={ui.darkBtn}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedEmployee(emp);
+                              }}
+                            >
                               Work
                             </button>
                           ) : (
@@ -397,229 +412,277 @@ function InfoBox({ label, value }) {
 function SummaryCard({ label, value }) {
   return (
     <div style={ui.summaryCard}>
-      <div style={ui.summaryLabel}>{label}</div>
       <div style={ui.summaryValue}>{value}</div>
+      <div style={ui.summaryLabel}>{label}</div>
     </div>
   );
 }
 
+// -- STYLES --
+const animations = `
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+`;
+
 const ui = {
+  // Page Header with Green Gradient
   pageHeader: {
+    background: "linear-gradient(135deg, #4a7c4e 0%, #3d6641 100%)",
+    padding: "24px 30px",
+    borderRadius: "16px",
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: 16,
-    marginBottom: 18,
+    alignItems: "center",
+    marginBottom: "24px",
+    color: "#fff",
+    boxShadow: "0 8px 20px rgba(74, 124, 78, 0.15)",
+    animation: "fadeIn 0.4s ease-out",
     flexWrap: "wrap",
+    gap: "16px",
   },
-  pageTitle: { margin: 0, fontSize: 28, fontWeight: 900, letterSpacing: -0.3, color: "#0b1220" },
-  pageSubTitle: { margin: "6px 0 0", color: "#64748b", fontSize: 13 },
+  pageTitle: { margin: 0, fontSize: "24px", fontWeight: 900, letterSpacing: "-0.5px" },
+  pageSubTitle: { margin: "4px 0 0", opacity: 0.9, fontSize: "14px", fontWeight: 500 },
 
-  topActions: { display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" },
+  topActions: { display: "flex", alignItems: "center", gap: 12 },
   searchWrap: {
     display: "flex",
     alignItems: "center",
-    gap: 8,
-    background: "#fff",
-    border: "1px solid #e6edf6",
-    borderRadius: 12,
-    padding: "10px 12px",
-    minWidth: 380,
-    boxShadow: "0 1px 0 rgba(15, 23, 42, 0.02)",
+    gap: 10,
+    background: "rgba(255, 255, 255, 0.15)",
+    backdropFilter: "blur(8px)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
+    borderRadius: "12px",
+    padding: "10px 16px",
+    minWidth: "280px",
   },
-  searchIcon: { fontSize: 14, opacity: 0.6 },
-  searchInput: { border: "none", outline: "none", width: "100%", fontSize: 14, color: "#0b1220" },
+  searchIcon: { fontSize: 16, opacity: 0.8 },
+  searchInput: {
+    border: "none",
+    outline: "none",
+    background: "transparent",
+    width: "100%",
+    fontSize: "14px",
+    color: "#fff",
+    fontWeight: "600",
+    placeholderColor: "rgba(255,255,255,0.7)",
+  },
 
-  grid2: { display: "grid", gridTemplateColumns: "1.15fr 1fr", gap: 16 },
+  // Layout Grid
+  grid2: { display: "grid", gridTemplateColumns: "1fr 1.3fr", gap: 24 },
+
+  // Cards (Glass/White style)
   card: {
     background: "#fff",
-    borderRadius: 16,
-    border: "1px solid #e6edf6",
-    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.06)",
+    borderRadius: "20px",
+    border: "1px solid #eef2f6",
+    boxShadow: "0 4px 20px rgba(0, 0, 0, 0.02)",
     overflow: "hidden",
+    animation: "fadeIn 0.5s ease-out",
   },
   cardHeaderRow: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "18px 18px 10px",
+    padding: "20px 24px",
+    borderBottom: "1px solid #f8fafc",
     gap: 12,
-    flexWrap: "wrap",
   },
-  cardTitle: { margin: 0, fontSize: 18, fontWeight: 900, color: "#0b1220" },
+  cardTitle: { margin: 0, fontSize: "17px", fontWeight: 800, color: "#1e293b" },
   countPill: {
     background: "#f1f5f9",
-    border: "1px solid #e2e8f0",
-    color: "#0b1220",
-    padding: "8px 12px",
+    color: "#64748b",
+    padding: "6px 14px",
     borderRadius: 999,
-    fontSize: 13,
+    fontSize: "12px",
     fontWeight: 800,
   },
 
+  // Badges
   badgeActive: {
     display: "inline-flex",
     alignItems: "center",
-    padding: "6px 12px",
+    padding: "5px 12px",
     borderRadius: 999,
-    fontSize: 13,
-    fontWeight: 900,
+    fontSize: "11px",
+    fontWeight: 800,
     background: "#dcfce7",
-    color: "#14532d",
+    color: "#166534",
     border: "1px solid #bbf7d0",
   },
   badgeInactive: {
     display: "inline-flex",
     alignItems: "center",
-    padding: "6px 12px",
+    padding: "5px 12px",
     borderRadius: 999,
-    fontSize: 13,
-    fontWeight: 900,
+    fontSize: "11px",
+    fontWeight: 800,
     background: "#fee2e2",
-    color: "#7f1d1d",
+    color: "#991b1b",
     border: "1px solid #fecaca",
   },
 
-  profileWrap: { display: "flex", gap: 14, padding: 18 },
+  // Profile Section
+  profileWrap: { display: "flex", gap: 20, padding: "24px" },
   profileAvatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 16,
-    border: "1px solid #e6edf6",
+    width: 80,
+    height: 80,
+    borderRadius: "20px",
+    border: "4px solid #f0f7f1",
     objectFit: "cover",
     background: "#f8fafc",
   },
-  profileName: { fontSize: 18, fontWeight: 900, color: "#0b1220" },
-  profileMeta: { marginTop: 4, fontSize: 13, color: "#64748b", fontWeight: 600 },
+  profileName: { fontSize: "20px", fontWeight: 900, color: "#1e293b" },
+  profileMeta: { marginTop: 4, fontSize: "13px", color: "#64748b", fontWeight: 600 },
   profileGrid: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
+    gridTemplateColumns: "1fr 1fr",
     gap: 10,
-    marginTop: 14,
+    marginTop: 16,
   },
+
+  // Info Box
   infoBox: {
     background: "#f8fafc",
-    border: "1px solid #e6edf6",
-    borderRadius: 14,
-    padding: 12,
+    border: "1px solid #f1f5f9",
+    borderRadius: "12px",
+    padding: "10px 14px",
   },
-  infoLabel: { fontSize: 12, color: "#64748b", fontWeight: 900, letterSpacing: 0.7 },
-  infoValue: { marginTop: 6, fontSize: 14, color: "#0b1220", fontWeight: 900 },
+  infoLabel: { fontSize: "10px", color: "#94a3b8", fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase" },
+  infoValue: { marginTop: 4, fontSize: "13px", color: "#334155", fontWeight: 700 },
 
+  // Inputs & Buttons
   dateInput: {
-    padding: "10px 12px",
-    borderRadius: 12,
-    border: "1px solid #e6edf6",
+    padding: "8px 12px",
+    borderRadius: "10px",
+    border: "1px solid #e2e8f0",
     outline: "none",
     background: "#fff",
-    fontWeight: 800,
+    fontWeight: 700,
+    fontSize: "13px",
+    color: "#334155",
   },
   primaryBtnSmall: {
-    background: "#0b1220",
+    background: "#4a7c4e", // Theme Green
     color: "#fff",
-    border: "1px solid #0b1220",
-    padding: "10px 14px",
-    borderRadius: 12,
+    border: "none",
+    padding: "8px 16px",
+    borderRadius: "10px",
     cursor: "pointer",
-    fontWeight: 900,
+    fontWeight: 800,
+    fontSize: "13px",
+    transition: "background 0.2s",
   },
   disabledBtnSmall: {
-    background: "#0b1220",
-    color: "#fff",
-    border: "1px solid #0b1220",
-    padding: "10px 14px",
-    borderRadius: 12,
-    opacity: 0.35,
+    background: "#e2e8f0",
+    color: "#94a3b8",
+    border: "none",
+    padding: "8px 16px",
+    borderRadius: "10px",
     cursor: "not-allowed",
-    fontWeight: 900,
+    fontWeight: 700,
+    fontSize: "13px",
   },
 
-  summaryRow: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, padding: "0 18px 16px" },
+  // Summary Cards
+  summaryRow: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, padding: "24px" },
   summaryCard: {
-    background: "#f8fafc",
-    border: "1px solid #e6edf6",
-    borderRadius: 16,
-    padding: 14,
+    background: "#f0f7f1", // Light green bg
+    border: "1px solid #dcfce7",
+    borderRadius: "16px",
+    padding: "16px",
+    textAlign: "center",
   },
-  summaryLabel: { fontSize: 12, color: "#64748b", fontWeight: 900, letterSpacing: 0.7 },
-  summaryValue: { marginTop: 8, fontSize: 20, fontWeight: 900, color: "#0b1220" },
+  summaryLabel: { fontSize: "11px", color: "#4a7c4e", fontWeight: 700, marginTop: 4, textTransform: "uppercase" },
+  summaryValue: { fontSize: "22px", fontWeight: 900, color: "#166534" },
 
   infoBoxBlue: {
-    margin: 18,
+    margin: 24,
     background: "#eff6ff",
-    border: "1px solid #bfdbfe",
-    borderRadius: 14,
-    padding: 12,
+    border: "1px solid #dbeafe",
+    borderRadius: "12px",
+    padding: "16px",
     color: "#1e40af",
-    fontWeight: 700,
+    fontWeight: 600,
+    fontSize: "13px",
   },
 
+  // Table
   tableWrap: { width: "100%", overflowX: "auto" },
-  table: { width: "100%", borderCollapse: "separate", borderSpacing: 0 },
+  table: { width: "100%", borderCollapse: "collapse" },
   th: {
     textAlign: "left",
-    padding: "14px 18px",
-    fontSize: 12,
-    letterSpacing: 0.8,
-    color: "#6b7280",
+    padding: "14px 24px",
+    fontSize: "11px",
+    fontWeight: 800,
+    color: "#94a3b8",
     background: "#f8fafc",
-    borderTop: "1px solid #e6edf6",
-    borderBottom: "1px solid #e6edf6",
+    textTransform: "uppercase",
+    borderBottom: "1px solid #f1f5f9",
   },
-  td: { padding: "14px 18px", borderBottom: "1px solid #edf2f7", verticalAlign: "middle", color: "#0b1220" },
-  emptyCell: { padding: 24, textAlign: "center", color: "#64748b" },
+  td: {
+    padding: "16px 24px",
+    borderBottom: "1px solid #f1f5f9",
+    verticalAlign: "middle",
+    color: "#334155",
+    fontSize: "14px",
+  },
+  tr: { transition: "background 0.2s", cursor: "pointer" },
+  selectedRow: {
+    background: "#f0f7f1",
+    borderLeft: "4px solid #4a7c4e",
+  },
+  emptyCell: { padding: 40, textAlign: "center", color: "#94a3b8", fontSize: "13px" },
 
-  actionRow: { display: "flex", justifyContent: "flex-end", gap: 10, flexWrap: "wrap" },
+  // Actions
+  actionRow: { display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" },
   darkBtn: {
-    background: "#0b1220",
+    background: "#1e293b",
     color: "#fff",
-    border: "1px solid #0b1220",
-    padding: "10px 14px",
-    borderRadius: 12,
+    border: "none",
+    padding: "6px 12px",
+    borderRadius: "8px",
     cursor: "pointer",
-    fontWeight: 900,
-    whiteSpace: "nowrap",
+    fontWeight: 700,
+    fontSize: "12px",
   },
   lightBtn: {
     background: "#fff",
-    color: "#0b1220",
-    border: "1px solid #e6edf6",
-    padding: "10px 14px",
-    borderRadius: 12,
+    color: "#475569",
+    border: "1px solid #e2e8f0",
+    padding: "6px 12px",
+    borderRadius: "8px",
     cursor: "pointer",
-    fontWeight: 900,
-    whiteSpace: "nowrap",
+    fontWeight: 700,
+    fontSize: "12px",
   },
   disabledBtn: {
-    background: "#0b1220",
-    color: "#fff",
-    border: "1px solid #0b1220",
-    padding: "10px 14px",
-    borderRadius: 12,
-    opacity: 0.35,
+    background: "#f1f5f9",
+    color: "#cbd5e1",
+    border: "1px solid #f1f5f9",
+    padding: "6px 12px",
+    borderRadius: "8px",
     cursor: "not-allowed",
-    fontWeight: 900,
-    whiteSpace: "nowrap",
+    fontWeight: 700,
+    fontSize: "12px",
   },
   dangerOutlineBtn: {
     background: "#fff",
     color: "#b91c1c",
     border: "1px solid #fecaca",
-    padding: "10px 14px",
-    borderRadius: 12,
+    padding: "6px 12px",
+    borderRadius: "8px",
     cursor: "pointer",
-    fontWeight: 900,
-    whiteSpace: "nowrap",
+    fontWeight: 700,
+    fontSize: "12px",
   },
 
-  nameCell: { display: "flex", alignItems: "center", gap: 12, minWidth: 280 },
-  avatar: { width: 44, height: 44, borderRadius: 12, border: "1px solid #e6edf6", objectFit: "cover", background: "#f8fafc" },
-  nameText: { fontWeight: 900, fontSize: 15, color: "#0b1220" },
-  subText: { fontSize: 13, color: "#64748b", marginTop: 2 },
-  subTextSmall: { fontSize: 12, color: "#64748b", marginTop: 4 },
-  miniMeta: { display: "flex", gap: 8, flexWrap: "wrap", marginTop: 6 },
-  miniTag: { fontSize: 12, padding: "3px 8px", borderRadius: 999, background: "#f1f5f9", border: "1px solid #e2e8f0", color: "#334155", fontWeight: 700 },
+  // Inner Components
+  nameCell: { display: "flex", alignItems: "center", gap: 14, minWidth: 240 },
+  avatar: { width: 40, height: 40, borderRadius: "10px", objectFit: "cover", background: "#e2e8f0" },
+  nameText: { fontWeight: 800, fontSize: "14px", color: "#1e293b" },
+  subText: { fontSize: "12px", color: "#64748b", marginTop: 2 },
+  subTextSmall: { fontSize: "11px", color: "#94a3b8", marginTop: 2 },
+  miniMeta: { display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 },
+  miniTag: { fontSize: "10px", padding: "2px 6px", borderRadius: 4, background: "#f1f5f9", color: "#64748b", fontWeight: 700 },
 
-  selectedRow: { background: "#f8fafc" },
-  emptyBox: { padding: 18, color: "#64748b" },
+  emptyBox: { padding: 40, textAlign: "center", color: "#94a3b8", fontWeight: 600, fontSize: "14px" },
 };

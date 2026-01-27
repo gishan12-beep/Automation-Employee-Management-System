@@ -310,7 +310,7 @@ export default function MyAttendance() {
           <div style={styles.cardHead}>
             <div style={styles.cardTitle}>Attendance History</div>
             <div style={{ fontSize: 12, opacity: 0.7 }}>
-              (UI-only) Later connect to MySQL `attendance` table
+             Attendance` table
             </div>
           </div>
 

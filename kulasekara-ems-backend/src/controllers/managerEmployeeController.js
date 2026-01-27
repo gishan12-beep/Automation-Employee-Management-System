@@ -6,13 +6,14 @@ import { generateTempPassword } from "../utils/passwordUtils.js";
 /**
  * POST /api/manager/employees
  * - Creates employee row (manual employee_id)
- * - Creates salary_configurations row (basic_rate, salary_type, EPF/ETF eligible, effective_date)
+ * - Creates salary_configurations row
  * - Creates user login with temp password (role EMPLOYEE)
+ * - ✅ Forces password reset before employee can access dashboard
  */
 export const createEmployee = async (req, res) => {
   const {
     employee_id,
-    department_id, // optional (only used if employee table has department_id)
+    department_id,
     first_name,
     last_name,
     nic,
@@ -75,23 +76,36 @@ export const createEmployee = async (req, res) => {
     }
 
     // 2) Insert employee
-    // If your employee table contains department_id, this will work.
-    // If not, it will throw "Unknown column 'department_id'" -> then remove department_id usage.
     if (department_id !== undefined && department_id !== null && department_id !== "") {
       await conn.query(
         `INSERT INTO employee (employee_id, department_id, first_name, last_name, nic, email, phone, status)
          VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE')`,
-        [String(employee_id), Number(department_id), String(first_name), String(last_name), String(nic), String(email), String(phone)]
+        [
+          String(employee_id),
+          Number(department_id),
+          String(first_name),
+          String(last_name),
+          String(nic),
+          String(email),
+          String(phone),
+        ]
       );
     } else {
       await conn.query(
         `INSERT INTO employee (employee_id, first_name, last_name, nic, email, phone, status)
          VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE')`,
-        [String(employee_id), String(first_name), String(last_name), String(nic), String(email), String(phone)]
+        [
+          String(employee_id),
+          String(first_name),
+          String(last_name),
+          String(nic),
+          String(email),
+          String(phone),
+        ]
       );
     }
 
-    // 3) Insert salary configuration (basic salary + EPF/ETF eligibility)
+    // 3) Insert salary configuration
     await conn.query(
       `INSERT INTO salary_configurations (employee_id, salary_type, basic_rate, is_epf_eligible, effective_date)
        VALUES (?, ?, ?, ?, ?)`,
@@ -113,9 +127,13 @@ export const createEmployee = async (req, res) => {
       return res.status(409).json({ message: "User username/email already exists" });
     }
 
+    // ✅ NEW: must_change_password = 1, temp_password_issued_at = NOW()
     await conn.query(
-      `INSERT INTO user (employee_id, username, email, password_hash, role, is_active)
-       VALUES (?, ?, ?, ?, 'EMPLOYEE', 1)`,
+      `INSERT INTO user (
+          employee_id, username, email, password_hash, role, is_active,
+          must_change_password, temp_password_issued_at
+       )
+       VALUES (?, ?, ?, ?, 'EMPLOYEE', 1, 1, NOW())`,
       [String(employee_id), String(username), String(email), String(password_hash)]
     );
 
@@ -162,13 +180,11 @@ export const deactivateEmployee = async (req, res) => {
   try {
     await conn.beginTransaction();
 
-    // Update employee status (keep record)
     const [empUpdate] = await conn.query(
       `UPDATE employee SET status='INACTIVE' WHERE employee_id = ?`,
       [employee_id]
     );
 
-    // Disable login (if user exists)
     await conn.query(
       `UPDATE user SET is_active=0 WHERE employee_id = ?`,
       [employee_id]

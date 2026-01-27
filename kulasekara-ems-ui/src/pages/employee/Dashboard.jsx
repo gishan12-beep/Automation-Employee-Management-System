@@ -1,27 +1,91 @@
-import React, { useMemo, useState } from "react";
+// src/pages/employee/EmployeeDashboard.jsx
+import React, { useMemo, useState, useEffect } from "react";
 import AppLayout from "../../components/layout/AppLayout";
 
-export default function EmployeeDashboard() {
-  const employee = {
-    name: "Kasun Perera",
-    role: "Employee",
-    department: "Production",
-    employeeId: "EMP-1024",
-    email: "kasun.perera@kulasekara.com",
-    phone: "071 234 5678",
-    status: "Active",
-  };
+function safeParse(json) {
+  try {
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
 
+// ✅ prevent showing "manager" / "employee" as a "name"
+function cleanName(name) {
+  const n = String(name || "").trim();
+  if (!n) return "";
+
+  const bad = ["manager", "employee", "accountant", "admin", "administrator", "user", "role"];
+  if (bad.includes(n.toLowerCase())) return "";
+
+  return n;
+}
+
+function buildDisplayName(userObj) {
+  if (!userObj) return "";
+
+  // prefer proper first/last
+  const first = cleanName(userObj.firstName || userObj.first_name);
+  const last = cleanName(userObj.lastName || userObj.last_name);
+  const full = `${first} ${last}`.trim();
+  if (full) return full;
+
+  // other common keys
+  const byName = cleanName(userObj.name);
+  if (byName) return byName;
+
+  const byUsername = cleanName(userObj.username);
+  if (byUsername) return byUsername;
+
+  // email fallback (only if not empty)
+  const email = String(userObj.email || "").trim();
+  if (email) return email;
+
+  return "";
+}
+
+export default function EmployeeDashboard() {
+  // ✅ live values (employee session)
+  // should be EMPLOYEE
+  const employeeIdLS = localStorage.getItem("employee_id") || localStorage.getItem("employeeId") || "";
+
+  const [user, setUser] = useState(() => safeParse(localStorage.getItem("user") || "null"));
+
+  // keep in sync after login
+  useEffect(() => {
+    const u = safeParse(localStorage.getItem("user") || "null");
+    if (u) setUser(u);
+  }, []);
+
+  // ✅ Build employee object (NO MOCK NAME)
+  const employee = useMemo(() => {
+    const displayName = buildDisplayName(user);
+
+    // If user data is wrong (example: still contains "manager"), force a safe fallback
+    const finalName = displayName || "Employee";
+
+    return {
+      name: finalName,
+      role: "Employee", // always employee label in employee dashboard
+      department: user?.department || user?.departmentName || user?.department_name || "—",
+      employeeId: user?.employeeId || user?.employee_id || user?.employeeID || employeeIdLS || "—",
+      email: user?.email || "—",
+      phone: user?.phone || user?.contactNo || user?.contact_no || "—",
+      status: user?.status || "Active",
+    };
+  }, [user, employeeIdLS]);
+
+  // UI-only stats (replace with API later)
   const stats = useMemo(
     () => ({
-      presentDays: 18,
-      absentDays: 2,
-      otHours: 14.5,
-      thisMonthNet: 86500,
-      pendingIssues: 1,
-      approvedLeaves: 2,
+      presentDays: Number(user?.presentDays ?? 18),
+      absentDays: Number(user?.absentDays ?? 2),
+      otHours: Number(user?.otHours ?? 14.5),
+      thisMonthNet: Number(user?.thisMonthNet ?? 86500),
+      pendingIssues: Number(user?.pendingIssues ?? 1),
+      approvedLeaves: Number(user?.approvedLeaves ?? 2),
     }),
-    []
+    [user]
   );
 
   const [recentAttendance] = useState([
@@ -43,6 +107,13 @@ export default function EmployeeDashboard() {
     { title: "Request Leave", subtitle: "Send leave request", icon: "📝" },
     { title: "Raise Issue", subtitle: "Report a concern", icon: "⚠️" },
   ];
+
+  const [isCompact, setIsCompact] = useState(() => window.innerWidth < 1200);
+  useEffect(() => {
+    const onResize = () => setIsCompact(window.innerWidth < 1200);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
 
   const styles = {
     page: { padding: 18 },
@@ -77,6 +148,7 @@ export default function EmployeeDashboard() {
       alignItems: "center",
       justifyContent: "center",
       fontWeight: 800,
+      textTransform: "uppercase",
     },
     chipText: { flex: 1, lineHeight: 1.1 },
     chipName: { fontWeight: 800, fontSize: 14 },
@@ -110,11 +182,7 @@ export default function EmployeeDashboard() {
     kpiValue: { marginTop: 8, fontSize: 18, fontWeight: 900 },
     kpiHint: { marginTop: 6, fontSize: 12, opacity: 0.7 },
 
-    grid: {
-      display: "grid",
-      gridTemplateColumns: "1.2fr 1.8fr",
-      gap: 12,
-    },
+    grid: { display: "grid", gridTemplateColumns: "1.2fr 1.8fr", gap: 12 },
 
     card: {
       background: "#fff",
@@ -244,12 +312,6 @@ export default function EmployeeDashboard() {
     notiTitle: { fontWeight: 900, fontSize: 13 },
     notiTime: { fontSize: 12, opacity: 0.7, fontWeight: 700 },
     notiDesc: { marginTop: 3, fontSize: 12, opacity: 0.78 },
-
-    // simple responsive
-    responsiveRow: {
-      display: "grid",
-      gap: 12,
-    },
   };
 
   const pillType = (status) => {
@@ -258,10 +320,12 @@ export default function EmployeeDashboard() {
     return "warn";
   };
 
+  // ✅ (Optional) quick visible debug, remove later
+  // console.log("role:", role, "user:", user);
+
   return (
     <AppLayout>
       <div style={styles.page}>
-        {/* Header */}
         <div style={styles.header}>
           <div>
             <h1 style={styles.title}>Employee Dashboard</h1>
@@ -271,7 +335,7 @@ export default function EmployeeDashboard() {
           </div>
 
           <div style={styles.chip}>
-            <div style={styles.avatar}>{employee.name?.[0] || "E"}</div>
+            <div style={styles.avatar}>{(employee.name || "E").charAt(0).toUpperCase()}</div>
             <div style={styles.chipText}>
               <div style={styles.chipName}>{employee.name}</div>
               <div style={styles.chipMeta}>
@@ -282,12 +346,10 @@ export default function EmployeeDashboard() {
           </div>
         </div>
 
-        {/* KPI Cards */}
         <div
           style={{
             ...styles.kpis,
-            gridTemplateColumns:
-              window.innerWidth < 1200 ? "repeat(3, minmax(0, 1fr))" : "repeat(6, minmax(0, 1fr))",
+            gridTemplateColumns: isCompact ? "repeat(3, minmax(0, 1fr))" : "repeat(6, minmax(0, 1fr))",
           }}
         >
           <Kpi styles={styles} label="Present Days" value={stats.presentDays} hint="This month" />
@@ -296,25 +358,18 @@ export default function EmployeeDashboard() {
           <Kpi
             styles={styles}
             label="Net Salary (Est.)"
-            value={`Rs ${stats.thisMonthNet.toLocaleString()}`}
+            value={`Rs ${Number(stats.thisMonthNet || 0).toLocaleString()}`}
             hint="This month"
           />
           <Kpi styles={styles} label="Pending Issues" value={stats.pendingIssues} hint="Awaiting review" />
           <Kpi styles={styles} label="Approved Leaves" value={stats.approvedLeaves} hint="This month" />
         </div>
 
-        {/* Main Grid */}
-        <div
-          style={{
-            ...styles.grid,
-            gridTemplateColumns: window.innerWidth < 1200 ? "1fr" : "1.2fr 1.8fr",
-          }}
-        >
-          {/* Quick Actions */}
+        <div style={{ ...styles.grid, gridTemplateColumns: isCompact ? "1fr" : "1.2fr 1.8fr" }}>
           <div style={styles.card}>
             <div style={styles.cardHead}>
               <h2 style={styles.cardTitle}>Quick Actions</h2>
-              <span style={styles.tag}></span>
+              <span style={styles.tag}>Self Service</span>
             </div>
 
             <div style={styles.actions}>
@@ -344,7 +399,6 @@ export default function EmployeeDashboard() {
             </div>
           </div>
 
-          {/* Attendance */}
           <div style={styles.card}>
             <div style={styles.cardHead}>
               <h2 style={styles.cardTitle}>Recent Attendance</h2>
@@ -379,16 +433,13 @@ export default function EmployeeDashboard() {
             </div>
           </div>
 
-          {/* Profile Summary */}
           <div style={styles.card}>
             <div style={styles.cardHead}>
               <h2 style={styles.cardTitle}>My Profile</h2>
-              
-            
             </div>
 
             <div style={styles.profile}>
-              <InfoRow styles={styles} label="Role" value={employee.role} />
+              <InfoRow styles={styles} label="Role" value="Employee" />
               <InfoRow styles={styles} label="Department" value={employee.department} />
               <InfoRow styles={styles} label="Employee ID" value={employee.employeeId} />
               <InfoRow styles={styles} label="Email" value={employee.email} />
@@ -396,7 +447,6 @@ export default function EmployeeDashboard() {
             </div>
           </div>
 
-          {/* Notifications */}
           <div style={styles.card}>
             <div style={styles.cardHead}>
               <h2 style={styles.cardTitle}>Notifications</h2>
