@@ -2,7 +2,7 @@ import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 
-const STORAGE_KEY = "kulasekara_manager_issues_v1";
+const STORAGE_KEY = "kulasekara_manager_issues_v3";
 
 // initial seed (only for first load; not shown as "demo" in UI)
 const seedIssues = [
@@ -38,36 +38,6 @@ const seedIssues = [
     status: "RESOLVED",
     raised_date: "2026-01-15T10:20:00",
     manager_note: "Verified OT sheet and updated payroll record.",
-  },
-  {
-    issue_id: "ISS20260120-LV001",
-    employee_id: "EMP005",
-    employeeName: "Ruwan Fernando",
-    category: "LEAVE_REQUEST",
-    subject: "Annual Leave Request - Family Function",
-    description: "Requesting 3 days leave from 2026-02-05 to 2026-02-07 for family wedding.",
-    status: "OPEN",
-    raised_date: "2026-01-20T11:30:00",
-    manager_note: "",
-    leaveType: "ANNUAL",
-    leaveStartDate: "2026-02-05",
-    leaveEndDate: "2026-02-07",
-    leaveDays: 3,
-  },
-  {
-    issue_id: "ISS20260118-LV002",
-    employee_id: "EMP012",
-    employeeName: "Dilini Rajapaksha",
-    category: "LEAVE_REQUEST",
-    subject: "Sick Leave - Medical Appointment",
-    description: "Need 1 day sick leave on 2026-01-25 for medical checkup.",
-    status: "IN_PROGRESS",
-    raised_date: "2026-01-18T09:15:00",
-    manager_note: "Waiting for medical certificate.",
-    leaveType: "SICK",
-    leaveStartDate: "2026-01-25",
-    leaveEndDate: "2026-01-25",
-    leaveDays: 1,
   },
 ];
 
@@ -187,132 +157,155 @@ export default function IssueList() {
 
   return (
     <AppLayout>
-      <div style={styles.wrap}>
-        <div style={styles.headerRow}>
-          <div>
-            <div style={styles.title}>Employee Issues & Leave Requests</div>
-            <div style={styles.subTitle}>
-              Review employee issues, leave requests, and add manager remarks for resolution tracking.
-            </div>
-          </div>
-        </div>
+      <div style={styles.page}>
+        {/* Inline CSS Animations */}
+        <style>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-20px) translateX(10px); }
+          }
+          @keyframes floatReverse {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(20px) translateX(-10px); }
+          }
+          .floating-circle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
+          .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(76, 175, 80, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
+          .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(56, 142, 60, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
+          .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(67, 160, 71, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
+        `}</style>
 
-        <IssuesDashboard issues={issues} />
+        {/* Animated background elements */}
+        <div className="floating-circle fc-1"></div>
+        <div className="floating-circle fc-2"></div>
+        <div className="floating-circle fc-3"></div>
 
-        {/* filters */}
-        <div style={styles.filtersRow}>
-          <div style={styles.selectGroup}>
-            <label style={styles.label}>Status</label>
-            <select value={status} onChange={(e) => setStatus(e.target.value)} style={styles.select}>
-              {STATUS.map((s) => (
-                <option key={s} value={s}>
-                  {s.replace("_", " ")}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div style={styles.selectGroup}>
-            <label style={styles.label}>Category</label>
-            <select value={category} onChange={(e) => setCategory(e.target.value)} style={styles.select}>
-              {CATEGORY.map((c) => (
-                <option key={c} value={c}>
-                  {c.replace("_", " ")}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div style={{ flex: 1 }}>
-            <label style={styles.label}>Search</label>
-            <div style={styles.searchWrap}>
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search by issue id, employee, subject..."
-                style={styles.searchInput}
-              />
-              <button style={styles.secondaryBtn} onClick={() => setQ("")}>
-                Clear
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* table */}
-        <div style={styles.tableCard}>
-          <div style={styles.tableHead}>
-            <div style={{ fontWeight: 900 }}>Issues & Leave Requests List</div>
-            <div style={{ color: "#64748b", fontSize: 13 }}>
-              Showing <b>{filtered.length}</b> of <b>{issues.length}</b>
+        <div style={styles.container}>
+          <div style={styles.headerRow}>
+            <div>
+              <div style={styles.title}>Employee Issues</div>
+              <div style={styles.subTitle}>
+                Review employee issues and add manager remarks for resolution tracking.
+              </div>
             </div>
           </div>
 
-          <div style={styles.tableWrap}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>Issue ID</th>
-                  <th style={styles.th}>Employee</th>
-                  <th style={styles.th}>Category</th>
-                  <th style={styles.th}>Subject</th>
-                  <th style={styles.th}>Status</th>
-                  <th style={styles.th}>Raised</th>
-                </tr>
-              </thead>
+          <IssuesDashboard issues={issues} />
 
-              <tbody>
-                {filtered.length === 0 ? (
+          {/* filters */}
+          <div style={styles.filtersRow}>
+            <div style={styles.selectGroup}>
+              <label style={styles.label}>Status</label>
+              <select value={status} onChange={(e) => setStatus(e.target.value)} style={styles.select}>
+                {STATUS.map((s) => (
+                  <option key={s} value={s}>
+                    {s.replace("_", " ")}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={styles.selectGroup}>
+              <label style={styles.label}>Category</label>
+              <select value={category} onChange={(e) => setCategory(e.target.value)} style={styles.select}>
+                {CATEGORY.map((c) => (
+                  <option key={c} value={c}>
+                    {c.replace("_", " ")}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div style={{ flex: 1 }}>
+              <label style={styles.label}>Search</label>
+              <div style={styles.searchWrap}>
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="Search by issue id, employee, subject..."
+                  style={styles.searchInput}
+                />
+                <button style={styles.secondaryBtn} onClick={() => setQ("")}>
+                  Clear
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* table */}
+          <div style={styles.tableCard}>
+            <div style={styles.tableHead}>
+              <div style={{ fontWeight: 900 }}>Issues List</div>
+              <div style={{ color: "#64748b", fontSize: 13 }}>
+                Showing <b>{filtered.length}</b> of <b>{issues.length}</b>
+              </div>
+            </div>
+
+            <div style={styles.tableWrap}>
+              <table style={styles.table}>
+                <thead>
                   <tr>
-                    <td style={styles.td} colSpan={6}>
-                      No issues found.
-                    </td>
+                    <th style={styles.th}>Issue ID</th>
+                    <th style={styles.th}>Employee</th>
+                    <th style={styles.th}>Category</th>
+                    <th style={styles.th}>Subject</th>
+                    <th style={styles.th}>Status</th>
+                    <th style={styles.th}>Raised</th>
                   </tr>
-                ) : (
-                  filtered.map((row) => (
-                    <tr
-                      key={row.issue_id}
-                      style={styles.tr}
-                      onClick={() => navigate(`/manager/issues/${row.issue_id}`)}
-                      title="Open issue"
-                    >
-                      <td style={styles.tdMono}>{row.issue_id}</td>
+                </thead>
 
-                      <td style={styles.td}>
-                        <div style={{ fontWeight: 900 }}>{row.employeeName}</div>
-                        <div style={{ fontSize: 12, color: "#64748b" }}>{row.employee_id}</div>
-                      </td>
-
-                      <td style={styles.td}>
-                        <span style={badgeStyle(row.category)}>{row.category.replace("_", " ")}</span>
-                      </td>
-
-                      <td style={styles.td}>
-                        <div style={{ fontWeight: 900 }}>{row.subject}</div>
-                        {row.category === "LEAVE_REQUEST" && row.leaveDays ? (
-                          <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
-                            {row.leaveType} • {row.leaveDays} day{row.leaveDays > 1 ? "s" : ""} • {row.leaveStartDate} to {row.leaveEndDate}
-                          </div>
-                        ) : row.description ? (
-                          <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
-                            {String(row.description).slice(0, 80)}
-                            {String(row.description).length > 80 ? "..." : ""}
-                          </div>
-                        ) : null}
-                      </td>
-
-                      <td style={styles.td}>
-                        <span style={badgeStyle(row.status)}>{row.status.replace("_", " ")}</span>
-                      </td>
-
-                      <td style={styles.td}>
-                        {row.raised_date ? new Date(row.raised_date).toLocaleString() : "-"}
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td style={styles.td} colSpan={6}>
+                        No issues found.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    filtered.map((row) => (
+                      <tr
+                        key={row.issue_id}
+                        style={styles.tr}
+                        onClick={() => navigate(`/manager/issues/${row.issue_id}`)}
+                        title="Open issue"
+                      >
+                        <td style={styles.tdMono}>{row.issue_id}</td>
+
+                        <td style={styles.td}>
+                          <div style={{ fontWeight: 900 }}>{row.employeeName}</div>
+                          <div style={{ fontSize: 12, color: "#64748b" }}>{row.employee_id}</div>
+                        </td>
+
+                        <td style={styles.td}>
+                          <span style={badgeStyle(row.category)}>{row.category.replace("_", " ")}</span>
+                        </td>
+
+                        <td style={styles.td}>
+                          <div style={{ fontWeight: 900 }}>{row.subject}</div>
+                          {row.category === "LEAVE_REQUEST" && row.leaveDays ? (
+                            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+                              {row.leaveType} • {row.leaveDays} day{row.leaveDays > 1 ? "s" : ""} • {row.leaveStartDate} to {row.leaveEndDate}
+                            </div>
+                          ) : row.description ? (
+                            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+                              {String(row.description).slice(0, 80)}
+                              {String(row.description).length > 80 ? "..." : ""}
+                            </div>
+                          ) : null}
+                        </td>
+
+                        <td style={styles.td}>
+                          <span style={badgeStyle(row.status)}>{row.status.replace("_", " ")}</span>
+                        </td>
+
+                        <td style={styles.td}>
+                          {row.raised_date ? new Date(row.raised_date).toLocaleString() : "-"}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -321,7 +314,8 @@ export default function IssueList() {
 }
 
 const styles = {
-  wrap: { padding: 20, display: "grid", gap: 16 },
+  page: { position: "relative", minHeight: "100%", overflow: "hidden" },
+  container: { padding: 24, position: "relative", zIndex: 1 },
 
   headerRow: {
     display: "flex",
@@ -329,105 +323,124 @@ const styles = {
     justifyContent: "space-between",
     gap: 16,
     flexWrap: "wrap",
+    marginBottom: 20
   },
 
-  title: { fontSize: 22, fontWeight: 1000, color: "#0f172a" },
-  subTitle: { marginTop: 6, fontSize: 13, color: "#64748b" },
+  title: { margin: 0, fontSize: 26, fontWeight: 800, color: "#2c5530" },
+  subTitle: { marginTop: 6, marginBottom: 0, opacity: 0.8, color: "#4b5563" },
 
   // KPI
-  kpiGrid: { display: "grid", gridTemplateColumns: "repeat(4, minmax(0, 1fr))", gap: 12 },
+  kpiGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 24 },
   kpiCard: {
-    background: "#fff",
-    border: "1px solid rgba(15,23,42,0.08)",
-    borderRadius: 14,
-    padding: 14,
-    boxShadow: "0 8px 18px rgba(2,6,23,0.04)",
+    background: "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255, 255, 255, 0.5)",
+    borderRadius: 18,
+    padding: 20,
+    boxShadow: "0 8px 25px rgba(0,0,0,0.03)",
   },
-  kpiLabel: { fontSize: 12, color: "#64748b", fontWeight: 900 },
-  kpiValue: { fontSize: 26, fontWeight: 1000, color: "#0f172a", marginTop: 6 },
-  kpiHint: { fontSize: 12, color: "#94a3b8", marginTop: 4 },
+  kpiLabel: { fontWeight: 700, color: "#6b7280", fontSize: 13, textTransform: "uppercase", marginBottom: 8 },
+  kpiValue: { fontSize: "clamp(20px, 2.5vw, 24px)", fontWeight: 800, color: "#111827", marginBottom: 4 },
+  kpiHint: { fontSize: 12, color: "#6b7280", fontWeight: 600 },
 
   // filters
-  filtersRow: { display: "flex", gap: 12, alignItems: "flex-end", flexWrap: "wrap" },
-  selectGroup: { minWidth: 180, display: "grid", gap: 6 },
-  label: { fontSize: 12, color: "#64748b", fontWeight: 900 },
+  filtersRow: {
+    display: "flex",
+    gap: 16,
+    flexWrap: "wrap",
+    alignItems: "flex-end",
+    background: "rgba(255, 255, 255, 0.8)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255, 255, 255, 0.5)",
+    borderRadius: 18,
+    padding: 16,
+    boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
+    marginBottom: 24
+  },
+  selectGroup: { minWidth: 180, display: "grid", gap: 8 },
+  label: { fontWeight: 700, color: "#374151", fontSize: 13, textTransform: "uppercase" },
   select: {
     width: "100%",
-    height: 40,
-    borderRadius: 12,
-    border: "1px solid rgba(15,23,42,0.12)",
-    padding: "0 12px",
+    border: "1px solid #e5e7eb",
+    borderRadius: 10,
+    padding: "10px 12px",
     outline: "none",
-    background: "#fff",
-    fontWeight: 800,
+    fontSize: 14,
+    background: "#f9fafb",
+    height: 42,
+    fontWeight: 600
   },
 
   searchWrap: { display: "flex", gap: 10 },
   searchInput: {
     flex: 1,
-    height: 40,
-    borderRadius: 12,
-    border: "1px solid rgba(15,23,42,0.12)",
-    padding: "0 12px",
+    border: "1px solid #e5e7eb",
+    borderRadius: 10,
+    padding: "10px 12px",
     outline: "none",
-    background: "#fff",
-    fontWeight: 800,
+    fontSize: 14,
+    background: "#f9fafb",
+    height: 42,
+    fontWeight: 600
   },
 
   // buttons
   secondaryBtn: {
-    height: 40,
-    padding: "0 14px",
+    height: 42,
+    padding: "0 16px",
     borderRadius: 12,
-    border: "1px solid rgba(15,23,42,0.12)",
+    border: "1px solid #d1d5db",
     background: "#fff",
-    color: "#0f172a",
-    fontWeight: 1000,
+    color: "#374151",
+    fontWeight: 600,
     cursor: "pointer",
     whiteSpace: "nowrap",
+    fontSize: 14
   },
 
   // table
   tableCard: {
-    background: "#fff",
-    border: "1px solid rgba(15,23,42,0.08)",
-    borderRadius: 14,
-    boxShadow: "0 8px 18px rgba(2,6,23,0.04)",
+    background: "rgba(255, 255, 255, 0.95)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255, 255, 255, 0.5)",
+    borderRadius: 18,
+    boxShadow: "0 10px 30px rgba(0,0,0,0.03)",
     overflow: "hidden",
+    padding: 24
   },
   tableHead: {
-    padding: 14,
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    borderBottom: "1px solid rgba(15,23,42,0.06)",
+    marginBottom: 16
   },
   tableWrap: { width: "100%", overflowX: "auto" },
-  table: { width: "100%", borderCollapse: "separate", borderSpacing: 0 },
+  table: { width: "100%", borderCollapse: "separate", borderSpacing: "0 4px" },
   th: {
     textAlign: "left",
+    padding: "12px 16px",
     fontSize: 12,
-    color: "#64748b",
-    fontWeight: 1000,
-    padding: "12px 14px",
-    borderBottom: "1px solid rgba(15,23,42,0.06)",
-    background: "#f8fafc",
+    fontWeight: 700,
+    color: "#6b7280",
+    textTransform: "uppercase",
   },
-  tr: { cursor: "pointer" },
+  tr: { cursor: "pointer", transition: "transform 0.1s" },
   td: {
-    padding: "12px 14px",
-    borderBottom: "1px solid rgba(15,23,42,0.06)",
+    padding: "12px 16px",
+    background: "#f9fafb",
+    fontSize: 14,
+    color: "#374151",
     verticalAlign: "top",
-    fontSize: 13,
-    color: "#0f172a",
+    firstOfType: { borderRadius: "8px 0 0 8px" },
+    lastOfType: { borderRadius: "0 8px 8px 0" }
   },
   tdMono: {
-    padding: "12px 14px",
-    borderBottom: "1px solid rgba(15,23,42,0.06)",
+    padding: "12px 16px",
+    background: "#f9fafb",
+    fontSize: 13,
+    color: "#374151",
+    fontWeight: 600,
     verticalAlign: "top",
-    fontSize: 12,
-    color: "#0f172a",
-    fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-    fontWeight: 1000,
+    firstOfType: { borderRadius: "8px 0 0 8px" }
   },
 };

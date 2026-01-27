@@ -395,187 +395,188 @@ export default function ProcessPayroll() {
 
   return (
     <AppLayout>
-      <div style={styles.page}>
-        <div style={styles.headerRow}>
-          <div>
-            <h2 style={styles.title}>Payroll</h2>
-            <p style={styles.subTitle}>
-              Monthly: fixed salary + EPF + OT • Weekly: task-based + OT • Daily: task-based (NO OT)
-            </p>
-          </div>
-
-          <div style={styles.summaryBar}>
-            <Summary label="Total Gross" value={LKR(totals.gross)} />
-            <Summary label="Total EPF (Monthly Only)" value={LKR(totals.epf)} />
-            <Summary label="Total Net" value={LKR(totals.net)} />
-          </div>
+      {/* Header Section */}
+      <div style={styles.headerRow}>
+        <div>
+          <h2 style={styles.title}>Payroll Management</h2>
+          <p style={styles.subTitle}>
+            Monthly: fixed salary + EPF + OT • Weekly: task-based + OT • Daily: task-based (NO OT)
+          </p>
         </div>
 
-        <div style={styles.filters}>
-          {renderPeriodPicker()}
-
-          <Field label="Department">
-            <select
-              value={department}
-              onChange={(e) => setDepartment(e.target.value)}
-              style={styles.input}
-            >
-              {departments.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Salary Type">
-            <select
-              value={salaryType}
-              onChange={(e) => setSalaryType(e.target.value)}
-              style={styles.input}
-            >
-              <option value="All">All</option>
-              {salaryTypes.map((t) => (
-                <option key={t} value={t}>
-                  {t}
-                </option>
-              ))}
-            </select>
-          </Field>
-
-          <Field label="Search" grow>
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search name or employee ID..."
-              style={styles.input}
-            />
-          </Field>
-
-          <button style={styles.primaryBtn} onClick={generateAll}>
-            Generate All
-          </button>
+        <div style={styles.summaryBar}>
+          <Summary label="Total Gross" value={LKR(totals.gross)} />
+          <div style={styles.summaryDivider}></div>
+          <Summary label="Total EPF (Monthly)" value={LKR(totals.epf)} />
+          <div style={styles.summaryDivider}></div>
+          <Summary label="Total Net" value={LKR(totals.net)} />
         </div>
-
-        {/* ✅ Simplified Table */}
-        <div style={styles.tableWrap}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Employee</th>
-                <th style={styles.th}>Dept</th>
-                <th style={styles.th}>Type</th>
-                <th style={styles.th}>Period</th>
-                <th style={styles.th}>Allowances</th>
-                <th style={styles.th}>Net</th>
-                <th style={styles.th}>State</th>
-                <th style={{ ...styles.th, textAlign: "right" }}>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filtered.length === 0 ? (
-                <tr>
-                  <td colSpan={8} style={styles.empty}>
-                    No employees found.
-                  </td>
-                </tr>
-              ) : (
-                filtered.map((emp) => {
-                  const p = computePayroll(emp);
-                  const isGenerated = !!generated[emp.employeeID];
-                  const paid = !!p.paidOn;
-
-                  return (
-                    <tr key={emp.employeeID} style={styles.tr}>
-                      <td style={styles.td}>
-                        <div style={styles.empCell}>
-                          <div style={styles.empAvatar}>{emp.name?.[0] || "E"}</div>
-                          <div>
-                            <div style={styles.empName}>{emp.name}</div>
-                            <div style={styles.empMeta}>{emp.employeeID}</div>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td style={styles.td}>{emp.department}</td>
-
-                      <td style={styles.td}>
-                        <span style={styles.badge}>{emp.salaryType}</span>
-                      </td>
-
-                      <td style={styles.td}>
-                        <div style={{ fontWeight: 800 }}>{p.period.label}</div>
-                        <div style={styles.empMeta}>{p.period.mode}</div>
-                      </td>
-
-                      <td style={styles.td}>{LKR(p.allowanceTotal)}</td>
-
-                      <td style={styles.tdStrong}>{LKR(p.net)}</td>
-
-                      <td style={styles.td}>
-                        {paid ? (
-                          <span style={{ ...styles.pill, ...styles.pillPaid }}>Paid</span>
-                        ) : isGenerated ? (
-                          <span style={{ ...styles.pill, ...styles.pillReady }}>Generated</span>
-                        ) : (
-                          <span style={{ ...styles.pill, ...styles.pillPending }}>Pending</span>
-                        )}
-                        {p.paidOn && <div style={styles.empMeta}>Paid on {p.paidOn}</div>}
-                      </td>
-
-                      <td style={{ ...styles.td, textAlign: "right" }}>
-                        <button style={styles.smallBtn} onClick={() => openPreview(emp)}>
-                          Preview
-                        </button>
-                        <button
-                          style={{ ...styles.smallBtn, ...(isGenerated ? styles.btnDisabled : {}) }}
-                          disabled={isGenerated}
-                          onClick={() => generatePayroll(emp)}
-                        >
-                          Generate
-                        </button>
-                        <button
-                          style={{ ...styles.smallBtn, ...(isGenerated ? {} : styles.btnDisabled) }}
-                          disabled={!isGenerated}
-                          onClick={() => openSlip(emp)}
-                        >
-                          Slip
-                        </button>
-                        <button
-                          style={{ ...styles.smallBtn, ...(paid ? styles.btnDisabled : {}) }}
-                          disabled={paid}
-                          onClick={() => markPaid(emp)}
-                        >
-                          Paid
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {selectedEmployee && (
-          <PayrollPreview
-            employee={selectedEmployee}
-            input={mockPayrollInputs[selectedEmployee.employeeID]}
-            payroll={computePayroll(selectedEmployee)}
-            onClose={closePreview}
-          />
-        )}
-
-        {slipEmployee && (
-          <SalarySlipGenerator
-            employee={slipEmployee}
-            input={mockPayrollInputs[slipEmployee.employeeID]}
-            payroll={computePayroll(slipEmployee)}
-            onClose={closeSlip}
-          />
-        )}
       </div>
+
+      <div style={styles.filters}>
+        {renderPeriodPicker()}
+
+        <Field label="Department">
+          <select
+            value={department}
+            onChange={(e) => setDepartment(e.target.value)}
+            style={styles.input}
+          >
+            {departments.map((d) => (
+              <option key={d} value={d}>
+                {d}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Salary Type">
+          <select
+            value={salaryType}
+            onChange={(e) => setSalaryType(e.target.value)}
+            style={styles.input}
+          >
+            <option value="All">All</option>
+            {salaryTypes.map((t) => (
+              <option key={t} value={t}>
+                {t}
+              </option>
+            ))}
+          </select>
+        </Field>
+
+        <Field label="Search" grow>
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search name or employee ID..."
+            style={styles.input}
+          />
+        </Field>
+
+        <button style={styles.primaryBtn} onClick={generateAll}>
+          Generate All
+        </button>
+      </div>
+
+      {/* ✅ Simplified Table */}
+      <div style={styles.tableWrap}>
+        <table style={styles.table}>
+          <thead>
+            <tr>
+              <th style={styles.th}>Employee</th>
+              <th style={styles.th}>Dept</th>
+              <th style={styles.th}>Type</th>
+              <th style={styles.th}>Period</th>
+              <th style={styles.th}>Allowances</th>
+              <th style={styles.th}>Net</th>
+              <th style={styles.th}>State</th>
+              <th style={{ ...styles.th, textAlign: "right" }}>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan={8} style={styles.empty}>
+                  No employees found.
+                </td>
+              </tr>
+            ) : (
+              filtered.map((emp) => {
+                const p = computePayroll(emp);
+                const isGenerated = !!generated[emp.employeeID];
+                const paid = !!p.paidOn;
+
+                return (
+                  <tr key={emp.employeeID} style={styles.tr}>
+                    <td style={styles.td}>
+                      <div style={styles.empCell}>
+                        <div style={styles.empAvatar}>{emp.name?.[0] || "E"}</div>
+                        <div>
+                          <div style={styles.empName}>{emp.name}</div>
+                          <div style={styles.empMeta}>{emp.employeeID}</div>
+                        </div>
+                      </div>
+                    </td>
+
+                    <td style={styles.td}>{emp.department}</td>
+
+                    <td style={styles.td}>
+                      <span style={styles.badge}>{emp.salaryType}</span>
+                    </td>
+
+                    <td style={styles.td}>
+                      <div style={{ fontWeight: 800, color: "#2c5530" }}>{p.period.label}</div>
+                      <div style={styles.empMeta}>{p.period.mode}</div>
+                    </td>
+
+                    <td style={styles.td}>{LKR(p.allowanceTotal)}</td>
+
+                    <td style={styles.tdStrong}>{LKR(p.net)}</td>
+
+                    <td style={styles.td}>
+                      {paid ? (
+                        <span style={{ ...styles.pill, ...styles.pillPaid }}>Paid</span>
+                      ) : isGenerated ? (
+                        <span style={{ ...styles.pill, ...styles.pillReady }}>Generated</span>
+                      ) : (
+                        <span style={{ ...styles.pill, ...styles.pillPending }}>Pending</span>
+                      )}
+                      {p.paidOn && <div style={styles.empMeta}>Paid on {p.paidOn}</div>}
+                    </td>
+
+                    <td style={{ ...styles.td, textAlign: "right" }}>
+                      <button style={styles.smallBtn} onClick={() => openPreview(emp)}>
+                        Preview
+                      </button>
+                      <button
+                        style={{ ...styles.smallBtn, ...(isGenerated ? styles.btnDisabled : {}) }}
+                        disabled={isGenerated}
+                        onClick={() => generatePayroll(emp)}
+                      >
+                        Generate
+                      </button>
+                      <button
+                        style={{ ...styles.smallBtn, ...(isGenerated ? {} : styles.btnDisabled) }}
+                        disabled={!isGenerated}
+                        onClick={() => openSlip(emp)}
+                      >
+                        Slip
+                      </button>
+                      <button
+                        style={{ ...styles.smallBtn, ...(paid ? styles.btnDisabled : {}) }}
+                        disabled={paid}
+                        onClick={() => markPaid(emp)}
+                      >
+                        Paid
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {selectedEmployee && (
+        <PayrollPreview
+          employee={selectedEmployee}
+          input={mockPayrollInputs[selectedEmployee.employeeID]}
+          payroll={computePayroll(selectedEmployee)}
+          onClose={closePreview}
+        />
+      )}
+
+      {slipEmployee && (
+        <SalarySlipGenerator
+          employee={slipEmployee}
+          input={mockPayrollInputs[slipEmployee.employeeID]}
+          payroll={computePayroll(slipEmployee)}
+          onClose={closeSlip}
+        />
+      )}
     </AppLayout>
   );
 }
@@ -599,126 +600,184 @@ function Summary({ label, value }) {
 }
 
 const styles = {
-  page: { padding: 16 },
   headerRow: {
     display: "flex",
     gap: 16,
     justifyContent: "space-between",
-    alignItems: "flex-start",
+    alignItems: "center",
     flexWrap: "wrap",
+    marginBottom: 24,
   },
-  title: { margin: 0, fontSize: 22, fontWeight: 800 },
-  subTitle: { margin: "6px 0 0", opacity: 0.8 },
+  title: {
+    margin: 0,
+    fontSize: 26,
+    fontWeight: 700,
+    color: "#2c5530",
+    letterSpacing: "-0.5px",
+  },
+  subTitle: {
+    margin: "6px 0 0",
+    opacity: 0.8,
+    color: "#4b5563",
+    fontSize: 14,
+  },
 
   summaryBar: {
     display: "flex",
-    gap: 10,
-    flexWrap: "wrap",
-    background: "#111827",
-    color: "white",
-    borderRadius: 14,
-    padding: 12,
-    boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+    gap: 0,
+    alignItems: "center",
+    background: "rgba(255, 255, 255, 0.8)",
+    backdropFilter: "blur(20px)",
+    WebkitBackdropFilter: "blur(20px)",
+    borderRadius: 16,
+    padding: "10px 16px",
+    boxShadow: "0 10px 30px rgba(74, 124, 78, 0.1), 0 0 0 1px rgba(74, 124, 78, 0.05)",
+    border: "2px solid rgba(255, 255, 255, 0.5)",
   },
-  summaryItem: { minWidth: 170, padding: "6px 10px" },
-  summaryLabel: { fontSize: 12, opacity: 0.85 },
-  summaryValue: { fontSize: 16, fontWeight: 800, marginTop: 2 },
+  summaryItem: {
+    minWidth: 140,
+    padding: "6px 16px",
+    textAlign: "center",
+  },
+  summaryLabel: {
+    fontSize: 11,
+    color: "#4b5563",
+    fontWeight: 600,
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+    opacity: 0.8,
+  },
+  summaryValue: {
+    fontSize: 18,
+    fontWeight: 800,
+    marginTop: 2,
+    color: "#2c5530",
+  },
+  summaryDivider: {
+    width: 1,
+    height: 30,
+    background: "rgba(74, 124, 78, 0.15)",
+  },
 
   filters: {
-    marginTop: 14,
     display: "flex",
     gap: 12,
     flexWrap: "wrap",
     alignItems: "end",
-    background: "white",
-    border: "1px solid rgba(0,0,0,0.08)",
-    borderRadius: 14,
-    padding: 12,
+    background: "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255, 255, 255, 0.6)",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
   },
-  field: { display: "flex", flexDirection: "column", gap: 6, minWidth: 180 },
-  label: { fontSize: 12, fontWeight: 700, opacity: 0.85 },
+  field: { display: "flex", flexDirection: "column", gap: 8, minWidth: 180 },
+  label: { fontSize: 12, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.3px" },
   input: {
-    height: 40,
-    borderRadius: 10,
-    border: "1px solid rgba(0,0,0,0.14)",
-    padding: "0 12px",
+    height: 42,
+    borderRadius: 12,
+    border: "1px solid #e5e7eb",
+    padding: "0 14px",
     outline: "none",
+    fontSize: 14,
+    background: "#f9fafb",
+    transition: "all 0.2s",
   },
-  miniHint: { fontSize: 12, opacity: 0.7, marginTop: 4 },
+  miniHint: { fontSize: 12, color: "#6b7280", marginTop: 4 },
 
   primaryBtn: {
-    height: 40,
-    borderRadius: 10,
+    height: 42,
+    borderRadius: 12,
     border: "none",
-    padding: "0 14px",
-    fontWeight: 800,
+    padding: "0 20px",
+    fontWeight: 700,
     cursor: "pointer",
-    background: "#18d49c",
+    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)",
+    color: "#ffffff",
+    boxShadow: "0 4px 12px rgba(74, 124, 78, 0.25)",
+    transition: "transform 0.2s, box-shadow 0.2s",
+    textTransform: "uppercase",
+    fontSize: 13,
+    letterSpacing: "0.5px",
   },
 
   tableWrap: {
-    marginTop: 14,
-    background: "white",
-    border: "1px solid rgba(0,0,0,0.08)",
-    borderRadius: 14,
+    background: "rgba(255, 255, 255, 0.95)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255, 255, 255, 0.5)",
+    borderRadius: 16,
     overflow: "hidden",
+    boxShadow: "0 10px 40px rgba(0,0,0,0.03)",
   },
   table: { width: "100%", borderCollapse: "collapse" },
   th: {
     textAlign: "left",
-    padding: 12,
+    padding: "16px 20px",
     fontSize: 12,
-    opacity: 0.8,
-    background: "rgba(0,0,0,0.03)",
+    fontWeight: 700,
+    color: "#374151",
+    background: "rgba(74, 124, 78, 0.05)",
+    textTransform: "uppercase",
+    letterSpacing: "0.3px",
   },
-  tr: { borderTop: "1px solid rgba(0,0,0,0.06)" },
-  td: { padding: 12, verticalAlign: "middle" },
-  tdStrong: { padding: 12, fontWeight: 900 },
-  empty: { padding: 18, textAlign: "center", opacity: 0.7 },
+  tr: { borderTop: "1px solid rgba(0,0,0,0.04)" },
+  td: { padding: "16px 20px", verticalAlign: "middle", fontSize: 14, color: "#1f2937" },
+  tdStrong: { padding: "16px 20px", verticalAlign: "middle", fontSize: 14, fontWeight: 700, color: "#2c5530" },
+  empty: { padding: 30, textAlign: "center", opacity: 0.6, fontSize: 15 },
 
-  empCell: { display: "flex", alignItems: "center", gap: 10 },
+  empCell: { display: "flex", alignItems: "center", gap: 12 },
   empAvatar: {
-    width: 34,
-    height: 34,
+    width: 36,
+    height: 36,
     borderRadius: 10,
-    background: "rgba(251,191,36,0.25)",
+    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)",
+    color: "white",
     display: "grid",
     placeItems: "center",
-    fontWeight: 900,
+    fontWeight: 700,
+    fontSize: 14,
+    boxShadow: "0 3px 8px rgba(74, 124, 78, 0.2)",
   },
-  empName: { fontWeight: 900 },
-  empMeta: { fontSize: 12, opacity: 0.7, marginTop: 2 },
+  empName: { fontWeight: 700, fontSize: 15, color: "#111827" },
+  empMeta: { fontSize: 12, color: "#6b7280", marginTop: 2 },
 
   badge: {
     display: "inline-block",
     padding: "4px 10px",
-    borderRadius: 999,
-    border: "1px solid rgba(0,0,0,0.12)",
+    borderRadius: 20,
+    border: "1px solid #e5e7eb",
     fontSize: 12,
-    fontWeight: 800,
-    background: "rgba(0,0,0,0.02)",
+    fontWeight: 600,
+    background: "#f9fafb",
+    color: "#374151",
   },
 
   pill: {
-    display: "inline-block",
-    padding: "4px 10px",
-    borderRadius: 999,
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    padding: "4px 12px",
+    borderRadius: 20,
     fontSize: 12,
-    fontWeight: 900,
+    fontWeight: 700,
   },
-  pillPaid: { background: "rgba(34,197,94,0.18)", color: "#166534" },
-  pillReady: { background: "rgba(59,130,246,0.15)", color: "#1d4ed8" },
-  pillPending: { background: "rgba(255, 217, 0, 0.18)", color: "#92400e" },
+  pillPaid: { background: "rgba(34,197,94,0.1)", color: "#15803d", border: "1px solid rgba(34,197,94,0.2)" },
+  pillReady: { background: "rgba(59,130,246,0.08)", color: "#1d4ed8", border: "1px solid rgba(59,130,246,0.15)" },
+  pillPending: { background: "rgba(245, 158, 11, 0.1)", color: "#b45309", border: "1px solid rgba(245, 158, 11, 0.2)" },
 
   smallBtn: {
-    height: 34,
-    borderRadius: 10,
-    border: "1px solid rgba(0,0,0,0.14)",
+    height: 32,
+    borderRadius: 8,
+    border: "1px solid #e5e7eb",
     background: "white",
-    padding: "0 10px",
-    fontWeight: 800,
+    padding: "0 12px",
+    fontWeight: 600,
     cursor: "pointer",
-    marginLeft: 6,
+    marginLeft: 8,
+    fontSize: 12,
+    color: "#374151",
+    transition: "all 0.2s",
   },
-  btnDisabled: { opacity: 0.5, cursor: "not-allowed" },
+  btnDisabled: { opacity: 0.5, cursor: "not-allowed", background: "#f3f4f6" },
 };

@@ -240,12 +240,12 @@ function EmployeeManagement() {
         prev.map((emp) =>
           String(emp.employee_id) === String(formData.employee_id)
             ? {
-                ...emp,
-                ...formData,
-                department_id: Number(formData.department_id),
-                basic_rate: formData.basic_rate === "" ? "" : Number(formData.basic_rate),
-                is_epf_eligible: Number(formData.is_epf_eligible) ? 1 : 0,
-              }
+              ...emp,
+              ...formData,
+              department_id: Number(formData.department_id),
+              basic_rate: formData.basic_rate === "" ? "" : Number(formData.basic_rate),
+              is_epf_eligible: Number(formData.is_epf_eligible) ? 1 : 0,
+            }
             : emp
         )
       );
@@ -809,28 +809,28 @@ function EmployeeManagement() {
                     )}
                   </div>
 
-                 {/* ✅ NEW: EPF/ETF ELIGIBLE (YES/NO) */}
-<div>
-  <label style={styles.label}>EPF/ETF ELIGIBLE</label>
+                  {/* ✅ NEW: EPF/ETF ELIGIBLE (YES/NO) */}
+                  <div>
+                    <label style={styles.label}>EPF/ETF ELIGIBLE</label>
 
-  {isEditMode ? (
-    <select
-      name="is_epf_eligible"
-      value={String(formData.is_epf_eligible ?? 1)}  // keep as "1" or "0"
-      onChange={(e) =>
-        setFormData((p) => ({ ...p, is_epf_eligible: Number(e.target.value) }))
-      }
-      style={styles.select}
-    >
-      <option value="1">YES</option>
-      <option value="0">NO</option>
-    </select>
-  ) : (
-    <div style={styles.readValue}>
-      {Number(formData.is_epf_eligible) === 1 ? "YES" : "NO"}
-    </div>
-  )}
-</div>
+                    {isEditMode ? (
+                      <select
+                        name="is_epf_eligible"
+                        value={String(formData.is_epf_eligible ?? 1)}  // keep as "1" or "0"
+                        onChange={(e) =>
+                          setFormData((p) => ({ ...p, is_epf_eligible: Number(e.target.value) }))
+                        }
+                        style={styles.select}
+                      >
+                        <option value="1">YES</option>
+                        <option value="0">NO</option>
+                      </select>
+                    ) : (
+                      <div style={styles.readValue}>
+                        {Number(formData.is_epf_eligible) === 1 ? "YES" : "NO"}
+                      </div>
+                    )}
+                  </div>
 
 
                   {/* ✅ NEW: EFFECTIVE DATE */}
@@ -968,14 +968,15 @@ export default EmployeeManagement;
 const styles = {
   page: { padding: "8px" },
   pageHeader: {
-    display: "flex",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-    gap: "14px",
-    marginBottom: "14px",
+    padding: "24px 32px",
+    background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%)",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(74, 124, 78, 0.1)",
+    borderRadius: 20,
+    boxShadow: "0 8px 24px rgba(74, 124, 78, 0.08)",
   },
-  heading: { margin: 0, color: "#0f172a", fontSize: "20px", fontWeight: 800 },
-  subheading: { margin: "6px 0 0 0", color: "#64748b", fontSize: "13px" },
+  heading: { margin: 0, color: "#2c5530", fontSize: "28px", fontWeight: 700, letterSpacing: "-0.5px" },
+  subheading: { margin: "6px 0 0 0", color: "#6b7280", fontSize: "14px", fontWeight: 500 },
 
   headerActions: {
     display: "flex",
@@ -987,38 +988,42 @@ const styles = {
   },
   search: {
     width: "320px",
-    padding: "10px 12px",
-    borderRadius: "10px",
-    border: "1px solid #e2e8f0",
+    padding: "12px 16px",
+    borderRadius: "12px",
+    border: "2px solid rgba(229, 231, 235, 0.5)",
     outline: "none",
-    background: "#fff",
+    background: "#f9fafb",
+    fontSize: "14px",
+    transition: "all 0.2s ease",
   },
 
   profileCard: {
-    background: "#fff",
-    border: "1px solid #e2e8f0",
-    borderRadius: "14px",
-    padding: "16px",
+    background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%)",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(74, 124, 78, 0.1)",
+    borderRadius: "18px",
+    padding: "24px",
     display: "flex",
     alignItems: "flex-start",
     justifyContent: "space-between",
-    gap: "16px",
-    boxShadow: "0 1px 2px rgba(15, 23, 42, 0.06)",
-    marginBottom: "14px",
+    gap: "20px",
+    boxShadow: "0 8px 24px rgba(74, 124, 78, 0.08)",
+    marginBottom: "20px",
   },
   profileLeft: { display: "flex", gap: "14px", flex: 1 },
   avatarBlock: {
-    width: "92px",
-    height: "92px",
-    borderRadius: "14px",
-    border: "1px solid #e2e8f0",
-    background: "#f8fafc",
+    width: "100px",
+    height: "100px",
+    borderRadius: "20px",
+    border: "1px solid rgba(74, 124, 78, 0.1)",
+    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontWeight: 1000,
-    fontSize: "28px",
-    color: "#0f172a",
+    fontWeight: 700,
+    fontSize: "32px",
+    color: "#ffffff",
+    boxShadow: "0 8px 24px rgba(74, 124, 78, 0.2)",
   },
 
   bigAvatar: {
@@ -1079,20 +1084,23 @@ const styles = {
   profileActions: { display: "flex", gap: "10px", flexWrap: "wrap" },
 
   emptyTop: {
-    background: "#fff",
-    border: "1px dashed #cbd5e1",
+    background: "rgba(255, 255, 255, 0.8)",
+    border: "1px dashed rgba(74, 124, 78, 0.3)",
     borderRadius: "14px",
-    padding: "14px 16px",
-    color: "#64748b",
+    padding: "16px 20px",
+    color: "#6b7280",
     marginBottom: "14px",
+    textAlign: "center",
+    fontWeight: 500,
   },
 
   listCard: {
-    background: "#fff",
-    border: "1px solid #e2e8f0",
-    borderRadius: "14px",
+    background: "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(10px)",
+    border: "1px solid rgba(74, 124, 78, 0.1)",
+    borderRadius: "18px",
     overflow: "hidden",
-    boxShadow: "0 1px 2px rgba(15, 23, 42, 0.06)",
+    boxShadow: "0 8px 24px rgba(74, 124, 78, 0.08)",
   },
   listHeader: {
     padding: "14px 16px",
@@ -1115,62 +1123,73 @@ const styles = {
   table: { width: "100%", borderCollapse: "collapse" },
   th: {
     textAlign: "left",
-    padding: "12px 16px",
-    fontSize: "12px",
-    color: "#64748b",
-    fontWeight: 900,
+    padding: "16px 20px",
+    fontSize: "13px",
+    color: "#4a7c4e",
+    fontWeight: 700,
     textTransform: "uppercase",
-    letterSpacing: "0.6px",
-    background: "#f8fafc",
-    borderBottom: "1px solid #e2e8f0",
+    letterSpacing: "0.8px",
+    background: "rgba(74, 124, 78, 0.04)",
+    borderBottom: "1px solid rgba(74, 124, 78, 0.1)",
   },
-  tr: { cursor: "pointer" },
-  trSelected: { background: "#f1f5f9" },
-  td: { padding: "12px 16px", borderBottom: "1px solid #e2e8f0", color: "#0f172a" },
-  tdName: { padding: "12px 16px", borderBottom: "1px solid #e2e8f0" },
+  tr: {
+    cursor: "pointer",
+    transition: "background 0.2s ease",
+  },
+  trSelected: { background: "rgba(74, 124, 78, 0.08)" },
+  td: {
+    padding: "16px 20px",
+    borderBottom: "1px solid rgba(74, 124, 78, 0.1)",
+    color: "#1f2937",
+    fontSize: "14px",
+    fontWeight: 500,
+  },
+  tdName: { padding: "16px 20px", borderBottom: "1px solid rgba(74, 124, 78, 0.1)" },
   nameCell: { display: "flex", alignItems: "center", gap: "10px" },
   rowAvatar: {
     width: "34px",
     height: "34px",
-    borderRadius: "10px",
-    border: "1px solid #e2e8f0",
-    background: "#f8fafc",
+    borderRadius: "12px",
+    border: "1px solid rgba(74, 124, 78, 0.1)",
+    background: "rgba(74, 124, 78, 0.05)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontWeight: 1000,
-    color: "#0f172a",
+    fontWeight: 700,
+    color: "#2c5530",
   },
-  rowName: { fontWeight: 900, color: "#0f172a", fontSize: "13.5px" },
-  rowSub: { color: "#64748b", fontSize: "12px", marginTop: "2px" },
+  rowName: { fontWeight: 700, color: "#1f2937", fontSize: "14px" },
+  rowSub: { color: "#6b7280", fontSize: "13px", marginTop: "2px" },
 
   statusSmall: {
     padding: "4px 10px",
     borderRadius: "999px",
     fontSize: "12px",
     fontWeight: 800,
-    border: "1px solid #e2e8f0",
+    border: "1px solid rgba(74, 124, 78, 0.2)",
   },
 
   selectBtn: {
     background: "#ffffff",
-    border: "1px solid #e2e8f0",
+    border: "1px solid rgba(74, 124, 78, 0.2)",
     borderRadius: "10px",
-    padding: "8px 10px",
+    padding: "8px 14px",
     cursor: "pointer",
-    fontWeight: 900,
-    color: "#0f172a",
+    fontWeight: 600,
+    color: "#2c5530",
     marginRight: "8px",
+    transition: "all 0.2s ease",
   },
   selectBtnActive: {
-    background: "#0f172a",
-    border: "1px solid #0f172a",
+    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)",
+    border: "none",
     borderRadius: "10px",
-    padding: "8px 10px",
+    padding: "8px 14px",
     cursor: "pointer",
-    fontWeight: 900,
+    fontWeight: 600,
     color: "#ffffff",
     marginRight: "8px",
+    boxShadow: "0 4px 12px rgba(74, 124, 78, 0.2)",
   },
 
   smallBtn: {
@@ -1196,22 +1215,24 @@ const styles = {
   empty: { padding: "16px", color: "#64748b", textAlign: "center" },
 
   btnPrimary: {
-    background: "#0f172a",
+    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)",
     color: "#fff",
-    border: "1px solid #0f172a",
+    border: "none",
     padding: "10px 12px",
     borderRadius: "10px",
     cursor: "pointer",
     fontWeight: 900,
+    boxShadow: "0 4px 12px rgba(74, 124, 78, 0.2)",
   },
   btnSecondary: {
-    background: "#f8fafc",
-    color: "#0f172a",
-    border: "1px solid #e2e8f0",
-    padding: "10px 12px",
-    borderRadius: "10px",
+    background: "rgba(255, 255, 255, 0.8)",
+    color: "#2c5530",
+    border: "1px solid rgba(74, 124, 78, 0.2)",
+    padding: "10px 16px",
+    borderRadius: "12px",
     cursor: "pointer",
-    fontWeight: 900,
+    fontWeight: 600,
+    backdropFilter: "blur(4px)",
   },
   btnDanger: {
     background: "#fff",
@@ -1237,9 +1258,9 @@ const styles = {
     width: "min(820px, 100%)",
     background: "#fff",
     borderRadius: "16px",
-    border: "1px solid #e2e8f0",
+    border: "1px solid rgba(74, 124, 78, 0.2)",
     overflow: "hidden",
-    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.18)",
+    boxShadow: "0 10px 30px rgba(74, 124, 78, 0.18)",
   },
 
   removeModal: {
@@ -1255,9 +1276,9 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "space-between",
-    padding: "14px 16px",
-    borderBottom: "1px solid #e2e8f0",
-    background: "#f8fafc",
+    padding: "18px 24px",
+    borderBottom: "1px solid rgba(74, 124, 78, 0.1)",
+    background: "rgba(74, 124, 78, 0.04)",
   },
   modalTitle: { margin: 0, fontSize: "15px", fontWeight: 900, color: "#0f172a" },
   iconBtn: {
@@ -1273,15 +1294,15 @@ const styles = {
   modalProfile: {
     display: "flex",
     alignItems: "flex-start",
-    gap: "12px",
-    padding: "12px",
+    gap: "16px",
+    padding: "16px",
     borderRadius: "14px",
-    background: "#f8fafc",
-    border: "1px solid #e2e8f0",
-    marginBottom: "14px",
+    background: "rgba(74, 124, 78, 0.05)",
+    border: "1px solid rgba(74, 124, 78, 0.1)",
+    marginBottom: "20px",
   },
-  modalName: { fontWeight: 1000, color: "#0f172a" },
-  modalSub: { marginTop: "2px", color: "#64748b", fontSize: "12.5px", fontWeight: 700 },
+  modalName: { fontWeight: 700, color: "#2c5530", fontSize: "16px" },
+  modalSub: { marginTop: "2px", color: "#6b7280", fontSize: "13px", fontWeight: 500 },
 
   removeWarnBox: {
     background: "#fffbeb",
@@ -1310,27 +1331,33 @@ const styles = {
   },
   input: {
     width: "100%",
-    padding: "10px 12px",
+    padding: "12px 14px",
     borderRadius: "12px",
-    border: "1px solid #e2e8f0",
+    border: "1px solid rgba(74, 124, 78, 0.2)",
     outline: "none",
     background: "#fff",
+    transition: "border 0.2s ease",
+    fontSize: "14px",
+    color: "#2c5530",
   },
   select: {
     width: "100%",
-    padding: "10px 12px",
+    padding: "12px 14px",
     borderRadius: "12px",
-    border: "1px solid #e2e8f0",
+    border: "1px solid rgba(74, 124, 78, 0.2)",
     outline: "none",
     background: "#fff",
+    fontSize: "14px",
+    color: "#2c5530",
   },
   readValue: {
-    padding: "10px 12px",
+    padding: "12px 14px",
     borderRadius: "12px",
-    border: "1px solid #e2e8f0",
-    background: "#ffffff",
-    color: "#0f172a",
-    fontWeight: 800,
+    border: "1px solid rgba(74, 124, 78, 0.1)",
+    background: "rgba(74, 124, 78, 0.04)",
+    color: "#2c5530",
+    fontWeight: 600,
+    fontSize: "14px",
   },
 
   textarea: {
@@ -1346,12 +1373,12 @@ const styles = {
   },
 
   modalActions: {
-    padding: "14px 16px",
-    borderTop: "1px solid #e2e8f0",
+    padding: "18px 24px",
+    borderTop: "1px solid rgba(74, 124, 78, 0.1)",
     background: "#ffffff",
     display: "flex",
     justifyContent: "flex-end",
-    gap: "10px",
+    gap: "12px",
     flexWrap: "wrap",
   },
 
@@ -1360,10 +1387,10 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "10px",
-    padding: "10px 12px",
+    padding: "12px 14px",
     borderRadius: "12px",
-    border: "1px solid #e2e8f0",
+    border: "1px solid rgba(74, 124, 78, 0.2)",
     background: "#fff",
   },
-  switchText: { fontWeight: 900, color: "#0f172a" },
+  switchText: { fontWeight: 700, color: "#2c5530" },
 };

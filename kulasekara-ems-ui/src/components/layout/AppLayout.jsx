@@ -147,16 +147,16 @@ const styles = {
   container: {
     display: "flex",
     minHeight: "100vh",
-    fontFamily: "'Inter', 'Segoe UI', sans-serif", // Modern font stack
-    background: "#F3F6FB",
+    // fontFamily: "'Inter', 'Segoe UI', sans-serif", // Inherited globally now
+    background: "linear-gradient(135deg, #e8f5e9 0%, #f1f8f4 50%, #e0f2f1 100%)", // Matching Login Background
   },
-  
+
   // Sidebar Styling
   sidebar: {
     background: "#FFFFFF",
     transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease",
-    borderRight: "1px solid #E6EDF5",
-    boxShadow: "4px 0 24px rgba(0,0,0,0.02)",
+    borderRight: "1px solid rgba(74, 124, 78, 0.1)",
+    boxShadow: "4px 0 24px rgba(74, 124, 78, 0.05)",
     overflow: "hidden",
     whiteSpace: "nowrap",
     position: "relative",
@@ -168,19 +168,19 @@ const styles = {
     height: "100%",
     width: "270px", // Fixed width content to prevent squash during transition
   },
-  
+
   // Brand Section
   brand: {
     padding: "24px 24px 20px",
     display: "flex",
     alignItems: "center",
     gap: "14px",
-    borderBottom: "1px solid #f1f5f9",
+    borderBottom: "1px solid rgba(74, 124, 78, 0.1)", // Theme border
   },
   brandIcon: {
     width: "40px",
     height: "40px",
-    background: "linear-gradient(135deg, #4a7c4e 0%, #2d4f2f 100%)", // The Theme Gradient
+    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)", // The Theme Gradient (Matched to Login)
     borderRadius: "10px",
     color: "#fff",
     display: "flex",
@@ -281,7 +281,7 @@ const styles = {
   // Footer / Logout
   footer: {
     padding: "16px",
-    borderTop: "1px solid #f1f5f9",
+    borderTop: "1px solid rgba(74, 124, 78, 0.1)", // Theme border
   },
   logoutButton: {
     width: "100%",
@@ -291,7 +291,7 @@ const styles = {
     gap: "8px",
     padding: "12px",
     background: "#fff",
-    border: "1px solid #e2e8f0",
+    border: "1px solid rgba(74, 124, 78, 0.2)", // Theme border
     borderRadius: "12px",
     color: "#64748b",
     fontWeight: "700",
@@ -316,7 +316,7 @@ const styles = {
   },
   toggleButton: {
     background: "#fff",
-    border: "1px solid #e2e8f0",
+    border: "1px solid rgba(74, 124, 78, 0.2)", // Theme border
     width: "40px",
     height: "40px",
     borderRadius: "12px",
@@ -328,7 +328,7 @@ const styles = {
     color: "#1e293b",
     boxShadow: "0 2px 5px rgba(0,0,0,0.03)",
   },
-  
+
   // User Profile in Header
   userSection: { display: "flex", alignItems: "center", gap: "14px" },
   userInfo: { textAlign: "right" },

@@ -134,21 +134,24 @@ export default function EmployeeDashboard() {
       gap: 10,
       padding: 12,
       borderRadius: 14,
-      background: "#fff",
-      border: "1px solid rgba(15,23,42,0.08)",
-      boxShadow: "0 8px 24px rgba(15,23,42,0.06)",
+      background: "rgba(255, 255, 255, 0.9)",
+      backdropFilter: "blur(8px)",
+      border: "1px solid rgba(74, 124, 78, 0.2)",
+      boxShadow: "0 8px 24px rgba(74, 124, 78, 0.1)",
       minWidth: 280,
     },
     avatar: {
       width: 40,
       height: 40,
       borderRadius: 12,
-      background: "rgba(15,23,42,0.06)",
+      background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)",
+      color: "#fff",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
       fontWeight: 800,
       textTransform: "uppercase",
+      boxShadow: "0 4px 10px rgba(74, 124, 78, 0.2)",
     },
     chipText: { flex: 1, lineHeight: 1.1 },
     chipName: { fontWeight: 800, fontSize: 14 },
@@ -158,9 +161,10 @@ export default function EmployeeDashboard() {
       fontWeight: 800,
       padding: "6px 10px",
       borderRadius: 999,
-      border: "1px solid rgba(15,23,42,0.08)",
-      background: ok ? "rgba(34,197,94,0.10)" : "rgba(245,158,11,0.10)",
-      borderColor: ok ? "rgba(34,197,94,0.25)" : "rgba(245,158,11,0.25)",
+      border: "1px solid rgba(74, 124, 78, 0.2)",
+      background: ok ? "rgba(74, 124, 78, 0.15)" : "rgba(245,158,11,0.10)",
+      borderColor: ok ? "rgba(74, 124, 78, 0.3)" : "rgba(245,158,11,0.25)",
+      color: ok ? "#14532d" : "#78350f",
       whiteSpace: "nowrap",
     }),
 
@@ -171,11 +175,12 @@ export default function EmployeeDashboard() {
       margin: "14px 0",
     },
     kpi: {
-      background: "#fff",
-      border: "1px solid rgba(15,23,42,0.08)",
+      background: "rgba(255, 255, 255, 0.9)",
+      backdropFilter: "blur(8px)",
+      border: "1px solid rgba(74, 124, 78, 0.15)",
       borderRadius: 16,
       padding: 12,
-      boxShadow: "0 8px 24px rgba(15,23,42,0.06)",
+      boxShadow: "0 8px 24px rgba(74, 124, 78, 0.08)",
       minHeight: 86,
     },
     kpiLabel: { fontSize: 12, opacity: 0.75, fontWeight: 700 },
@@ -185,11 +190,12 @@ export default function EmployeeDashboard() {
     grid: { display: "grid", gridTemplateColumns: "1.2fr 1.8fr", gap: 12 },
 
     card: {
-      background: "#fff",
-      border: "1px solid rgba(15,23,42,0.08)",
+      background: "rgba(255, 255, 255, 0.95)",
+      backdropFilter: "blur(8px)",
+      border: "1px solid rgba(74, 124, 78, 0.15)",
       borderRadius: 16,
       padding: 14,
-      boxShadow: "0 8px 24px rgba(15,23,42,0.06)",
+      boxShadow: "0 8px 24px rgba(74, 124, 78, 0.08)",
     },
     cardHead: {
       display: "flex",
@@ -205,8 +211,9 @@ export default function EmployeeDashboard() {
       fontWeight: 800,
       padding: "6px 10px",
       borderRadius: 999,
-      background: "rgba(15,23,42,0.05)",
-      border: "1px solid rgba(15,23,42,0.08)",
+      background: "rgba(74, 124, 78, 0.1)",
+      border: "1px solid rgba(74, 124, 78, 0.15)",
+      color: "#2c5530",
     },
     linkBtn: {
       border: "none",
@@ -216,6 +223,7 @@ export default function EmployeeDashboard() {
       cursor: "pointer",
       opacity: 0.85,
       padding: 0,
+      color: "#4a7c4e",
     },
 
     actions: { display: "flex", flexDirection: "column", gap: 10 },
@@ -226,8 +234,8 @@ export default function EmployeeDashboard() {
       alignItems: "center",
       borderRadius: 14,
       padding: 12,
-      border: "1px solid rgba(15,23,42,0.08)",
-      background: "rgba(15,23,42,0.02)",
+      border: "1px solid rgba(74, 124, 78, 0.15)",
+      background: "rgba(74, 124, 78, 0.04)",
       cursor: "pointer",
       transition: "transform 0.08s ease, background 0.12s ease",
       textAlign: "left",
@@ -236,7 +244,8 @@ export default function EmployeeDashboard() {
       width: 36,
       height: 36,
       borderRadius: 12,
-      background: "rgba(15,23,42,0.06)",
+      background: "rgba(74, 124, 78, 0.1)",
+      color: "#4a7c4e",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
@@ -248,21 +257,21 @@ export default function EmployeeDashboard() {
     actionSub: { fontSize: 12, opacity: 0.75, marginTop: 2 },
     actionArrow: { fontSize: 20, opacity: 0.6 },
 
-    tableWrap: { overflow: "auto", borderRadius: 12, border: "1px solid rgba(15,23,42,0.08)" },
+    tableWrap: { overflow: "auto", borderRadius: 12, border: "1px solid rgba(74, 124, 78, 0.15)" },
     table: { width: "100%", borderCollapse: "collapse", minWidth: 520 },
     th: {
       padding: "10px 12px",
       fontSize: 12,
       fontWeight: 900,
-      background: "rgba(15,23,42,0.03)",
-      borderBottom: "1px solid rgba(15,23,42,0.06)",
+      background: "rgba(74, 124, 78, 0.04)",
+      borderBottom: "1px solid rgba(74, 124, 78, 0.1)",
       textAlign: "left",
       whiteSpace: "nowrap",
     },
     td: {
       padding: "10px 12px",
       fontSize: 12,
-      borderBottom: "1px solid rgba(15,23,42,0.06)",
+      borderBottom: "1px solid rgba(74, 124, 78, 0.1)",
       textAlign: "left",
       whiteSpace: "nowrap",
     },
@@ -274,11 +283,11 @@ export default function EmployeeDashboard() {
         fontSize: 12,
         fontWeight: 800,
         borderRadius: 999,
-        border: "1px solid rgba(15,23,42,0.10)",
-        background: "rgba(15,23,42,0.03)",
+        border: "1px solid rgba(74, 124, 78, 0.15)",
+        background: "rgba(74, 124, 78, 0.05)",
       };
       if (type === "ok")
-        return { ...base, background: "rgba(34,197,94,0.10)", borderColor: "rgba(34,197,94,0.25)" };
+        return { ...base, background: "rgba(74, 124, 78, 0.15)", borderColor: "rgba(74, 124, 78, 0.3)" };
       if (type === "info")
         return { ...base, background: "rgba(59,130,246,0.10)", borderColor: "rgba(59,130,246,0.25)" };
       return { ...base, background: "rgba(245,158,11,0.10)", borderColor: "rgba(245,158,11,0.25)" };
@@ -291,8 +300,8 @@ export default function EmployeeDashboard() {
       gap: 14,
       padding: "10px 12px",
       borderRadius: 12,
-      border: "1px solid rgba(15,23,42,0.08)",
-      background: "rgba(15,23,42,0.02)",
+      border: "1px solid rgba(74, 124, 78, 0.15)",
+      background: "rgba(74, 124, 78, 0.02)",
     },
     infoLabel: { fontSize: 12, fontWeight: 900, opacity: 0.75 },
     infoValue: { fontSize: 12, fontWeight: 800 },
@@ -303,10 +312,10 @@ export default function EmployeeDashboard() {
       gap: 10,
       padding: 10,
       borderRadius: 14,
-      border: "1px solid rgba(15,23,42,0.08)",
-      background: "rgba(15,23,42,0.02)",
+      border: "1px solid rgba(74, 124, 78, 0.15)",
+      background: "rgba(74, 124, 78, 0.02)",
     },
-    dot: { width: 10, height: 10, marginTop: 6, borderRadius: "50%", background: "rgba(15,23,42,0.30)" },
+    dot: { width: 10, height: 10, marginTop: 6, borderRadius: "50%", background: "rgba(74, 124, 78, 0.4)" },
     notiBody: { flex: 1 },
     notiTitleRow: { display: "flex", justifyContent: "space-between", gap: 10 },
     notiTitle: { fontWeight: 900, fontSize: 13 },
@@ -380,11 +389,11 @@ export default function EmployeeDashboard() {
                   style={styles.actionBtn}
                   onClick={() => alert(`UI only: ${a.title}`)}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(15,23,42,0.04)";
+                    e.currentTarget.style.background = "rgba(74, 124, 78, 0.08)";
                     e.currentTarget.style.transform = "translateY(-1px)";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(15,23,42,0.02)";
+                    e.currentTarget.style.background = "rgba(74, 124, 78, 0.04)";
                     e.currentTarget.style.transform = "translateY(0)";
                   }}
                 >
@@ -472,7 +481,7 @@ export default function EmployeeDashboard() {
           </div>
         </div>
       </div>
-    </AppLayout>
+    </AppLayout >
   );
 }
 

@@ -46,19 +46,23 @@ const Badge = ({ status }) => {
 const KpiCard = ({ title, value, hint }) => (
   <div
     style={{
-      background: "#fff",
-      border: "1px solid #E6EAF2",
-      borderRadius: 14,
-      padding: 14,
-      boxShadow: "0 8px 18px rgba(15, 23, 42, 0.06)",
-      minHeight: 86,
+      background: "rgba(255, 255, 255, 0.9)",
+      backdropFilter: "blur(12px)",
+      border: "1px solid rgba(255, 255, 255, 0.5)",
+      borderRadius: 18,
+      padding: 20,
+      boxShadow: "0 8px 18px rgba(0,0,0,0.03)",
+      minHeight: 100,
+      display: "flex",
+      flexDirection: "column",
+      justifyContent: "center"
     }}
   >
-    <div style={{ fontSize: 12, color: "#64748B", fontWeight: 700 }}>{title}</div>
-    <div style={{ fontSize: 24, fontWeight: 900, color: "#0F172A", marginTop: 6 }}>
+    <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 700, textTransform: "uppercase" }}>{title}</div>
+    <div style={{ fontSize: 28, fontWeight: 800, color: "#111827", marginTop: 8, marginBottom: 4 }}>
       {value}
     </div>
-    {hint ? <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 6 }}>{hint}</div> : null}
+    {hint ? <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 500 }}>{hint}</div> : null}
   </div>
 );
 
@@ -231,465 +235,494 @@ export default function LeaveRequests() {
 
   return (
     <AppLayout>
-      <div style={{ padding: 18, background: "#F6F8FC", minHeight: "100vh" }}>
-        {/* Header */}
-        <div
-          style={{
-            background: "#fff",
-            border: "1px solid #E6EAF2",
-            borderRadius: 16,
-            padding: 16,
-            boxShadow: "0 10px 22px rgba(15, 23, 42, 0.06)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <div style={{ flex: 1, minWidth: 220 }}>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#0F172A" }}>
-                Leave Requests
+      <div style={styles.page}>
+        {/* Inline CSS Animations */}
+        <style>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-20px) translateX(10px); }
+          }
+          @keyframes floatReverse {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(20px) translateX(-10px); }
+          }
+          .floating-circle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
+          .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(76, 175, 80, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
+          .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(56, 142, 60, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
+          .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(67, 160, 71, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
+        `}</style>
+
+        {/* Animated background elements */}
+        <div className="floating-circle fc-1"></div>
+        <div className="floating-circle fc-2"></div>
+        <div className="floating-circle fc-3"></div>
+
+        <div style={styles.container}>
+          {/* Header */}
+          <div style={styles.headerCard}>
+            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+              <div style={{ flex: 1, minWidth: 220 }}>
+                <div style={styles.pageTitle}>
+                  Leave Requests
+                </div>
+                <div style={styles.pageSubtitle}>
+                  Review and respond to employee leave applications
+                </div>
               </div>
-              <div style={{ fontSize: 13, color: "#64748B", marginTop: 4 }}>
-                Review and respond to employee leave applications
+
+              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+                <button
+                  onClick={() => alert("Export will coming soon")}
+                  style={styles.secondaryBtn}
+                >
+                  Export
+                </button>
+
+                <button
+                  onClick={() => setFilters({ q: "", status: "ALL", type: "ALL", from: "", to: "" })}
+                  style={styles.secondaryBtn}
+                >
+                  Reset Filters
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* KPI Row */}
+          <div style={styles.kpiGrid}>
+            <KpiCard title="Pending" value={kpis.pending} hint="Needs your review" />
+            <KpiCard title="Approved" value={kpis.approved} hint="All time (UI demo)" />
+            <KpiCard title="Rejected" value={kpis.rejected} hint="All time (UI demo)" />
+          </div>
+
+          {/* Filters */}
+          <div style={styles.filterCard}>
+            <div style={styles.filterGrid}>
+              <div>
+                <div style={styles.label}>Search</div>
+                <input
+                  value={filters.q}
+                  onChange={(e) => setFilters((p) => ({ ...p, q: e.target.value }))}
+                  placeholder="Employee ID / Leave ID"
+                  style={styles.input}
+                />
+              </div>
+
+              <div>
+                <div style={styles.label}>Status</div>
+                <select
+                  value={filters.status}
+                  onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}
+                  style={styles.select}
+                >
+                  <option value="ALL">All</option>
+                  <option value="PENDING">Pending</option>
+                  <option value="APPROVED">Approved</option>
+                  <option value="REJECTED">Rejected</option>
+                </select>
+              </div>
+
+              <div>
+                <div style={styles.label}>Leave Type</div>
+                <select
+                  value={filters.type}
+                  onChange={(e) => setFilters((p) => ({ ...p, type: e.target.value }))}
+                  style={styles.select}
+                >
+                  <option value="ALL">All</option>
+                  <option value="CASUAL">CASUAL</option>
+                  <option value="MEDICAL">MEDICAL</option>
+                  <option value="ANNUAL">ANNUAL</option>
+                </select>
+              </div>
+
+              <div>
+                <div style={styles.label}>From</div>
+                <input
+                  type="date"
+                  value={filters.from}
+                  onChange={(e) => setFilters((p) => ({ ...p, from: e.target.value }))}
+                  style={styles.input}
+                />
+              </div>
+
+              <div>
+                <div style={styles.label}>To</div>
+                <input
+                  type="date"
+                  value={filters.to}
+                  onChange={(e) => setFilters((p) => ({ ...p, to: e.target.value }))}
+                  style={styles.input}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Table */}
+          <div style={styles.tableCard}>
+            <div style={styles.tableHeader}>
+              <div style={{ fontWeight: 800, color: "#111827" }}>Requests</div>
+              <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 600 }}>
+                Showing {filtered.length} of {requests.length}
               </div>
             </div>
 
-            <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <button
-                onClick={() => alert("Export will coming soon")}
-                style={{
-                  border: "1px solid #E2E8F0",
-                  background: "#F8FAFC",
-                  borderRadius: 12,
-                  padding: "10px 12px",
-                  fontWeight: 900,
-                  cursor: "pointer",
-                }}
-              >
-                Export
-              </button>
-
-              <button
-                onClick={() => setFilters({ q: "", status: "ALL", type: "ALL", from: "", to: "" })}
-                style={{
-                  border: "1px solid #E2E8F0",
-                  background: "#FFFFFF",
-                  borderRadius: 12,
-                  padding: "10px 12px",
-                  fontWeight: 900,
-                  cursor: "pointer",
-                }}
-              >
-                Reset Filters
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* KPI Row */}
-        <div style={{ height: 14 }} />
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-            gap: 12,
-          }}
-        >
-          <KpiCard title="Pending" value={kpis.pending} hint="Needs your review" />
-          <KpiCard title="Approved" value={kpis.approved} hint="All time (UI demo)" />
-          <KpiCard title="Rejected" value={kpis.rejected} hint="All time (UI demo)" />
-        </div>
-
-        {/* Filters */}
-        <div style={{ height: 14 }} />
-        <div
-          style={{
-            background: "#fff",
-            border: "1px solid #E6EAF2",
-            borderRadius: 16,
-            padding: 14,
-            boxShadow: "0 10px 22px rgba(15, 23, 42, 0.06)",
-          }}
-        >
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1.4fr 0.7fr 0.7fr 0.7fr 0.7fr",
-              gap: 10,
-              alignItems: "end",
-            }}
-          >
-            <div>
-              <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800 }}>Search</div>
-              <input
-                value={filters.q}
-                onChange={(e) => setFilters((p) => ({ ...p, q: e.target.value }))}
-                placeholder="Employee ID / Leave ID"
-                style={{
-                  width: "100%",
-                  marginTop: 6,
-                  padding: "10px 12px",
-                  borderRadius: 12,
-                  border: "1px solid #E2E8F0",
-                  outline: "none",
-                  fontWeight: 700,
-                }}
-              />
-            </div>
-
-            <div>
-              <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800 }}>Status</div>
-              <select
-                value={filters.status}
-                onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}
-                style={{
-                  width: "100%",
-                  marginTop: 6,
-                  padding: "10px 12px",
-                  borderRadius: 12,
-                  border: "1px solid #E2E8F0",
-                  outline: "none",
-                  fontWeight: 800,
-                  background: "#fff",
-                }}
-              >
-                <option value="ALL">All</option>
-                <option value="PENDING">Pending</option>
-                <option value="APPROVED">Approved</option>
-                <option value="REJECTED">Rejected</option>
-              </select>
-            </div>
-
-            <div>
-              <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800 }}>Leave Type</div>
-              <select
-                value={filters.type}
-                onChange={(e) => setFilters((p) => ({ ...p, type: e.target.value }))}
-                style={{
-                  width: "100%",
-                  marginTop: 6,
-                  padding: "10px 12px",
-                  borderRadius: 12,
-                  border: "1px solid #E2E8F0",
-                  outline: "none",
-                  fontWeight: 800,
-                  background: "#fff",
-                }}
-              >
-                <option value="ALL">All</option>
-                <option value="CASUAL">CASUAL</option>
-                <option value="MEDICAL">MEDICAL</option>
-                <option value="ANNUAL">ANNUAL</option>
-              </select>
-            </div>
-
-            <div>
-              <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800 }}>From</div>
-              <input
-                type="date"
-                value={filters.from}
-                onChange={(e) => setFilters((p) => ({ ...p, from: e.target.value }))}
-                style={{
-                  width: "100%",
-                  marginTop: 6,
-                  padding: "10px 12px",
-                  borderRadius: 12,
-                  border: "1px solid #E2E8F0",
-                  outline: "none",
-                  fontWeight: 800,
-                }}
-              />
-            </div>
-
-            <div>
-              <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800 }}>To</div>
-              <input
-                type="date"
-                value={filters.to}
-                onChange={(e) => setFilters((p) => ({ ...p, to: e.target.value }))}
-                style={{
-                  width: "100%",
-                  marginTop: 6,
-                  padding: "10px 12px",
-                  borderRadius: 12,
-                  border: "1px solid #E2E8F0",
-                  outline: "none",
-                  fontWeight: 800,
-                }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Table */}
-        <div style={{ height: 14 }} />
-        <div
-          style={{
-            background: "#fff",
-            border: "1px solid #E6EAF2",
-            borderRadius: 16,
-            padding: 0,
-            boxShadow: "0 10px 22px rgba(15, 23, 42, 0.06)",
-            overflow: "hidden",
-          }}
-        >
-          <div style={{ padding: 14, display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ fontWeight: 900, color: "#0F172A" }}>Requests</div>
-            <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800 }}>
-              Showing {filtered.length} of {requests.length}
-            </div>
-          </div>
-
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
-              <thead>
-                <tr style={{ background: "#F8FAFC", borderTop: "1px solid #E6EAF2" }}>
-                  {[
-                    "Leave ID",
-                    "Employee ID",
-                    "Leave Type",
-                    "Start Date",
-                    "End Date",
-                    "Days",
-                    "Reason",
-                    "Status",
-                    "Action",
-                  ].map((h) => (
-                    <th
-                      key={h}
-                      style={{
-                        textAlign: "left",
-                        padding: "12px 14px",
-                        fontSize: 12,
-                        color: "#64748B",
-                        fontWeight: 900,
-                        borderBottom: "1px solid #E6EAF2",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.length === 0 ? (
+            <div style={{ overflowX: "auto" }}>
+              <table style={styles.table}>
+                <thead>
                   <tr>
-                    <td colSpan={9} style={{ padding: 18, color: "#64748B", fontWeight: 700 }}>
-                      No leave requests found for the selected filters.
-                    </td>
+                    {[
+                      "Leave ID",
+                      "Employee ID",
+                      "Leave Type",
+                      "Start Date",
+                      "End Date",
+                      "Days",
+                      "Reason",
+                      "Status",
+                      "Action",
+                    ].map((h) => (
+                      <th key={h} style={styles.th}>
+                        {h}
+                      </th>
+                    ))}
                   </tr>
-                ) : (
-                  filtered.map((r) => (
-                    <tr key={r.leave_id} style={{ borderBottom: "1px solid #EEF2F7" }}>
-                      <td style={{ padding: "12px 14px", fontWeight: 900, color: "#0F172A" }}>
-                        {r.leave_id}
-                      </td>
-                      <td style={{ padding: "12px 14px", fontWeight: 800, color: "#0F172A" }}>
-                        {r.employee_id}
-                      </td>
-                      <td style={{ padding: "12px 14px", fontWeight: 800, color: "#0F172A" }}>
-                        {r.leave_type}
-                      </td>
-                      <td style={{ padding: "12px 14px", fontWeight: 800, color: "#0F172A" }}>
-                        {fmtDate(r.start_date)}
-                      </td>
-                      <td style={{ padding: "12px 14px", fontWeight: 800, color: "#0F172A" }}>
-                        {fmtDate(r.end_date)}
-                      </td>
-                      <td style={{ padding: "12px 14px", fontWeight: 900, color: "#0F172A" }}>
-                        {daysBetweenInclusive(r.start_date, r.end_date)}
-                      </td>
-                      <td style={{ padding: "12px 14px" }}>
-                        <div
-                          style={{
-                            maxWidth: 320,
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis",
-                            fontWeight: 700,
-                            color: "#334155",
-                          }}
-                          title={r.reason || ""}
-                        >
-                          {r.reason || "—"}
-                        </div>
-                      </td>
-                      <td style={{ padding: "12px 14px" }}>
-                        <Badge status={r.status} />
-                      </td>
-                      <td style={{ padding: "12px 14px" }}>
-                        <button
-                          onClick={() => openReview(r)}
-                          style={{
-                            padding: "10px 12px",
-                            borderRadius: 12,
-                            border: "1px solid #E2E8F0",
-                            background: "#FFFFFF",
-                            fontWeight: 900,
-                            cursor: "pointer",
-                          }}
-                        >
-                          View
-                        </button>
+                </thead>
+                <tbody>
+                  {filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={9} style={{ padding: 20, color: "#6b7280", fontWeight: 600, textAlign: "center" }}>
+                        No leave requests found.
                       </td>
                     </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ) : (
+                    filtered.map((r) => (
+                      <tr key={r.leave_id} style={styles.tr}>
+                        <td style={styles.tdMono}>
+                          {r.leave_id}
+                        </td>
+                        <td style={styles.tdMono}>
+                          {r.employee_id}
+                        </td>
+                        <td style={styles.td}>
+                          {r.leave_type}
+                        </td>
+                        <td style={styles.td}>
+                          {fmtDate(r.start_date)}
+                        </td>
+                        <td style={styles.td}>
+                          {fmtDate(r.end_date)}
+                        </td>
+                        <td style={styles.td}>
+                          {daysBetweenInclusive(r.start_date, r.end_date)}
+                        </td>
+                        <td style={styles.td}>
+                          <div
+                            style={{
+                              maxWidth: 320,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              color: "#374151",
+                            }}
+                            title={r.reason || ""}
+                          >
+                            {r.reason || "—"}
+                          </div>
+                        </td>
+                        <td style={styles.td}>
+                          <Badge status={r.status} />
+                        </td>
+                        <td style={styles.td}>
+                          <button
+                            onClick={() => openReview(r)}
+                            style={styles.secondaryBtnSmall}
+                          >
+                            View
+                          </button>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
+
+          {/* Drawer / Review Panel */}
+          <Drawer
+            open={drawerOpen}
+            onClose={closeReview}
+            title={selected ? `Review Leave #${selected.leave_id}` : "Review Leave"}
+          >
+            {selected ? (
+              <>
+                <div style={styles.drawerCard}>
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: "#111827" }}>
+                        Employee ID: {selected.employee_id}
+                      </div>
+                      <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 600, marginTop: 4 }}>
+                        Leave ID: {selected.leave_id}
+                      </div>
+                    </div>
+                    <div>
+                      <Badge status={selected.status} />
+                    </div>
+                  </div>
+
+                  <div style={{ height: 16 }} />
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                    <Field label="Leave Type" value={selected.leave_type} />
+                    <Field label="Total Days" value={daysBetweenInclusive(selected.start_date, selected.end_date)} />
+                    <Field label="Start Date" value={fmtDate(selected.start_date)} />
+                    <Field label="End Date" value={fmtDate(selected.end_date)} />
+                  </div>
+
+                  <div style={{ marginTop: 16 }}>
+                    <div style={styles.label}>Reason</div>
+                    <div style={styles.reasonBox}>
+                      {selected.reason || "—"}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ height: 16 }} />
+
+                <div style={styles.drawerCard}>
+                  <div style={styles.sectionTitle}>Manager Remark</div>
+                  <textarea
+                    value={remark}
+                    onChange={(e) => setRemark(e.target.value)}
+                    placeholder="Add a short remark..."
+                    rows={4}
+                    style={styles.textarea}
+                    disabled={selected.status !== "PENDING"}
+                  />
+
+                  <div style={{ height: 16 }} />
+
+                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                    <button
+                      onClick={() => updateStatus("APPROVED")}
+                      disabled={selected.status !== "PENDING"}
+                      style={{
+                        ...styles.approveBtn,
+                        opacity: selected.status !== "PENDING" ? 0.5 : 1,
+                        cursor: selected.status !== "PENDING" ? "not-allowed" : "pointer"
+                      }}
+                    >
+                      Approve
+                    </button>
+
+                    <button
+                      onClick={() => updateStatus("REJECTED")}
+                      disabled={selected.status !== "PENDING"}
+                      style={{
+                        ...styles.rejectBtn,
+                        opacity: selected.status !== "PENDING" ? 0.5 : 1,
+                        cursor: selected.status !== "PENDING" ? "not-allowed" : "pointer"
+                      }}
+                    >
+                      Reject
+                    </button>
+
+                    <div style={{ flex: 1 }}></div>
+
+                    <button
+                      onClick={closeReview}
+                      style={styles.secondaryBtn}
+                    >
+                      Close
+                    </button>
+                  </div>
+                </div>
+              </>
+            ) : null}
+          </Drawer>
         </div>
-
-        {/* Drawer / Review Panel (same look) */}
-        <Drawer
-          open={drawerOpen}
-          onClose={closeReview}
-          title={selected ? `Review Leave #${selected.leave_id}` : "Review Leave"}
-        >
-          {selected ? (
-            <>
-              <div
-                style={{
-                  border: "1px solid #E6EAF2",
-                  borderRadius: 14,
-                  padding: 14,
-                  background: "#FFFFFF",
-                }}
-              >
-                <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 16, fontWeight: 900, color: "#0F172A" }}>
-                      Employee ID: {selected.employee_id}
-                    </div>
-                    <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800, marginTop: 3 }}>
-                      Leave ID: {selected.leave_id}
-                    </div>
-                  </div>
-                  <div>
-                    <Badge status={selected.status} />
-                  </div>
-                </div>
-
-                <div style={{ height: 12 }} />
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                    gap: 12,
-                  }}
-                >
-                  <Field label="Leave Type" value={selected.leave_type} />
-                  <Field label="Total Days" value={daysBetweenInclusive(selected.start_date, selected.end_date)} />
-                  <Field label="Start Date" value={fmtDate(selected.start_date)} />
-                  <Field label="End Date" value={fmtDate(selected.end_date)} />
-                </div>
-
-                <div style={{ marginTop: 10 }}>
-                  <div style={{ fontSize: 12, color: "#64748B", fontWeight: 900 }}>Reason</div>
-                  <div
-                    style={{
-                      marginTop: 6,
-                      padding: 12,
-                      background: "#F8FAFC",
-                      border: "1px solid #E2E8F0",
-                      borderRadius: 12,
-                      fontWeight: 700,
-                      color: "#0F172A",
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    {selected.reason || "—"}
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ height: 12 }} />
-
-              {/* Remark section (UI only) */}
-              <div
-                style={{
-                  border: "1px solid #E6EAF2",
-                  borderRadius: 14,
-                  padding: 14,
-                  background: "#FFFFFF",
-                }}
-              >
-                <div style={{ fontWeight: 900, color: "#0F172A" }}>Manager Remark </div>
-                <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800, marginTop: 6 }}>
-                 
-                </div>
-
-                <textarea
-                  value={remark}
-                  onChange={(e) => setRemark(e.target.value)}
-                  placeholder="Add a short remark..."
-                  rows={4}
-                  style={{
-                    marginTop: 10,
-                    width: "100%",
-                    padding: 12,
-                    borderRadius: 12,
-                    border: "1px solid #E2E8F0",
-                    outline: "none",
-                    fontWeight: 700,
-                    resize: "vertical",
-                  }}
-                  disabled={selected.status !== "PENDING"}
-                />
-
-                <div style={{ height: 10 }} />
-
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  <button
-                    onClick={() => updateStatus("APPROVED")}
-                    disabled={selected.status !== "PENDING"}
-                    style={{
-                      padding: "12px 14px",
-                      borderRadius: 12,
-                      border: "1px solid #BBF7D0",
-                      background: selected.status !== "PENDING" ? "#E5E7EB" : "#D1FAE5",
-                      fontWeight: 900,
-                      cursor: selected.status !== "PENDING" ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    Approve
-                  </button>
-
-                  <button
-                    onClick={() => updateStatus("REJECTED")}
-                    disabled={selected.status !== "PENDING"}
-                    style={{
-                      padding: "12px 14px",
-                      borderRadius: 12,
-                      border: "1px solid #FECACA",
-                      background: selected.status !== "PENDING" ? "#E5E7EB" : "#FEE2E2",
-                      fontWeight: 900,
-                      cursor: selected.status !== "PENDING" ? "not-allowed" : "pointer",
-                    }}
-                  >
-                    Reject
-                  </button>
-
-                  <button
-                    onClick={closeReview}
-                    style={{
-                      marginLeft: "auto",
-                      padding: "12px 14px",
-                      borderRadius: 12,
-                      border: "1px solid #E2E8F0",
-                      background: "#FFFFFF",
-                      fontWeight: 900,
-                      cursor: "pointer",
-                    }}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : null}
-        </Drawer>
       </div>
     </AppLayout>
   );
 }
+
+const styles = {
+  page: { position: "relative", minHeight: "100%", overflow: "hidden" },
+  container: { padding: 24, position: "relative", zIndex: 1, display: "grid", gap: 20 },
+
+  headerCard: {
+    background: "rgba(255, 255, 255, 0.95)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255, 255, 255, 0.5)",
+    borderRadius: 18,
+    padding: 24,
+    boxShadow: "0 8px 25px rgba(0,0,0,0.03)",
+  },
+  pageTitle: { fontSize: 24, fontWeight: 800, color: "#2c5530" },
+  pageSubtitle: { fontSize: 14, color: "#4b5563", marginTop: 4, opacity: 0.8 },
+
+  kpiGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    gap: 16,
+  },
+
+  filterCard: {
+    background: "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255, 255, 255, 0.5)",
+    borderRadius: 18,
+    padding: 20,
+    boxShadow: "0 8px 15px rgba(0,0,0,0.02)",
+  },
+  filterGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    gap: 16,
+    alignItems: "end",
+  },
+  label: { fontSize: 12, color: "#6b7280", fontWeight: 700, textTransform: "uppercase", marginBottom: 6 },
+  input: {
+    width: "100%",
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: "1px solid #e5e7eb",
+    outline: "none",
+    fontWeight: 600,
+    fontSize: 14,
+    background: "#fff",
+  },
+  select: {
+    width: "100%",
+    padding: "10px 12px",
+    borderRadius: 10,
+    border: "1px solid #e5e7eb",
+    outline: "none",
+    fontWeight: 600,
+    fontSize: 14,
+    background: "#fff",
+  },
+
+  tableCard: {
+    background: "rgba(255, 255, 255, 0.95)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255, 255, 255, 0.5)",
+    borderRadius: 18,
+    boxShadow: "0 10px 30px rgba(0,0,0,0.03)",
+    overflow: "hidden",
+  },
+  tableHeader: {
+    padding: 20,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    borderBottom: "1px solid rgba(0,0,0,0.05)",
+  },
+  table: { width: "100%", borderCollapse: "separate", borderSpacing: "0 4px", minWidth: 900, padding: "0 12px 12px" },
+  th: {
+    textAlign: "left",
+    padding: "12px 16px",
+    fontSize: 12,
+    color: "#6b7280",
+    fontWeight: 700,
+    textTransform: "uppercase",
+  },
+  tr: {
+    transition: "transform 0.1s",
+    background: "transparent",
+  },
+  td: {
+    padding: "12px 16px",
+    background: "#f9fafb",
+    fontSize: 14,
+    color: "#374151",
+    verticalAlign: "middle",
+    fontWeight: 500,
+    firstOfType: { borderRadius: "10px 0 0 10px" },
+    lastOfType: { borderRadius: "0 10px 10px 0" }
+  },
+  tdMono: {
+    padding: "12px 16px",
+    background: "#f9fafb",
+    fontSize: 13,
+    color: "#111827",
+    fontWeight: 600,
+    fontFamily: "monospace",
+    firstOfType: { borderRadius: "10px 0 0 10px" }
+  },
+
+  // Buttons
+  secondaryBtn: {
+    padding: "8px 16px",
+    borderRadius: 10,
+    border: "1px solid #d1d5db",
+    background: "#fff",
+    color: "#374151",
+    fontWeight: 600,
+    cursor: "pointer",
+    fontSize: 13,
+  },
+  secondaryBtnSmall: {
+    padding: "6px 12px",
+    borderRadius: 8,
+    border: "1px solid #d1d5db",
+    background: "#fff",
+    color: "#374151",
+    fontWeight: 600,
+    cursor: "pointer",
+    fontSize: 12,
+  },
+
+  approveBtn: {
+    padding: "10px 20px",
+    borderRadius: 12,
+    border: "none",
+    background: "#d1fae5",
+    color: "#065f46",
+    fontWeight: 700,
+    cursor: "pointer",
+    fontSize: 14,
+  },
+  rejectBtn: {
+    padding: "10px 20px",
+    borderRadius: 12,
+    border: "none",
+    background: "#fee2e2",
+    color: "#991b1b",
+    fontWeight: 700,
+    cursor: "pointer",
+    fontSize: 14,
+  },
+
+  // Drawer
+  drawerCard: {
+    background: "#fff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 16,
+    padding: 20,
+  },
+  sectionTitle: { fontSize: 14, fontWeight: 700, color: "#111827", marginBottom: 12, textTransform: "uppercase" },
+  reasonBox: {
+    padding: 14,
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    borderRadius: 12,
+    fontWeight: 500,
+    color: "#334155",
+    lineHeight: 1.6,
+    fontSize: 14,
+  },
+  textarea: {
+    width: "100%",
+    padding: 14,
+    borderRadius: 12,
+    border: "1px solid #e2e8f0",
+    outline: "none",
+    fontWeight: 500,
+    resize: "vertical",
+    fontSize: 14,
+    background: "#fff",
+  },
+};

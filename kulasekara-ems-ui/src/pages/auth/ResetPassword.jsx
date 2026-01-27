@@ -15,6 +15,7 @@ export default function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [msg, setMsg] = useState({ type: "", text: "" });
   const [loading, setLoading] = useState(false);
+  const [focusedInput, setFocusedInput] = useState("");
 
   const validateStrongPassword = (p) => {
     if (p.length < 8) return "Password must be at least 8 characters.";
@@ -23,7 +24,7 @@ export default function ResetPassword() {
     if (!/[a-z]/.test(p)) return "Include at least 1 lowercase letter.";
     if (!/[A-Z]/.test(p)) return "Include at least 1 uppercase letter.";
     if (!/[0-9]/.test(p)) return "Include at least 1 number.";
-    if (!/[!@#$%^&*()_\-+=\[\]{};:'\",.<>/?\\|`~]/.test(p)) return "Include at least 1 special character.";
+    if (!/[!@#$%^&*()_\-+=[\]{};:'",.<>/?\\|`~]/.test(p)) return "Include at least 1 special character.";
     return "";
   };
 
@@ -59,67 +60,265 @@ export default function ResetPassword() {
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>Reset Password</h2>
-        <p style={styles.sub}>Enter a new strong password.</p>
+    <>
+      {/* Inline CSS Animations (Same as Login) */}
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) translateX(0px); }
+          50% { transform: translateY(-20px) translateX(10px); }
+        }
+        @keyframes floatReverse {
+          0%, 100% { transform: translateY(0px) translateX(0px); }
+          50% { transform: translateY(20px) translateX(-10px); }
+        }
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+        .floating-circle-1 { animation: float 20s ease-in-out infinite; }
+        .floating-circle-2 { animation: floatReverse 25s ease-in-out infinite; }
+        .floating-circle-3 { animation: float 18s ease-in-out infinite; }
+        .floating-circle-4 { animation: floatReverse 22s ease-in-out infinite; }
+        .spinner { animation: spin 0.8s linear infinite; }
+      `}</style>
 
-        {msg.text ? (
-          <div style={{ ...styles.msg, ...(msg.type === "ok" ? styles.ok : styles.bad) }}>
-            {msg.text}
+      <div style={styles.container}>
+        {/* Animated background elements */}
+        <div style={styles.backgroundPattern}>
+          <div className="floating-circle-1" style={styles.floatingCircle1}></div>
+          <div className="floating-circle-2" style={styles.floatingCircle2}></div>
+          <div className="floating-circle-3" style={styles.floatingCircle3}></div>
+          <div className="floating-circle-4" style={styles.floatingCircle4}></div>
+        </div>
+
+        <div style={styles.loginWrapper}>
+          {/* Logo Section */}
+          <div style={styles.logoSection}>
+            <div style={styles.logoCircle}>
+              <svg style={styles.logoIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                <circle cx="12" cy="12" r="3" strokeWidth={2} />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 1v6m0 6v6M4.22 4.22l4.24 4.24m5.08 5.08l4.24 4.24M1 12h6m6 0h6M4.22 19.78l4.24-4.24m5.08-5.08l4.24-4.24" />
+              </svg>
+            </div>
+            <h1 style={styles.brandName}>Reset Password</h1>
+            <div style={styles.divider}></div>
+            <p style={styles.brandTagline}>Enter a new strong password below</p>
           </div>
-        ) : null}
 
-        <form onSubmit={onSubmit}>
-          <label style={styles.label}>New Password</label>
-          <input
-            type="password"
-            style={styles.input}
-            value={newPassword}
-            onChange={(e) => setNewPassword(e.target.value)}
-            placeholder="Eg: Hello@123"
-          />
+          <form onSubmit={onSubmit}>
+            {msg.text && (
+              <div style={{ ...styles.msg, ...(msg.type === "ok" ? styles.ok : styles.bad) }}>
+                {msg.text}
+              </div>
+            )}
 
-          <label style={styles.label}>Confirm Password</label>
-          <input
-            type="password"
-            style={styles.input}
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Re-enter password"
-          />
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>New Password</label>
+              <input
+                type="password"
+                style={{
+                  ...styles.input,
+                  ...(focusedInput === "new" ? styles.inputFocused : {}),
+                }}
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                onFocus={() => setFocusedInput("new")}
+                onBlur={() => setFocusedInput("")}
+                placeholder="Ej: Hello@123"
+              />
+            </div>
 
-          <div style={styles.rules}>
-            <div>✅ 8–64 characters</div>
-            <div>✅ 1 uppercase + 1 lowercase</div>
-            <div>✅ 1 number + 1 special character</div>
-            <div>✅ No spaces</div>
+            <div style={styles.inputGroup}>
+              <label style={styles.label}>Confirm Password</label>
+              <input
+                type="password"
+                style={{
+                  ...styles.input,
+                  ...(focusedInput === "confirm" ? styles.inputFocused : {}),
+                }}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                onFocus={() => setFocusedInput("confirm")}
+                onBlur={() => setFocusedInput("")}
+                placeholder="Re-enter password"
+              />
+            </div>
+
+            <div style={styles.rules}>
+              <div>✅ 8–64 characters</div>
+              <div>✅ 1 uppercase + 1 lowercase</div>
+              <div>✅ 1 number + 1 special character</div>
+              <div>✅ No spaces</div>
+            </div>
+
+            <button style={styles.button} disabled={loading}>
+              {loading ? (
+                <>
+                  <span className="spinner" style={styles.spinner}></span>
+                  Updating...
+                </>
+              ) : (
+                "Update Password"
+              )}
+            </button>
+          </form>
+
+          <div style={{ marginTop: 24, textAlign: 'center' }}>
+            <Link to="/" style={styles.forgotLink}>Back to Login</Link>
           </div>
-
-          <button style={styles.btn} disabled={loading}>
-            {loading ? "Updating..." : "Update Password"}
-          </button>
-        </form>
-
-        <div style={{ marginTop: 12, fontSize: 14 }}>
-          <Link to="/" style={styles.link}>Back to Login</Link>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
 const styles = {
-  page: { minHeight: "100vh", display: "flex", justifyContent: "center", alignItems: "center", background: "#f6f7fb", padding: 16 },
-  card: { width: "100%", maxWidth: 440, background: "#fff", borderRadius: 14, padding: 18, boxShadow: "0 10px 30px rgba(0,0,0,0.08)" },
-  title: { margin: 0, fontSize: 22 },
-  sub: { marginTop: 6, marginBottom: 14, color: "#666", fontSize: 14 },
-  label: { display: "block", marginBottom: 6, fontSize: 13, color: "#333" },
-  input: { width: "100%", padding: "10px 12px", borderRadius: 10, border: "1px solid #ddd", outline: "none", marginBottom: 12 },
-  btn: { width: "100%", padding: "10px 12px", borderRadius: 10, border: "none", background: "#0ea5e9", color: "#fff", cursor: "pointer", fontWeight: 600 },
-  link: { color: "#0ea5e9", textDecoration: "none" },
-  msg: { padding: "10px 12px", borderRadius: 10, marginBottom: 12, fontSize: 14 },
-  ok: { background: "#ecfeff", color: "#155e75", border: "1px solid #a5f3fc" },
-  bad: { background: "#fff1f2", color: "#9f1239", border: "1px solid #fecdd3" },
-  rules: { fontSize: 13, color: "#555", background: "#f8fafc", border: "1px solid #e2e8f0", padding: 10, borderRadius: 10, marginBottom: 12 },
+  container: {
+    minHeight: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    background: "linear-gradient(135deg, #e8f5e9 0%, #f1f8f4 50%, #e0f2f1 100%)",
+    padding: "20px",
+    position: "relative",
+    overflow: "hidden",
+  },
+  backgroundPattern: {
+    position: "absolute",
+    width: "100%",
+    height: "100%",
+    top: 0,
+    left: 0,
+    zIndex: 1,
+    pointerEvents: "none",
+  },
+  floatingCircle1: {
+    position: "absolute",
+    width: "400px",
+    height: "400px",
+    borderRadius: "50%",
+    background: "radial-gradient(circle, rgba(76, 175, 80, 0.08) 0%, transparent 70%)",
+    top: "-100px",
+    left: "-100px",
+  },
+  floatingCircle2: {
+    position: "absolute",
+    width: "350px",
+    height: "350px",
+    borderRadius: "50%",
+    background: "radial-gradient(circle, rgba(56, 142, 60, 0.06) 0%, transparent 70%)",
+    bottom: "-80px",
+    right: "-80px",
+  },
+  floatingCircle3: {
+    position: "absolute",
+    width: "250px",
+    height: "250px",
+    borderRadius: "50%",
+    background: "radial-gradient(circle, rgba(67, 160, 71, 0.05) 0%, transparent 70%)",
+    top: "50%",
+    right: "10%",
+  },
+  floatingCircle4: {
+    position: "absolute",
+    width: "300px",
+    height: "300px",
+    borderRadius: "50%",
+    background: "radial-gradient(circle, rgba(46, 125, 50, 0.04) 0%, transparent 70%)",
+    bottom: "20%",
+    left: "15%",
+  },
+  loginWrapper: {
+    position: "relative",
+    width: "100%",
+    maxWidth: "480px",
+    background: "rgba(255, 255, 255, 0.95)",
+    backdropFilter: "blur(20px)",
+    borderRadius: "24px",
+    padding: "50px 45px",
+    boxShadow: "0 20px 60px rgba(46, 125, 50, 0.15), 0 0 0 1px rgba(46, 125, 50, 0.05)",
+    zIndex: 2,
+    border: "2px solid rgba(255, 255, 255, 0.8)",
+  },
+  logoSection: { textAlign: "center", marginBottom: "35px" },
+  logoCircle: {
+    width: "80px",
+    height: "80px",
+    borderRadius: "50%",
+    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    margin: "0 auto 20px",
+    boxShadow: "0 10px 30px rgba(74, 124, 78, 0.25)",
+  },
+  logoIcon: { width: "40px", height: "40px", color: "#ffffff" },
+  brandName: { fontSize: "24px", fontWeight: "700", color: "#2c5530", marginBottom: "12px" },
+  divider: {
+    width: "60px",
+    height: "3px",
+    background: "linear-gradient(90deg, transparent 0%, #4a7c4e 50%, transparent 100%)",
+    margin: "15px auto",
+    borderRadius: "2px",
+  },
+  brandTagline: { fontSize: "14px", color: "#6b7280", fontWeight: "500" },
+
+  inputGroup: { marginBottom: "20px" },
+  label: { display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: "600", color: "#374151", textTransform: "uppercase" },
+  input: {
+    width: "100%",
+    padding: "14px 18px",
+    fontSize: "15px",
+    borderRadius: "12px",
+    border: "2px solid #e5e7eb",
+    outline: "none",
+    transition: "all 0.3s ease",
+    backgroundColor: "#f9fafb",
+  },
+  inputFocused: {
+    borderColor: "#4a7c4e",
+    backgroundColor: "#ffffff",
+    boxShadow: "0 0 0 3px rgba(74, 124, 78, 0.1)",
+  },
+  button: {
+    width: "100%",
+    padding: "15px 24px",
+    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)",
+    border: "none",
+    fontWeight: "700",
+    cursor: "pointer",
+    borderRadius: "12px",
+    color: "#ffffff",
+    fontSize: "16px",
+    transition: "all 0.3s ease",
+    boxShadow: "0 4px 15px rgba(74, 124, 78, 0.3)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "10px",
+  },
+  forgotLink: { color: "#4a7c4e", textDecoration: "none", fontWeight: "600" },
+
+  msg: { padding: "12px", borderRadius: "10px", marginBottom: "20px", fontSize: "14px", fontWeight: "500" },
+  ok: { background: "rgba(74, 124, 78, 0.1)", color: "#166534", border: "1px solid rgba(74, 124, 78, 0.2)" },
+  bad: { background: "#fee2e2", color: "#991b1b", border: "1px solid #fecaca" },
+
+  rules: {
+    fontSize: "13px",
+    color: "#555",
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    padding: "12px",
+    borderRadius: "12px",
+    marginBottom: "20px",
+    lineHeight: "1.6"
+  },
+  spinner: {
+    width: "16px",
+    height: "16px",
+    border: "2px solid rgba(255, 255, 255, 0.3)",
+    borderTop: "2px solid #ffffff",
+    borderRadius: "50%",
+    display: "inline-block",
+  },
 };

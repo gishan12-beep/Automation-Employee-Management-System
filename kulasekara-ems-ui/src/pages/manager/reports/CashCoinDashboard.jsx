@@ -38,132 +38,154 @@ export default function CashCoinDashboard() {
 
   return (
     <AppLayout>
-      <div style={styles.container}>
-        <div style={styles.topRow}>
-          <div>
-            <h2 style={styles.heading}>Cash / Coin Reports</h2>
-            <p style={styles.subText}>
-              Track cash withdrawals, cash salary payouts, pending cash, and monthly differences.
-            </p>
-          </div>
+      <div style={styles.page}>
+        {/* Inline CSS Animations */}
+        <style>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-20px) translateX(10px); }
+          }
+          @keyframes floatReverse {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(20px) translateX(-10px); }
+          }
+          .floating-circle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
+          .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(76, 175, 80, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
+          .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(56, 142, 60, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
+          .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(67, 160, 71, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
+        `}</style>
 
-          <div style={styles.filterRow}>
-            <label style={styles.label}>Month</label>
-            <input
-              type="month"
-              value={month}
-              onChange={(e) => setMonth(e.target.value)}
-              style={styles.monthInput}
-            />
-          </div>
-        </div>
+        {/* Animated background elements */}
+        <div className="floating-circle fc-1"></div>
+        <div className="floating-circle fc-2"></div>
+        <div className="floating-circle fc-3"></div>
 
-        {/* KPI Cards */}
-        <div style={styles.kpiGrid}>
-          <KpiCard title="Cash Withdrawn (Month)" value={formatLKR(kpis.cashWithdrawn)} hint="From bank withdrawals" />
-          <KpiCard title="Cash Salaries Paid (Month)" value={formatLKR(kpis.cashPaid)} hint="Paid by cash method" />
-          <KpiCard title="Cash Pending to Pay" value={formatLKR(kpis.cashPending)} hint="Cash method unpaid items" />
-          <KpiCard
-            title="Cash Difference"
-            value={formatLKR(kpis.diff)}
-            hint={risk ? "⚠️ Investigate difference" : "Balanced"}
-            danger={risk}
-          />
-          <KpiCard title="Employees Paid in Cash" value={kpis.employeesPaidCash} hint="Unique employees" />
-          <KpiCard title="Avg Cash per Employee" value={formatLKR(kpis.avgCash)} hint="Paid cash / employees" />
-        </div>
+        <div style={styles.container}>
+          <div style={styles.topRow}>
+            <div>
+              <h2 style={styles.heading}>Cash / Coin Reports</h2>
+              <p style={styles.subText}>
+                Track cash withdrawals, cash salary payouts, pending cash, and monthly differences.
+              </p>
+            </div>
 
-        {/* Quick actions */}
-        <div style={styles.actionsRow}>
-          <button style={styles.primaryBtn} onClick={() => navigate("/manager/reports/cash/payouts")}>
-            View Cash Salary Payout List
-          </button>
-          <button style={styles.secondaryBtn} onClick={() => navigate("/manager/reports/cash/summary")}>
-            View Withdraw vs Paid Summary
-          </button>
-          <button
-            style={styles.secondaryBtn}
-            onClick={() => alert("Export will be added after backend integration")}
-          >
-            Export Monthly Cash Report
-          </button>
-        </div>
-
-        {/* Mini Preview tables */}
-        <div style={styles.twoCol}>
-          <div style={styles.panel}>
-            <div style={styles.panelTitle}>Latest Withdrawals</div>
-            <div style={styles.tableWrap}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>Date</th>
-                    <th style={styles.th}>Bank Ref</th>
-                    <th style={styles.thRight}>Amount</th>
-                    <th style={styles.th}>Withdrawn By</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.withdrawals.slice(0, 5).map((w) => (
-                    <tr key={w.id}>
-                      <td style={styles.td}>{w.date}</td>
-                      <td style={styles.td}>{w.bankRef}</td>
-                      <td style={styles.tdRight}>{formatLKR(w.amount)}</td>
-                      <td style={styles.td}>{w.withdrawnBy}</td>
-                    </tr>
-                  ))}
-                  {data.withdrawals.length === 0 && (
-                    <tr>
-                      <td style={styles.td} colSpan={4}>
-                        No withdrawals for this month.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+            <div style={styles.filterRow}>
+              <label style={styles.label}>Month</label>
+              <input
+                type="month"
+                value={month}
+                onChange={(e) => setMonth(e.target.value)}
+                style={styles.monthInput}
+              />
             </div>
           </div>
 
-          <div style={styles.panel}>
-            <div style={styles.panelTitle}>Cash Payouts (Pending)</div>
-            <div style={styles.tableWrap}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}>Employee</th>
-                    <th style={styles.th}>Type</th>
-                    <th style={styles.thRight}>Net Pay</th>
-                    <th style={styles.th}>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {data.payouts
-                    .filter((p) => p.method === "CASH")
-                    .filter((p) => p.status !== "PAID")
-                    .slice(0, 5)
-                    .map((p) => (
-                      <tr key={p.id}>
-                        <td style={styles.td}>{p.employeeName}</td>
-                        <td style={styles.td}>{p.salaryType}</td>
-                        <td style={styles.tdRight}>{formatLKR(p.netPay)}</td>
-                        <td style={styles.td}>
-                          <span style={{ ...styles.badge, ...styles.badgePending }}>Pending</span>
-                        </td>
+          {/* KPI Cards */}
+          <div style={styles.kpiGrid}>
+            <KpiCard title="Cash Withdrawn" value={formatLKR(kpis.cashWithdrawn)} hint="For this month" />
+            <KpiCard title="Cash Paid" value={formatLKR(kpis.cashPaid)} hint="Salaries paid in cash" />
+            <KpiCard title="Cash Pending" value={formatLKR(kpis.cashPending)} hint="Unpaid cash salaries" />
+            <KpiCard
+              title="Difference"
+              value={formatLKR(kpis.diff)}
+              hint={risk ? "⚠️ Mismatch found" : "Books balanced"}
+              danger={risk}
+            />
+            <KpiCard title="Employees Paid" value={kpis.employeesPaidCash} hint="Unique count" />
+            <KpiCard title="Avg Cash Pay" value={formatLKR(kpis.avgCash)} hint="Per employee" />
+          </div>
+
+          {/* Quick actions */}
+          <div style={styles.actionsRow}>
+            <button style={styles.primaryBtn} onClick={() => navigate("/manager/reports/cash/payouts")}>
+              View Payout List
+            </button>
+            <button style={styles.secondaryBtn} onClick={() => navigate("/manager/reports/cash/summary")}>
+              Withdraw vs Paid Summary
+            </button>
+            <button
+              style={styles.secondaryBtn}
+              onClick={() => alert("Export will be added after backend integration")}
+            >
+              Export Report
+            </button>
+          </div>
+
+          {/* Mini Preview tables */}
+          <div style={styles.twoCol}>
+            <div style={styles.panel}>
+              <div style={styles.panelTitle}>Latest Withdrawals</div>
+              <div style={styles.tableWrap}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}>Date</th>
+                      <th style={styles.th}>Ref</th>
+                      <th style={styles.thRight}>Amount</th>
+                      <th style={styles.th}>By</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.withdrawals.slice(0, 5).map((w) => (
+                      <tr key={w.id}>
+                        <td style={styles.td}>{w.date}</td>
+                        <td style={styles.td}>{w.bankRef}</td>
+                        <td style={styles.tdRight}>{formatLKR(w.amount)}</td>
+                        <td style={styles.td}>{w.withdrawnBy}</td>
                       </tr>
                     ))}
-                  {data.payouts.filter((p) => p.method === "CASH" && p.status !== "PAID").length === 0 && (
+                    {data.withdrawals.length === 0 && (
+                      <tr>
+                        <td style={styles.td} colSpan={4}>
+                          No withdrawals for this month.
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <div style={styles.panel}>
+              <div style={styles.panelTitle}>Pending Cash Payouts</div>
+              <div style={styles.tableWrap}>
+                <table style={styles.table}>
+                  <thead>
                     <tr>
-                      <td style={styles.td} colSpan={4}>
-                        No pending cash payouts 🎉
-                      </td>
+                      <th style={styles.th}>Employee</th>
+                      <th style={styles.th}>Type</th>
+                      <th style={styles.thRight}>Net Pay</th>
+                      <th style={styles.th}>Status</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {data.payouts
+                      .filter((p) => p.method === "CASH")
+                      .filter((p) => p.status !== "PAID")
+                      .slice(0, 5)
+                      .map((p) => (
+                        <tr key={p.id}>
+                          <td style={styles.td}>{p.employeeName}</td>
+                          <td style={styles.td}>{p.salaryType}</td>
+                          <td style={styles.tdRight}>{formatLKR(p.netPay)}</td>
+                          <td style={styles.td}>
+                            <span style={{ ...styles.badge, ...styles.badgePending }}>Pending</span>
+                          </td>
+                        </tr>
+                      ))}
+                    {data.payouts.filter((p) => p.method === "CASH" && p.status !== "PAID").length === 0 && (
+                      <tr>
+                        <td style={styles.td} colSpan={4}>
+                          No pending cash payouts 🎉
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
           </div>
         </div>
-
       </div>
     </AppLayout>
   );
@@ -186,7 +208,6 @@ function KpiCard({ title, value, hint, danger, onClick }) {
     </button>
   );
 }
-
 
 function getMonthKey(d) {
   const yyyy = d.getFullYear();
@@ -256,79 +277,110 @@ function makeDummyCashData(monthKey) {
 }
 
 const styles = {
-  container: { padding: 18 },
-  topRow: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap" },
-  heading: { margin: 0, fontSize: 22, fontWeight: 900 },
-  subText: { marginTop: 6, marginBottom: 0, opacity: 0.75 },
+  page: { position: "relative", minHeight: "100%", overflow: "hidden" },
+  container: { padding: 24, position: "relative", zIndex: 1 },
+  topRow: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 24 },
+  heading: { margin: 0, fontSize: 26, fontWeight: 800, color: "#2c5530" },
+  subText: { marginTop: 6, marginBottom: 0, opacity: 0.8, color: "#4b5563" },
+  backBtn: {
+    background: "none",
+    border: "none",
+    padding: 0,
+    cursor: "pointer",
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#6b7280",
+    display: "flex",
+    alignItems: "center",
+  },
+  backBtn: {
+    background: "none",
+    border: "none",
+    padding: 0,
+    cursor: "pointer",
+    fontSize: 14,
+    fontWeight: 700,
+    color: "#6b7280",
+    display: "flex",
+    alignItems: "center",
+  },
 
   filterRow: {
     display: "flex",
     alignItems: "center",
     gap: 10,
-    background: "#fff",
-    border: "1px solid rgba(0,0,0,0.08)",
+    background: "rgba(255, 255, 255, 0.8)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255, 255, 255, 0.5)",
     borderRadius: 14,
-    padding: "10px 12px",
-    boxShadow: "0 10px 25px rgba(0,0,0,0.04)",
+    padding: "10px 16px",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
   },
-  label: { fontWeight: 800, opacity: 0.8 },
-  monthInput: { border: "1px solid rgba(0,0,0,0.12)", borderRadius: 10, padding: "8px 10px" },
+  label: { fontWeight: 700, color: "#374151", fontSize: 13, textTransform: "uppercase" },
+  monthInput: { border: "1px solid #e5e7eb", borderRadius: 10, padding: "8px 12px", outline: "none", fontSize: 14, background: "#f9fafb" },
 
   kpiGrid: {
-    marginTop: 14,
+    marginTop: 20,
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: 12,
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
+    gap: 16,
   },
   kpiCard: {
-    background: "#fff",
-    border: "1px solid rgba(0,0,0,0.08)",
-    borderRadius: 16,
-    padding: 14,
-    boxShadow: "0 10px 25px rgba(0,0,0,0.04)",
+    background: "rgba(255, 255, 255, 0.9)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255, 255, 255, 0.5)",
+    borderRadius: 18,
+    padding: 20,
+    boxShadow: "0 8px 25px rgba(0,0,0,0.03)",
+    transition: "transform 0.2s",
   },
   kpiDanger: {
-    border: "1px solid rgba(220, 38, 38, 0.35)",
+    border: "1px solid rgba(220, 38, 38, 0.3)",
+    background: "rgba(254, 226, 226, 0.5)",
   },
-  kpiTitle: { fontWeight: 900, opacity: 0.8, marginBottom: 8 },
-  kpiValue: { fontSize: 22, fontWeight: 900, marginBottom: 6 },
-  kpiHint: { opacity: 0.7, fontWeight: 700 },
+  kpiTitle: { fontWeight: 700, color: "#6b7280", fontSize: 13, textTransform: "uppercase", marginBottom: 8 },
+  kpiValue: { fontSize: "18px", fontWeight: 700, color: "#111827", marginBottom: 4 },
+  kpiHint: { fontSize: 12, color: "#6b7280", fontWeight: 600 },
 
-  actionsRow: { marginTop: 14, display: "flex", gap: 10, flexWrap: "wrap" },
+  actionsRow: { marginTop: 24, display: "flex", gap: 12, flexWrap: "wrap" },
   primaryBtn: {
-    background: "#111827",
+    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)",
     color: "#fff",
     border: "none",
-    padding: "10px 12px",
+    padding: "12px 24px",
     borderRadius: 12,
     cursor: "pointer",
-    fontWeight: 900,
+    fontWeight: 700,
+    boxShadow: "0 4px 12px rgba(74, 124, 78, 0.25)",
+    fontSize: 14,
   },
   secondaryBtn: {
-    background: "#fff",
-    border: "1px solid rgba(0,0,0,0.12)",
-    padding: "10px 12px",
+    background: "white",
+    border: "1px solid #d1d5db",
+    padding: "12px 20px",
     borderRadius: 12,
     cursor: "pointer",
-    fontWeight: 900,
+    fontWeight: 600,
+    color: "#374151",
+    fontSize: 14,
   },
 
-  twoCol: { marginTop: 14, display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 },
+  twoCol: { marginTop: 24, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: 20 },
   panel: {
-    background: "#fff",
-    border: "1px solid rgba(0,0,0,0.08)",
-    borderRadius: 16,
-    padding: 14,
-    boxShadow: "0 10px 25px rgba(0,0,0,0.04)",
-    minWidth: 0,
+    background: "rgba(255, 255, 255, 0.95)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255, 255, 255, 0.5)",
+    borderRadius: 18,
+    padding: 20,
+    boxShadow: "0 10px 30px rgba(0,0,0,0.03)",
   },
-  panelTitle: { fontWeight: 900, marginBottom: 10 },
+  panelTitle: { fontWeight: 800, marginBottom: 16, fontSize: 16, color: "#1f2937" },
   tableWrap: { overflowX: "auto" },
-  table: { width: "100%", borderCollapse: "collapse" },
-  th: { textAlign: "left", padding: "10px 8px", fontSize: 12, opacity: 0.75, borderBottom: "1px solid rgba(0,0,0,0.08)" },
-  thRight: { textAlign: "right", padding: "10px 8px", fontSize: 12, opacity: 0.75, borderBottom: "1px solid rgba(0,0,0,0.08)" },
-  td: { padding: "10px 8px", borderBottom: "1px solid rgba(0,0,0,0.06)" },
-  tdRight: { padding: "10px 8px", textAlign: "right", borderBottom: "1px solid rgba(0,0,0,0.06)" },
-  badge: { padding: "6px 10px", borderRadius: 999, fontSize: 12, fontWeight: 900 },
-  badgePending: { background: "rgba(245, 158, 11, 0.15)" },
+  table: { width: "100%", borderCollapse: "separate", borderSpacing: "0 4px" },
+  th: { textAlign: "left", padding: "12px 16px", fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" },
+  thRight: { textAlign: "right", padding: "12px 16px", fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" },
+  td: { padding: "12px 16px", background: "#f9fafb", fontSize: 14, color: "#374151", firstOfType: { borderRadius: "8px 0 0 8px" }, lastOfType: { borderRadius: "0 8px 8px 0" } },
+  tdRight: { padding: "12px 16px", textAlign: "right", background: "#f9fafb", fontSize: 14, fontWeight: 700, color: "#111827", lastOfType: { borderRadius: "0 8px 8px 0" } },
+  badge: { padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700 },
+  badgePending: { background: "#FEF3C7", color: "#D97706" },
 };
