@@ -30,7 +30,6 @@ import CheckInOut from "../pages/employee/attendance/CheckInOut";
 import ApplyLeave from "../pages/employee/leave/ApplyLeave";
 import SalaryHistory from "../pages/employee/payroll/SalaryHistory";
 import SalarySlipView from "../pages/employee/payroll/SalarySlipView";
-import RaiseIssue from "../pages/employee/issues/RaiseIssue";
 import IssueStatus from "../pages/employee/issues/IssueStatus";
 import FinalSettlement from "../pages/employee/settlement/FinalSettlement";
 import ChangePassword from "../pages/employee/auth/ChangePassword";
@@ -79,7 +78,6 @@ function AppRoutes() {
       <Route path="/employee/leave" element={<PrivateRoute allowedRoles={["EMPLOYEE"]}><ApplyLeave /></PrivateRoute>} />
       <Route path="/employee/payroll/salary-history" element={<PrivateRoute allowedRoles={["EMPLOYEE"]}><SalaryHistory /></PrivateRoute>} />
       <Route path="/employee/payroll/salary-slip/:slipId" element={<PrivateRoute allowedRoles={["EMPLOYEE"]}><SalarySlipView /></PrivateRoute>} />
-      <Route path="/employee/issues/raise" element={<PrivateRoute allowedRoles={["EMPLOYEE"]}><RaiseIssue /></PrivateRoute>} />
       <Route path="/employee/issues/status" element={<PrivateRoute allowedRoles={["EMPLOYEE"]}><IssueStatus /></PrivateRoute>} />
       <Route path="/employee/settlement" element={<PrivateRoute allowedRoles={["EMPLOYEE"]}><FinalSettlement /></PrivateRoute>} />
 

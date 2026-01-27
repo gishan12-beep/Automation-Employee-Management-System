@@ -217,13 +217,25 @@ function EmployeeManagement() {
     );
 
     // ---- basic validation (employee) ----
+    // ---- basic validation (employee) ----
     if (!String(formData.employee_id || "").trim()) return alert("Please fill Employee ID.");
     if (!String(formData.department_id || "").trim()) return alert("Please select Department.");
     if (!formData.first_name?.trim()) return alert("Please fill First Name.");
     if (!formData.last_name?.trim()) return alert("Please fill Last Name (use '-' if not available).");
+
+    // Validations
+    const nicRegex = /^([0-9]{9}[x|X|v|V]|[0-9]{12})$/;
+    const phoneRegex = /^0[0-9]{9}$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!formData.nic?.trim()) return alert("Please fill NIC.");
+    if (!nicRegex.test(formData.nic.trim())) return alert("Invalid NIC format (Format: 9 digits + V/X or 12 digits).");
+
     if (!formData.email?.trim()) return alert("Please fill Email.");
+    if (!emailRegex.test(formData.email.trim())) return alert("Invalid Email address.");
+
     if (!formData.phone?.trim()) return alert("Please fill Phone.");
+    if (!phoneRegex.test(formData.phone.trim())) return alert("Invalid Phone number (Must be 10 digits starting with 0).");
 
     // ---- validation (salary configuration) ----
     if (!String(formData.salary_type || "").trim()) return alert("Please select Salary Type.");

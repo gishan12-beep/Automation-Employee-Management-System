@@ -1,5 +1,5 @@
 // src/pages/manager/settlement/SettlementCalculator.jsx
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
 
 const mockEmployees = [
@@ -14,20 +14,18 @@ export default function SettlementCalculator() {
   const [selected, setSelected] = useState(null); // employeeID
   const [form, setForm] = useState({
     employeeID: "",
-    lastWorkingDate: "",
-    reason: "Resigned",
-    notes: "",
-    unpaidSalary: 0,
-    unpaidOT: 0,
-    incentives: 0,
-    allowances: 0,
-    unusedLeavePay: 0,
-    epfEtfAdjustment: 0,
-    advances: 0,
-    otherDeductions: 0,
+    resignationDate: "", // Schema: resignation_date
+    lastWorkingDate: "", // Schema: last_working_date
+
+    basicPayable: 0,      // Schema: basic_payable
+    leaveEncashment: 0,   // Schema: leave_encashment
+    gratuityAmount: 0,    // Schema: gratuity_amount
+    otherDues: 0,         // Schema: other_dues
+
+    totalDeductions: 0,   // Schema: total_deductions
   });
 
-  const [result, setResult] = useState({ gross: 0, deductions: 0, finalAmount: 0 });
+  const [result, setResult] = useState({ gross: 0, deductions: 0, finalAmount: 0 }); // finalAmount -> net_settlement_amount
 
   const filteredEmployees = useMemo(() => {
     const s = search.toLowerCase();
@@ -50,15 +48,13 @@ export default function SettlementCalculator() {
     setForm((prev) => ({
       ...prev,
       employeeID: e.employeeID,
+      resignationDate: "",
       lastWorkingDate: new Date().toISOString().split("T")[0],
-      unpaidSalary: 0,
-      unpaidOT: 0,
-      incentives: 0,
-      allowances: 0,
-      unusedLeavePay: 0,
-      epfEtfAdjustment: 0,
-      advances: 0,
-      otherDeductions: 0,
+      basicPayable: 0,
+      leaveEncashment: 0,
+      gratuityAmount: 0,
+      otherDues: 0,
+      totalDeductions: 0,
     }));
     setResult({ gross: 0, deductions: 0, finalAmount: 0 });
   };
@@ -69,34 +65,30 @@ export default function SettlementCalculator() {
   };
 
   const calculate = () => {
-    const gross =
-      form.unpaidSalary +
-      form.unpaidOT +
-      form.incentives +
-      form.allowances +
-      form.unusedLeavePay +
-      form.epfEtfAdjustment;
-    const deductions = form.advances + form.otherDeductions;
-    const final = gross - deductions;
-    setResult({ gross, deductions, finalAmount: final });
+
+    const val = (v) => parseFloat(v) || 0;
+    const earnings = val(form.basicPayable) + val(form.leaveEncashment) + val(form.gratuityAmount) + val(form.otherDues);
+    const ded = val(form.totalDeductions);
+    const final = earnings - ded;
+    setResult({ gross: earnings, deductions: ded, finalAmount: final });
   };
+
+  useEffect(() => {
+    if (selected) calculate();
+  }, [form, selected]);
 
   const resetAll = () => {
     setSelected(null);
     setSearch("");
     setForm({
       employeeID: "",
+      resignationDate: "",
       lastWorkingDate: "",
-      reason: "Resigned",
-      notes: "",
-      unpaidSalary: 0,
-      unpaidOT: 0,
-      incentives: 0,
-      allowances: 0,
-      unusedLeavePay: 0,
-      epfEtfAdjustment: 0,
-      advances: 0,
-      otherDeductions: 0,
+      basicPayable: 0,
+      leaveEncashment: 0,
+      gratuityAmount: 0,
+      otherDues: 0,
+      totalDeductions: 0,
     });
     setResult({ gross: 0, deductions: 0, finalAmount: 0 });
   };
@@ -108,15 +100,15 @@ export default function SettlementCalculator() {
   // --- Styles ---
   const styles = useMemo(() => ({
     page: { position: "relative", minHeight: "100%", overflow: "hidden" },
-    container: { padding: 32, position: "relative", zIndex: 1 },
+    container: { padding: "10px 32px 32px", position: "relative", zIndex: 1 },
     headerRow: {
       display: "flex",
       justifyContent: "space-between",
       alignItems: "flex-start",
       gap: 12,
-      marginBottom: 32,
+      marginBottom: 16,
       maxWidth: 1200,
-      margin: "0 auto 32px auto"
+      margin: "0 auto 16px auto"
     },
     title: { margin: 0, fontSize: 28, fontWeight: 900, color: "#2c5530" },
     sub: { margin: "6px 0 0", color: "#4b5563", fontSize: 15 },
@@ -124,7 +116,7 @@ export default function SettlementCalculator() {
 
     grid: {
       display: "grid",
-      gridTemplateColumns: "0.9fr 1.3fr",
+      gridTemplateColumns: "1fr 1.5fr",
       gap: 24,
       maxWidth: 1200,
       margin: "0 auto"
@@ -186,7 +178,7 @@ export default function SettlementCalculator() {
     thCenter: { textAlign: "center", padding: "10px 12px", color: "#6b7280", fontWeight: 700, textTransform: "uppercase", fontSize: 11 },
 
     tr: { transition: "background 0.2s" },
-    trActive: { background: "#f0fdf4" },
+    trActive: { background: "rgba(240, 253, 244, 0.5)" },
 
     td: { padding: "12px 12px", color: "#111827", background: "rgba(255,255,255,0.4)", borderRadius: 8 },
     tdMono: { padding: "12px 12px", fontSize: 12, fontFamily: "monospace", color: "#374151", background: "rgba(255,255,255,0.4)", borderRadius: 8 },
@@ -221,24 +213,25 @@ export default function SettlementCalculator() {
     pill: { fontSize: 11, padding: "4px 10px", borderRadius: 999, background: "#e0e7ff", color: "#3730a3", fontWeight: 800 },
 
     formGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24, padding: 24 },
-    formCol: { display: "flex", flexDirection: "column", gap: 16 },
+    formCol: { display: "flex", flexDirection: "column", gap: 10 },
 
     label: { fontSize: 12, color: "#6b7280", fontWeight: 700, textTransform: "uppercase", marginBottom: 6 },
-    sectionTitle: { marginTop: 8, fontSize: 14, color: "#374151", fontWeight: 800, borderBottom: "1px solid #e5e7eb", paddingBottom: 6, marginBottom: 12 },
+    sectionTitle: { marginTop: 4, fontSize: 14, color: "#374151", fontWeight: 800, borderBottom: "1px solid #e5e7eb", paddingBottom: 6, marginBottom: 8 },
 
     rowField: {
-      display: "flex",
+      display: "grid",
+      gridTemplateColumns: "1fr 140px",
       alignItems: "center",
-      justifyContent: "space-between",
       gap: 12,
       padding: "10px 14px",
       border: "1px solid #e5e7eb",
       borderRadius: 12,
       background: "#fff",
+      marginBottom: 0,
     },
-    rowLabel: { fontSize: 13, fontWeight: 700, color: "#374151" },
+    rowLabel: { fontSize: 13, fontWeight: 700, color: "#374151", lineHeight: 1.3 },
     rowInput: {
-      width: 140,
+      width: "100%",
       padding: "8px 10px",
       borderRadius: 8,
       border: "1px solid #d1d5db",
@@ -251,7 +244,7 @@ export default function SettlementCalculator() {
     calcRow: { display: "flex", justifyContent: "flex-end", marginTop: 8 },
 
     resultGrid: {
-      marginTop: 20,
+      marginTop: 12,
       display: "grid",
       gridTemplateColumns: "1fr 1fr",
       gap: 12,
@@ -427,115 +420,76 @@ export default function SettlementCalculator() {
 
               <div style={styles.formGrid}>
                 <div style={styles.formCol}>
-                  <div>
-                    <div style={styles.label}>Employee ID</div>
-                    <input style={styles.input} value={form.employeeID} readOnly />
-                  </div>
+                  <RowField
+                    label="Employee ID"
+                    value={form.employeeID}
+                    readOnly
+                    type="text"
+                    styles={styles}
+                  />
 
-                  <div>
-                    <div style={styles.label}>Last Working Date</div>
-                    <input
-                      style={styles.input}
-                      type="date"
-                      value={form.lastWorkingDate}
-                      onChange={(e) => setForm((p) => ({ ...p, lastWorkingDate: e.target.value }))}
-                      disabled={!selected}
-                    />
-                  </div>
+                  <RowField
+                    label="Resignation Date"
+                    value={form.resignationDate}
+                    onChange={(v) => setForm((p) => ({ ...p, resignationDate: v }))}
+                    disabled={!selected}
+                    type="date"
+                    styles={styles}
+                  />
 
-                  <div>
-                    <div style={styles.label}>Reason</div>
-                    <select
-                      style={styles.input}
-                      value={form.reason}
-                      onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))}
-                      disabled={!selected}
-                    >
-                      <option>Resigned</option>
-                      <option>Terminated</option>
-                      <option>Contract End</option>
-                      <option>Retired</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <div style={styles.label}>Notes</div>
-                    <textarea
-                      style={{ ...styles.input, minHeight: 88, resize: "vertical" }}
-                      value={form.notes}
-                      onChange={(e) => setForm((p) => ({ ...p, notes: e.target.value }))}
-                      placeholder="Optional notes..."
-                      disabled={!selected}
-                    />
-                  </div>
+                  <RowField
+                    label="Last Working Date"
+                    value={form.lastWorkingDate}
+                    onChange={(v) => setForm((p) => ({ ...p, lastWorkingDate: v }))}
+                    disabled={!selected}
+                    type="date"
+                    styles={styles}
+                  />
                 </div>
 
                 <div style={styles.formCol}>
-                  <div style={styles.sectionTitle}>Earnings</div>
+                  <div style={styles.sectionTitle}>Earnings & Payments</div>
 
                   <RowField
-                    label="Unpaid Salary"
-                    value={form.unpaidSalary}
-                    onChange={(v) => setNum("unpaidSalary", v)}
+                    label="Basic Payable (Partial Month Salary)"
+                    value={form.basicPayable}
+                    onChange={(v) => setNum("basicPayable", v)}
                     disabled={!selected}
                     styles={styles}
                   />
                   <RowField
-                    label="Unpaid OT"
-                    value={form.unpaidOT}
-                    onChange={(v) => setNum("unpaidOT", v)}
+                    label="Leave Encashment (Unused Leaves)"
+                    value={form.leaveEncashment}
+                    onChange={(v) => setNum("leaveEncashment", v)}
                     disabled={!selected}
                     styles={styles}
                   />
                   <RowField
-                    label="Incentives"
-                    value={form.incentives}
-                    onChange={(v) => setNum("incentives", v)}
+                    label="Gratuity Amount (Service Bonus)"
+                    value={form.gratuityAmount}
+                    onChange={(v) => setNum("gratuityAmount", v)}
                     disabled={!selected}
                     styles={styles}
                   />
                   <RowField
-                    label="Allowances"
-                    value={form.allowances}
-                    onChange={(v) => setNum("allowances", v)}
-                    disabled={!selected}
-                    styles={styles}
-                  />
-                  <RowField
-                    label="Unused Leave Pay"
-                    value={form.unusedLeavePay}
-                    onChange={(v) => setNum("unusedLeavePay", v)}
-                    disabled={!selected}
-                    styles={styles}
-                  />
-                  <RowField
-                    label="EPF/ETF Adjustment"
-                    value={form.epfEtfAdjustment}
-                    onChange={(v) => setNum("epfEtfAdjustment", v)}
+                    label="Other Dues (Pending Payments)"
+                    value={form.otherDues}
+                    onChange={(v) => setNum("otherDues", v)}
                     disabled={!selected}
                     styles={styles}
                   />
 
                   <div style={styles.sectionTitle}>Deductions</div>
                   <RowField
-                    label="Advances"
-                    value={form.advances}
-                    onChange={(v) => setNum("advances", v)}
-                    disabled={!selected}
-                    styles={styles}
-                  />
-                  <RowField
-                    label="Other Deductions"
-                    value={form.otherDeductions}
-                    onChange={(v) => setNum("otherDeductions", v)}
+                    label="Total Deductions (Loans/Fines)"
+                    value={form.totalDeductions}
+                    onChange={(v) => setNum("totalDeductions", v)}
                     disabled={!selected}
                     styles={styles}
                   />
 
                   <div style={styles.calcRow}>
-                    <button style={styles.primaryBtn} onClick={calculate} disabled={!selected}>
-                      Calculate
-                    </button>
+                    {/* Auto-calculated */}
                   </div>
 
                   {/* Result cards */}
@@ -559,17 +513,20 @@ export default function SettlementCalculator() {
   );
 }
 
-function RowField({ label, value, onChange, disabled, styles }) {
+function RowField({ label, value, onChange, disabled, type = "number", readOnly, styles }) {
   return (
     <div style={styles.rowField}>
       <div style={styles.rowLabel}>{label}</div>
       <input
         style={styles.rowInput}
-        type="number"
+        type={type}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={(e) => onChange && onChange(e.target.value)}
+        onFocus={(e) => e.target.select()}
         disabled={disabled}
+        readOnly={readOnly}
         min="0"
+        placeholder={type === "number" ? "0.00" : ""}
       />
     </div>
   );

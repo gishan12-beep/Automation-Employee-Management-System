@@ -8,18 +8,22 @@ const dummySettlements = [
     employeeID: "EMP001",
     employeeName: "Kamal Perera",
     department: "Production",
+    resignationDate: "2025-12-10",
     lastWorkingDate: "2026-01-10",
-    finalAmount: 210000,
-    status: "Completed",
+    netSettlementAmount: 210000,
+    status: "PAID",
+    settledDate: "2026-01-12",
   },
   {
     settlementID: "SET-EMP003-2026-01-12",
     employeeID: "EMP003",
     employeeName: "Saman Jayasuriya",
     department: "Stores",
-    lastWorkingDate: "2026-01-12",
-    finalAmount: 132500,
-    status: "Pending",
+    resignationDate: "2026-01-02",
+    lastWorkingDate: "2026-02-02",
+    netSettlementAmount: 132500,
+    status: "PENDING",
+    settledDate: null,
   },
 ];
 
@@ -56,7 +60,7 @@ export default function SettlementSummary() {
 
     grid: {
       display: "grid",
-      gridTemplateColumns: "1fr 1.2fr",
+      gridTemplateColumns: "1fr 1.5fr",
       gap: 24,
       maxWidth: 1200,
       margin: "0 auto"
@@ -234,12 +238,12 @@ export default function SettlementSummary() {
                             {x.employeeID} • {x.department} • {x.lastWorkingDate}
                           </div>
                         </div>
-                        <span style={x.status === "Completed" ? styles.pillOk : styles.pillWarn}>
+                        <span style={x.status === "PAID" ? styles.pillOk : styles.pillWarn}>
                           {x.status}
                         </span>
                       </div>
                       <div style={styles.amount}>
-                        LKR {Number(x.finalAmount).toLocaleString("en-LK")}
+                        LKR {Number(x.netSettlementAmount).toLocaleString("en-LK")}
                       </div>
                       <div style={styles.smallId}>{x.settlementID}</div>
                     </button>
@@ -269,19 +273,21 @@ export default function SettlementSummary() {
                       </div>
                     </div>
                     <div style={styles.detailsAmount}>
-                      LKR {Number(active.finalAmount).toLocaleString("en-LK")}
+                      LKR {Number(active.netSettlementAmount).toLocaleString("en-LK")}
                     </div>
                   </div>
 
                   <div style={styles.kvGrid}>
                     <KV k="Settlement ID" v={active.settlementID} mono styles={styles} />
+                    <KV k="Resignation Date" v={active.resignationDate} styles={styles} />
                     <KV k="Last Working Date" v={active.lastWorkingDate} styles={styles} />
                     <KV k="Status" v={active.status} styles={styles} />
+                    <KV k="Settled Date" v={active.settledDate || "-"} styles={styles} />
                   </div>
 
                   <div style={styles.actions}>
                     <button style={styles.secondaryBtn} onClick={() => alert("UI only: Print mock")}>
-                      Print
+                      Print Report
                     </button>
                     <button style={styles.primaryBtn} onClick={() => alert("UI only: Export mock")}>
                       Export PDF

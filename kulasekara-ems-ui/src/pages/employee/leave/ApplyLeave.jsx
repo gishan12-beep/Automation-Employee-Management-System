@@ -5,27 +5,26 @@ import AppLayout from "../../../components/layout/AppLayout";
 const Badge = ({ status }) => {
   const s = (status || "PENDING").toUpperCase();
   const cfg = {
-    PENDING: { bg: "#FEF3C7", fg: "#92400E", border: "#FCD34D" },
-    APPROVED: { bg: "#D1FAE5", fg: "#065F46", border: "#6EE7B7" },
-    REJECTED: { bg: "#FEE2E2", fg: "#991B1B", border: "#FCA5A5" },
-  }[s] || { bg: "#E5E7EB", fg: "#374151", border: "#D1D5DB" };
+    PENDING: { bg: "#fef9c3", fg: "#854d0e", border: "#fef08a", text: "PENDING" },
+    APPROVED: { bg: "#dcfce7", fg: "#166534", border: "#bbf7d0", text: "APPROVED" },
+    REJECTED: { bg: "#fef2f2", fg: "#991b1b", border: "#fecaca", text: "REJECTED" },
+  }[s] || { bg: "#f3f4f6", fg: "#4b5563", border: "#e5e7eb", text: s };
 
   return (
     <span
+      className="badge"
       style={{
-        display: "inline-flex",
-        alignItems: "center",
-        padding: "6px 10px",
+        padding: "4px 10px",
         borderRadius: 999,
-        fontSize: 12,
+        fontSize: 11,
         fontWeight: 800,
         color: cfg.fg,
         background: cfg.bg,
         border: `1px solid ${cfg.border}`,
-        whiteSpace: "nowrap",
+        textTransform: "uppercase",
       }}
     >
-      {s}
+      {cfg.text}
     </span>
   );
 };
@@ -45,30 +44,16 @@ const fmtDate = (d) => {
 };
 
 const KpiCard = ({ title, value, hint }) => (
-  <div
-    style={{
-      background: "#fff",
-      border: "1px solid #E6EAF2",
-      borderRadius: 14,
-      padding: 14,
-      boxShadow: "0 8px 18px rgba(15, 23, 42, 0.06)",
-      minHeight: 86,
-    }}
-  >
-    <div style={{ fontSize: 12, color: "#64748B", fontWeight: 700 }}>{title}</div>
-    <div style={{ fontSize: 24, fontWeight: 900, color: "#0F172A", marginTop: 6 }}>
-      {value}
-    </div>
-    {hint ? <div style={{ fontSize: 12, color: "#94A3B8", marginTop: 6 }}>{hint}</div> : null}
+  <div className="card kpi-card">
+    <div className="kpi-label">{title}</div>
+    <div className="kpi-value">{value}</div>
+    {hint && <div className="kpi-hint">{hint}</div>}
   </div>
 );
 
 export default function ApplyLeave() {
-  // ✅ employee_id from login/local storage (fallback for UI demo)
   const employee_id = localStorage.getItem("employee_id") || "EMP001";
 
-  // ✅ DB schema fields:
-  // leave_id (auto), employee_id, leave_type, start_date, end_date, reason, status
   const [myRequests, setMyRequests] = useState([
     {
       leave_id: 2001,
@@ -127,15 +112,11 @@ export default function ApplyLeave() {
   const onSubmit = (ev) => {
     ev.preventDefault();
     setSuccessMsg("");
-
     if (!validate()) return;
 
-    // UI-only: create next leave_id
-    const nextId =
-      Math.max(0, ...myRequests.map((r) => Number(r.leave_id || 0))) + 1;
-
+    const nextId = Math.max(0, ...myRequests.map((r) => Number(r.leave_id || 0))) + 1;
     const newReq = {
-      leave_id: nextId, // in real DB it auto increments
+      leave_id: nextId,
       employee_id,
       leave_type: form.leave_type,
       start_date: form.start_date,
@@ -147,360 +128,229 @@ export default function ApplyLeave() {
     setMyRequests((prev) => [newReq, ...prev]);
     setForm({ leave_type: "CASUAL", start_date: "", end_date: "", reason: "" });
     setErrors({});
-    setSuccessMsg("Leave request submitted (UI demo).");
+    setSuccessMsg("Leave request submitted successfully.");
+    setTimeout(() => setSuccessMsg(""), 3000);
   };
 
   return (
     <AppLayout>
-      <div style={{ padding: 18, background: "#F6F8FC", minHeight: "100vh" }}>
-        {/* Header */}
-        <div
-          style={{
-            background: "#fff",
-            border: "1px solid #E6EAF2",
-            borderRadius: 16,
-            padding: 16,
-            boxShadow: "0 10px 22px rgba(15, 23, 42, 0.06)",
-          }}
-        >
-          <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <div style={{ flex: 1, minWidth: 220 }}>
-              <div style={{ fontSize: 18, fontWeight: 900, color: "#0F172A" }}>
-                Apply Leave
-              </div>
-              <div style={{ fontSize: 13, color: "#64748B", marginTop: 4 }}>
-                Submit a leave request and track your request status
-              </div>
-            </div>
+      <div className="page-wrapper">
+        <style>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-20px) translateX(10px); }
+          }
+          @keyframes floatReverse {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(20px) translateX(-10px); }
+          }
+          .floating-circle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
+          .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(76, 175, 80, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
+          .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(56, 142, 60, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
+          .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(67, 160, 71, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
 
-            <div
-              style={{
-                padding: "10px 12px",
-                borderRadius: 12,
-                border: "1px solid #E2E8F0",
-                background: "#F8FAFC",
-                fontWeight: 900,
-                color: "#0F172A",
-              }}
-            >
+          .page-wrapper { position: relative; min-height: 100%; overflow: hidden; }
+          .page-container { padding: 30px; position: relative; z-index: 1; max-width: 1300px; margin: 0 auto; }
+          
+          .header-row { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; }
+          .title-group .title { font-size: 28px; font-weight: 900; color: #2c5530; margin: 0 0 8px 0; }
+          .title-group .sub { color: #4b5563; font-size: 15px; margin: 0; font-weight: 500;}
+          
+          .emp-badge { padding: 10px 16px; border-radius: 12px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.5); font-weight: 800; color: #2c5530; font-size: 13px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
+
+          .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 24px; }
+          .card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 20px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
+          .kpi-label { font-size: 11px; font-weight: 800; color: #6b7280; text-transform: uppercase; margin-bottom: 8px; }
+          .kpi-value { font-size: 32px; font-weight: 900; color: #1f2937; margin-bottom: 4px; }
+          .kpi-hint { font-size: 13px; color: #9ca3af; font-weight: 600; }
+
+          .form-card { margin-bottom: 24px; }
+          .form-title { font-size: 16px; font-weight: 900; color: #1f2937; margin-bottom: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+          .label { display: block; margin-bottom: 8px; font-weight: 800; font-size: 11px; color: #6b7280; text-transform: uppercase; }
+          .input, .select, .textarea { width: 100%; padding: 12px 16px; border-radius: 12px; border: 1px solid #e5e7eb; font-size: 14px; font-weight: 700; outline: none; background: #fff; transition: all 0.2s; }
+          .input:focus, .select:focus, .textarea:focus { border-color: #4a7c4e; box-shadow: 0 0 0 3px rgba(74, 124, 78, 0.1); }
+          .input-error { border-color: #ef4444 !important; }
+          .error-text { font-size: 11px; color: #ef4444; font-weight: 700; margin-top: 4px; display: block; text-transform: uppercase;}
+
+          .btn-group { display: flex; gap: 12px; justify-content: flex-end; margin-top: 20px; }
+          .btn { padding: 12px 24px; border-radius: 12px; font-weight: 800; font-size: 14px; cursor: pointer; transition: all 0.2s; border: 1px solid #d1d5db; color: #374151; background: #fff; text-transform: uppercase; }
+          .btn:hover { background: #f9fafb; transform: translateY(-1px); }
+          .btn-primary { background: linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%); color: #fff; border: none; box-shadow: 0 4px 15px rgba(74, 124, 78, 0.15); }
+          .btn-ghost { background: transparent; border: 1px solid #e5e7eb; }
+
+          .table-card { padding: 0; overflow: hidden; }
+          .table-header { padding: 20px 24px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+          .table-title { font-size: 16px; font-weight: 900; color: #1f2937; text-transform: uppercase; }
+          .table-wrap { overflow-x: auto; }
+          .table { width: 100%; border-collapse: collapse; }
+          .table th { background: #f9fafb; padding: 14px 20px; text-align: left; font-size: 11px; font-weight: 800; color: #6b7280; text-transform: uppercase; border-bottom: 1px solid #f3f4f6; }
+          .table td { padding: 14px 20px; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6; font-weight: 600; transition: background 0.2s; }
+          .table tr:hover td { background: #f9fafb; }
+          .mono { font-family: monospace; font-size: 12px; color: #111827; }
+
+          .alert-success { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; padding: 14px; border-radius: 12px; font-weight: 800; font-size: 13px; margin-bottom: 20px; display: flex; align-items: center; gap: 8px; }
+
+          @media (max-width: 800px) {
+            .grid-cols-4 { grid-template-columns: repeat(2, 1fr) !important; }
+          }
+          @media (max-width: 600px) {
+            .page-container { padding: 20px; }
+            .header-row { flex-direction: column; align-items: stretch; }
+            .grid-cols-4 { grid-template-columns: 1fr !important; }
+          }
+        `}</style>
+
+        <div className="floating-circle fc-1"></div>
+        <div className="floating-circle fc-2"></div>
+        <div className="floating-circle fc-3"></div>
+
+        <div className="page-container">
+          <div className="header-row">
+            <div className="title-group">
+              <h2 className="title">Apply Leave</h2>
+              <p className="sub">Submit a leave request and track your request status</p>
+            </div>
+            <div className="emp-badge">
               Employee ID: {employee_id}
             </div>
           </div>
-        </div>
 
-        {/* KPI */}
-        <div style={{ height: 14 }} />
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-            gap: 12,
-          }}
-        >
-          <KpiCard title="Pending" value={kpis.pending} hint="Waiting for manager review" />
-          <KpiCard title="Approved" value={kpis.approved} hint="Leave confirmed" />
-          <KpiCard title="Rejected" value={kpis.rejected} hint="Not approved" />
-        </div>
-
-        {/* Form card */}
-        <div style={{ height: 14 }} />
-        <div
-          style={{
-            background: "#fff",
-            border: "1px solid #E6EAF2",
-            borderRadius: 16,
-            padding: 14,
-            boxShadow: "0 10px 22px rgba(15, 23, 42, 0.06)",
-          }}
-        >
-          <div style={{ fontWeight: 900, color: "#0F172A", marginBottom: 10 }}>
-            New Leave Request
+          <div className="kpi-grid">
+            <KpiCard title="Pending" value={kpis.pending} hint="Waiting for review" />
+            <KpiCard title="Approved" value={kpis.approved} hint="Leave confirmed" />
+            <KpiCard title="Rejected" value={kpis.rejected} hint="Not approved" />
           </div>
 
-          {successMsg ? (
-            <div
-              style={{
-                marginBottom: 12,
-                padding: 12,
-                borderRadius: 12,
-                background: "#D1FAE5",
-                border: "1px solid #6EE7B7",
-                color: "#065F46",
-                fontWeight: 800,
-              }}
-            >
-              {successMsg}
-            </div>
-          ) : null}
+          <div className="card form-card">
+            <h3 className="form-title">New Leave Request</h3>
 
-          <form onSubmit={onSubmit}>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(4, minmax(0, 1fr))",
-                gap: 10,
-                alignItems: "end",
-              }}
-            >
-              {/* leave_type */}
-              <div>
-                <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800 }}>
-                  Leave Type
+            {successMsg && (
+              <div className="alert-success">
+                <span>check_circle</span> {successMsg}
+              </div>
+            )}
+
+            <form onSubmit={onSubmit}>
+              <div className="grid-cols-4" style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: "20px" }}>
+                <div>
+                  <label className="label">Leave Type</label>
+                  <select
+                    className="select"
+                    value={form.leave_type}
+                    onChange={(e) => setForm((p) => ({ ...p, leave_type: e.target.value }))}
+                  >
+                    <option value="CASUAL">CASUAL</option>
+                    <option value="MEDICAL">MEDICAL</option>
+                    <option value="ANNUAL">ANNUAL</option>
+                  </select>
+                  {errors.leave_type && <span className="error-text">{errors.leave_type}</span>}
                 </div>
-                <select
-                  value={form.leave_type}
-                  onChange={(e) => setForm((p) => ({ ...p, leave_type: e.target.value }))}
-                  style={{
-                    width: "100%",
-                    marginTop: 6,
-                    padding: "10px 12px",
-                    borderRadius: 12,
-                    border: "1px solid #E2E8F0",
-                    outline: "none",
-                    fontWeight: 800,
-                    background: "#fff",
+
+                <div>
+                  <label className="label">Start Date</label>
+                  <input
+                    type="date"
+                    className={`input ${errors.start_date ? 'input-error' : ''}`}
+                    value={form.start_date}
+                    onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))}
+                  />
+                  {errors.start_date && <span className="error-text">{errors.start_date}</span>}
+                </div>
+
+                <div>
+                  <label className="label">End Date</label>
+                  <input
+                    type="date"
+                    className={`input ${errors.end_date ? 'input-error' : ''}`}
+                    value={form.end_date}
+                    onChange={(e) => setForm((p) => ({ ...p, end_date: e.target.value }))}
+                  />
+                  {errors.end_date && <span className="error-text">{errors.end_date}</span>}
+                </div>
+
+                <div>
+                  <label className="label">Days</label>
+                  <div className="input" style={{ background: "rgba(0,0,0,0.02)", display: "flex", alignItems: "center" }}>
+                    {form.start_date && form.end_date ? daysBetweenInclusive(form.start_date, form.end_date) : "—"}
+                  </div>
+                </div>
+
+                <div style={{ gridColumn: "1 / -1" }}>
+                  <label className="label">Reason (Optional)</label>
+                  <textarea
+                    className="textarea"
+                    rows={3}
+                    placeholder="Provide a reason for your leave..."
+                    value={form.reason}
+                    onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))}
+                  />
+                  <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8 }}>
+                    {errors.reason ? <span className="error-text">{errors.reason}</span> : <span />}
+                    <span style={{ fontSize: 11, fontWeight: 800, color: "#9ca3af" }}>
+                      {(form.reason || "").length}/255
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="btn-group">
+                <button
+                  type="button"
+                  className="btn btn-ghost"
+                  onClick={() => {
+                    setForm({ leave_type: "CASUAL", start_date: "", end_date: "", reason: "" });
+                    setErrors({});
                   }}
                 >
-                  <option value="CASUAL">CASUAL</option>
-                  <option value="MEDICAL">MEDICAL</option>
-                  <option value="ANNUAL">ANNUAL</option>
-                </select>
-                {errors.leave_type ? (
-                  <div style={{ marginTop: 6, fontSize: 12, color: "#B91C1C", fontWeight: 800 }}>
-                    {errors.leave_type}
-                  </div>
-                ) : null}
+                  Clear
+                </button>
+                <button type="submit" className="btn btn-primary">
+                  Submit Request
+                </button>
               </div>
-
-              {/* start_date */}
-              <div>
-                <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800 }}>
-                  Start Date
-                </div>
-                <input
-                  type="date"
-                  value={form.start_date}
-                  onChange={(e) => setForm((p) => ({ ...p, start_date: e.target.value }))}
-                  style={{
-                    width: "100%",
-                    marginTop: 6,
-                    padding: "10px 12px",
-                    borderRadius: 12,
-                    border: "1px solid #E2E8F0",
-                    outline: "none",
-                    fontWeight: 800,
-                  }}
-                />
-                {errors.start_date ? (
-                  <div style={{ marginTop: 6, fontSize: 12, color: "#B91C1C", fontWeight: 800 }}>
-                    {errors.start_date}
-                  </div>
-                ) : null}
-              </div>
-
-              {/* end_date */}
-              <div>
-                <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800 }}>
-                  End Date
-                </div>
-                <input
-                  type="date"
-                  value={form.end_date}
-                  onChange={(e) => setForm((p) => ({ ...p, end_date: e.target.value }))}
-                  style={{
-                    width: "100%",
-                    marginTop: 6,
-                    padding: "10px 12px",
-                    borderRadius: 12,
-                    border: "1px solid #E2E8F0",
-                    outline: "none",
-                    fontWeight: 800,
-                  }}
-                />
-                {errors.end_date ? (
-                  <div style={{ marginTop: 6, fontSize: 12, color: "#B91C1C", fontWeight: 800 }}>
-                    {errors.end_date}
-                  </div>
-                ) : null}
-              </div>
-
-              {/* days */}
-              <div>
-                <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800 }}>
-                  Days
-                </div>
-                <div
-                  style={{
-                    marginTop: 6,
-                    padding: "10px 12px",
-                    borderRadius: 12,
-                    border: "1px solid #E2E8F0",
-                    background: "#F8FAFC",
-                    fontWeight: 900,
-                    color: "#0F172A",
-                  }}
-                >
-                  {form.start_date && form.end_date
-                    ? daysBetweenInclusive(form.start_date, form.end_date)
-                    : "—"}
-                </div>
-              </div>
-
-              {/* reason */}
-              <div style={{ gridColumn: "1 / -1" }}>
-                <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800 }}>
-                  Reason (optional, max 255 chars)
-                </div>
-                <textarea
-                  value={form.reason}
-                  onChange={(e) => setForm((p) => ({ ...p, reason: e.target.value }))}
-                  rows={3}
-                  placeholder="Type your reason..."
-                  style={{
-                    width: "100%",
-                    marginTop: 6,
-                    padding: "10px 12px",
-                    borderRadius: 12,
-                    border: "1px solid #E2E8F0",
-                    outline: "none",
-                    fontWeight: 700,
-                    resize: "vertical",
-                  }}
-                />
-                <div style={{ display: "flex", justifyContent: "space-between", marginTop: 6 }}>
-                  {errors.reason ? (
-                    <div style={{ fontSize: 12, color: "#B91C1C", fontWeight: 800 }}>
-                      {errors.reason}
-                    </div>
-                  ) : <span />}
-
-                  <div style={{ fontSize: 12, color: "#94A3B8", fontWeight: 800 }}>
-                    {(form.reason || "").length}/255
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div style={{ height: 12 }} />
-            <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-              <button
-                type="button"
-                onClick={() => {
-                  setForm({ leave_type: "CASUAL", start_date: "", end_date: "", reason: "" });
-                  setErrors({});
-                  setSuccessMsg("");
-                }}
-                style={{
-                  border: "1px solid #E2E8F0",
-                  background: "#FFFFFF",
-                  borderRadius: 12,
-                  padding: "10px 12px",
-                  fontWeight: 900,
-                  cursor: "pointer",
-                }}
-              >
-                Clear
-              </button>
-
-              <button
-                type="submit"
-                style={{
-                  border: "1px solid #BBF7D0",
-                  background: "#D1FAE5",
-                  borderRadius: 12,
-                  padding: "10px 12px",
-                  fontWeight: 900,
-                  cursor: "pointer",
-                }}
-              >
-                Submit Request
-              </button>
-            </div>
-          </form>
-        </div>
-
-        {/* My Requests table */}
-        <div style={{ height: 14 }} />
-        <div
-          style={{
-            background: "#fff",
-            border: "1px solid #E6EAF2",
-            borderRadius: 16,
-            padding: 0,
-            boxShadow: "0 10px 22px rgba(15, 23, 42, 0.06)",
-            overflow: "hidden",
-          }}
-        >
-          <div style={{ padding: 14, display: "flex", alignItems: "center", gap: 12 }}>
-            <div style={{ fontWeight: 900, color: "#0F172A" }}>My Leave Requests</div>
-            <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800 }}>
-              {myRequests.length} total
-            </div>
+            </form>
           </div>
 
-          <div style={{ overflowX: "auto" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", minWidth: 900 }}>
-              <thead>
-                <tr style={{ background: "#F8FAFC", borderTop: "1px solid #E6EAF2" }}>
-                  {["Leave ID", "Leave Type", "Start Date", "End Date", "Days", "Reason", "Status"].map((h) => (
-                    <th
-                      key={h}
-                      style={{
-                        textAlign: "left",
-                        padding: "12px 14px",
-                        fontSize: 12,
-                        color: "#64748B",
-                        fontWeight: 900,
-                        borderBottom: "1px solid #E6EAF2",
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      {h}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-
-              <tbody>
-                {myRequests.map((r) => (
-                  <tr key={r.leave_id} style={{ borderBottom: "1px solid #EEF2F7" }}>
-                    <td style={{ padding: "12px 14px", fontWeight: 900, color: "#0F172A" }}>
-                      {r.leave_id}
-                    </td>
-                    <td style={{ padding: "12px 14px", fontWeight: 800, color: "#0F172A" }}>
-                      {r.leave_type}
-                    </td>
-                    <td style={{ padding: "12px 14px", fontWeight: 800, color: "#0F172A" }}>
-                      {fmtDate(r.start_date)}
-                    </td>
-                    <td style={{ padding: "12px 14px", fontWeight: 800, color: "#0F172A" }}>
-                      {fmtDate(r.end_date)}
-                    </td>
-                    <td style={{ padding: "12px 14px", fontWeight: 900, color: "#0F172A" }}>
-                      {daysBetweenInclusive(r.start_date, r.end_date)}
-                    </td>
-                    <td style={{ padding: "12px 14px" }}>
-                      <div
-                        style={{
-                          maxWidth: 360,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          fontWeight: 700,
-                          color: "#334155",
-                        }}
-                        title={r.reason || ""}
-                      >
-                        {r.reason || "—"}
-                      </div>
-                    </td>
-                    <td style={{ padding: "12px 14px" }}>
-                      <Badge status={r.status} />
-                    </td>
+          <div className="card table-card">
+            <div className="table-header">
+              <h3 className="table-title">My Leave Requests</h3>
+              <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 800 }}>
+                {myRequests.length} Total Requests
+              </div>
+            </div>
+            <div className="table-wrap">
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Leave ID</th>
+                    <th>Type</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Days</th>
+                    <th>Reason</th>
+                    <th>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {myRequests.map((r) => (
+                    <tr key={r.leave_id}>
+                      <td className="mono">#{r.leave_id}</td>
+                      <td>{r.leave_type}</td>
+                      <td>{fmtDate(r.start_date)}</td>
+                      <td>{fmtDate(r.end_date)}</td>
+                      <td>{daysBetweenInclusive(r.start_date, r.end_date)}</td>
+                      <td>
+                        <div style={{ maxWidth: 300, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={r.reason}>
+                          {r.reason || "—"}
+                        </div>
+                      </td>
+                      <td><Badge status={r.status} /></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>

@@ -18,24 +18,23 @@ const fmtDate = (d) => {
 const Badge = ({ status }) => {
   const s = (status || "PENDING").toUpperCase();
   const cfg = {
-    PENDING: { bg: "#FEF3C7", fg: "#92400E", border: "#FCD34D", text: "PENDING" },
-    APPROVED: { bg: "#D1FAE5", fg: "#065F46", border: "#6EE7B7", text: "APPROVED" },
-    REJECTED: { bg: "#FEE2E2", fg: "#991B1B", border: "#FCA5A5", text: "REJECTED" },
-  }[s] || { bg: "#E5E7EB", fg: "#374151", border: "#D1D5DB", text: s };
+    PENDING: { bg: "#fef9c3", fg: "#854d0e", border: "#fef08a", text: "PENDING" },
+    APPROVED: { bg: "#dcfce7", fg: "#166534", border: "#bbf7d0", text: "APPROVED" },
+    REJECTED: { bg: "#fef2f2", fg: "#991b1b", border: "#fecaca", text: "REJECTED" },
+  }[s] || { bg: "#f3f4f6", fg: "#4b5563", border: "#e5e7eb", text: s };
 
   return (
     <span
+      className="badge"
       style={{
-        display: "inline-flex",
-        alignItems: "center",
-        padding: "6px 10px",
+        padding: "4px 10px",
         borderRadius: 999,
-        fontSize: 12,
-        fontWeight: 700,
+        fontSize: 11,
+        fontWeight: 800,
         color: cfg.fg,
         background: cfg.bg,
         border: `1px solid ${cfg.border}`,
-        whiteSpace: "nowrap",
+        textTransform: "uppercase",
       }}
     >
       {cfg.text}
@@ -44,25 +43,10 @@ const Badge = ({ status }) => {
 };
 
 const KpiCard = ({ title, value, hint }) => (
-  <div
-    style={{
-      background: "rgba(255, 255, 255, 0.9)",
-      backdropFilter: "blur(12px)",
-      border: "1px solid rgba(255, 255, 255, 0.5)",
-      borderRadius: 18,
-      padding: 20,
-      boxShadow: "0 8px 18px rgba(0,0,0,0.03)",
-      minHeight: 100,
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center"
-    }}
-  >
-    <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 700, textTransform: "uppercase" }}>{title}</div>
-    <div style={{ fontSize: 28, fontWeight: 800, color: "#111827", marginTop: 8, marginBottom: 4 }}>
-      {value}
-    </div>
-    {hint ? <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 500 }}>{hint}</div> : null}
+  <div className="card kpi-card">
+    <div className="kpi-label">{title}</div>
+    <div className="kpi-value">{value}</div>
+    {hint && <div className="kpi-hint">{hint}</div>}
   </div>
 );
 
@@ -70,69 +54,29 @@ const Drawer = ({ open, onClose, title, children }) => {
   if (!open) return null;
 
   return (
-    <div
-      style={{
-        position: "fixed",
-        inset: 0,
-        background: "rgba(15,23,42,0.45)",
-        zIndex: 999,
-        display: "flex",
-        justifyContent: "flex-end",
-      }}
-      onMouseDown={(e) => {
-        if (e.target === e.currentTarget) onClose();
-      }}
-    >
-      <div
-        style={{
-          width: "min(560px, 92vw)",
-          height: "100%",
-          background: "#fff",
-          padding: 18,
-          overflowY: "auto",
-          boxShadow: "-10px 0 30px rgba(15,23,42,0.25)",
-        }}
-      >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 900, color: "#0F172A" }}>{title}</div>
-            <div style={{ fontSize: 12, color: "#64748B", marginTop: 4 }}>
-              Review leave request details and respond
-            </div>
+    <div className="drawer-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="drawer-content">
+        <div className="drawer-header">
+          <div>
+            <h3 className="drawer-title">{title}</h3>
+            <p className="drawer-subtitle">Review leave request details and respond</p>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              border: "1px solid #E2E8F0",
-              background: "#F8FAFC",
-              borderRadius: 10,
-              padding: "10px 12px",
-              fontWeight: 800,
-              cursor: "pointer",
-            }}
-          >
-            Close
-          </button>
+          <button className="close-btn" onClick={onClose}>×</button>
         </div>
-
-        <div style={{ height: 14 }} />
-        {children}
+        <div className="drawer-body">{children}</div>
       </div>
     </div>
   );
 };
 
 const Field = ({ label, value }) => (
-  <div style={{ marginBottom: 12 }}>
-    <div style={{ fontSize: 12, color: "#64748B", fontWeight: 800 }}>{label}</div>
-    <div style={{ fontSize: 14, color: "#0F172A", fontWeight: 700, marginTop: 4 }}>
-      {value}
-    </div>
+  <div className="field-group">
+    <div className="field-label">{label}</div>
+    <div className="field-value">{value}</div>
   </div>
 );
 
 export default function LeaveRequests() {
-  // ✅ Dummy data EXACTLY matches MySQL schema
   const [requests, setRequests] = useState([
     {
       leave_id: 1001,
@@ -163,35 +107,19 @@ export default function LeaveRequests() {
     },
   ]);
 
-  const [filters, setFilters] = useState({
-    q: "",
-    status: "ALL",
-    type: "ALL",
-    from: "",
-    to: "",
-  });
-
+  const [filters, setFilters] = useState({ q: "", status: "ALL", type: "ALL", from: "", to: "" });
   const [selected, setSelected] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
-
-  // remark is NOT in schema; keep as UI-only (optional) and do NOT store to DB unless you add a column later
   const [remark, setRemark] = useState("");
 
   const filtered = useMemo(() => {
     const q = (filters.q || "").trim().toLowerCase();
-
     return requests.filter((r) => {
-      const okQ =
-        !q ||
-        String(r.employee_id).toLowerCase().includes(q) ||
-        String(r.leave_id).toLowerCase().includes(q);
-
+      const okQ = !q || String(r.employee_id).toLowerCase().includes(q) || String(r.leave_id).toLowerCase().includes(q);
       const okStatus = filters.status === "ALL" || r.status === filters.status;
       const okType = filters.type === "ALL" || r.leave_type === filters.type;
-
       const okFrom = !filters.from || new Date(r.start_date) >= new Date(filters.from);
       const okTo = !filters.to || new Date(r.end_date) <= new Date(filters.to);
-
       return okQ && okStatus && okType && okFrom && okTo;
     });
   }, [requests, filters]);
@@ -217,26 +145,17 @@ export default function LeaveRequests() {
 
   const updateStatus = (newStatus) => {
     if (!selected) return;
-
-    // UI validation (remark is optional in schema; keep only for UX)
     if (newStatus === "REJECTED" && !(remark || "").trim()) {
-      alert("Please add a remark before rejecting. ");
+      alert("Please add a remark before rejecting.");
       return;
     }
-
-    setRequests((prev) =>
-      prev.map((r) =>
-        r.leave_id === selected.leave_id ? { ...r, status: newStatus } : r
-      )
-    );
-
-    setSelected((prev) => (prev ? { ...prev, status: newStatus } : prev));
+    setRequests((p) => p.map((r) => (r.leave_id === selected.leave_id ? { ...r, status: newStatus } : r)));
+    setSelected((p) => (p ? { ...p, status: newStatus } : p));
   };
 
   return (
     <AppLayout>
-      <div style={styles.page}>
-        {/* Inline CSS Animations */}
+      <div className="page-wrapper">
         <style>{`
           @keyframes float {
             0%, 100% { transform: translateY(0px) translateX(0px); }
@@ -250,196 +169,175 @@ export default function LeaveRequests() {
           .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(76, 175, 80, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
           .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(56, 142, 60, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
           .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(67, 160, 71, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
+
+          .page-wrapper { position: relative; min-height: 100%; overflow: hidden; }
+          .page-container { padding: 30px; position: relative; z-index: 1; max-width: 1300px; margin: 0 auto; }
+          
+          .header-row { display: flex; justify-content: space-between; gap: 20px; align-items: flex-start; margin-bottom: 24px; flex-wrap: wrap; }
+          .title-group .title { font-size: 28px; font-weight: 900; color: #2c5530; margin: 0 0 8px 0; }
+          .title-group .sub { color: #4b5563; font-size: 15px; margin: 0; font-weight: 500;}
+          
+          .btn-group { display: flex; gap: 12px; }
+          .btn { padding: 10px 20px; border-radius: 12px; font-weight: 800; font-size: 13px; cursor: pointer; transition: all 0.2s; border: 1px solid #d1d5db; color: #374151; background: #fff; }
+          .btn:hover { background: #f9fafb; transform: translateY(-1px); }
+          .btn-primary { background: linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%); color: #fff; border: none; box-shadow: 0 4px 15px rgba(74, 124, 78, 0.15); }
+
+          .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 24px; }
+          .card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 20px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
+          .kpi-label { font-size: 11px; font-weight: 800; color: #6b7280; text-transform: uppercase; margin-bottom: 8px; }
+          .kpi-value { font-size: 32px; font-weight: 900; color: #1f2937; margin-bottom: 4px; }
+          .kpi-hint { font-size: 13px; color: #9ca3af; font-weight: 600; }
+
+          .filter-card { margin-bottom: 24px; padding: 20px; }
+          .filter-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 16px; align-items: flex-end; }
+          .label { display: block; margin-bottom: 8px; font-weight: 800; font-size: 11px; color: #6b7280; text-transform: uppercase; }
+          .input, .select { width: 100%; padding: 10px 14px; border-radius: 12px; border: 1px solid #e5e7eb; font-size: 13px; font-weight: 700; outline: none; background: #fff; }
+          .input:focus, .select:focus { border-color: #4a7c4e; box-shadow: 0 0 0 3px rgba(74, 124, 78, 0.1); }
+
+          .table-card { padding: 0; overflow: hidden; }
+          .table-header { padding: 20px 24px; border-bottom: 1px solid rgba(0,0,0,0.05); display: flex; justify-content: space-between; align-items: center; }
+          .table-title { font-size: 16px; font-weight: 900; color: #1f2937; }
+          .table-wrap { overflow-x: auto; }
+          .table { width: 100%; border-collapse: collapse; }
+          .table th { background: #f9fafb; padding: 14px 20px; text-align: left; font-size: 11px; font-weight: 800; color: #6b7280; text-transform: uppercase; border-bottom: 1px solid #f3f4f6; }
+          .table td { padding: 14px 20px; font-size: 13px; color: #374151; border-bottom: 1px solid #f3f4f6; font-weight: 600; transition: background 0.2s; }
+          .table tr:hover td { background: #f9fafb; }
+          .mono { font-family: monospace; font-size: 12px; color: #111827; }
+
+          /* DRAWER */
+          .drawer-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 1000; display: flex; justify-content: flex-end; }
+          .drawer-content { width: min(560px, 100%); background: #fff; height: 100%; display: flex; flex-direction: column; animation: slideIn 0.3s ease-out; }
+          @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
+          .drawer-header { padding: 24px; border-bottom: 1px solid #f3f4f6; display: flex; justify-content: space-between; align-items: flex-start; }
+          .drawer-title { margin: 0; font-size: 18px; font-weight: 900; color: #1f2937; }
+          .drawer-subtitle { margin: 4px 0 0; font-size: 13px; color: #6b7280; font-weight: 600; }
+          .close-btn { background: none; border: none; font-size: 28px; color: #9ca3af; cursor: pointer; }
+          .drawer-body { padding: 24px; flex: 1; overflow-y: auto; }
+          
+          .drawer-card { background: #f9fafb; border: 1px solid #f3f4f6; border-radius: 16px; padding: 20px; margin-bottom: 20px; }
+          .field-group { margin-bottom: 16px; }
+          .field-label { font-size: 11px; font-weight: 800; color: #9ca3af; text-transform: uppercase; margin-bottom: 4px; }
+          .field-value { font-size: 15px; font-weight: 700; color: #1f2937; }
+          .reason-box { padding: 16px; background: #fff; border: 1px solid #e5e7eb; border-radius: 12px; font-size: 14px; line-height: 1.6; color: #4b5563; font-weight: 500; }
+          
+          .textarea { width: 100%; padding: 14px; border-radius: 12px; border: 1px solid #e5e7eb; font-size: 14px; font-weight: 600; outline: none; resize: vertical; margin-bottom: 20px; }
+          .textarea:focus { border-color: #4a7c4e; box-shadow: 0 0 0 3px rgba(74, 124, 78, 0.1); }
+          
+          .drawer-foot { display: flex; gap: 12px; margin-top: auto; }
+          .btn-approve { background: #166534; color: #fff; border: none; border-radius: 12px; font-weight: 800; cursor: pointer;}
+          .btn-reject { background: #991b1b; color: #fff; border: none; border-radius: 12px; font-weight: 800; cursor: pointer;}
+          .btn-approve:disabled, .btn-reject:disabled { opacity: 0.5; cursor: not-allowed; }
+
+          @media (max-width: 600px) {
+            .page-container { padding: 20px; }
+            .header-row { flex-direction: column; align-items: stretch; }
+            .btn-group { justify-content: stretch; }
+            .btn-group .btn { flex: 1; }
+          }
         `}</style>
 
-        {/* Animated background elements */}
         <div className="floating-circle fc-1"></div>
         <div className="floating-circle fc-2"></div>
         <div className="floating-circle fc-3"></div>
 
-        <div style={styles.container}>
-          {/* Header */}
-          <div style={styles.headerCard}>
-            <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-              <div style={{ flex: 1, minWidth: 220 }}>
-                <div style={styles.pageTitle}>
-                  Leave Requests
-                </div>
-                <div style={styles.pageSubtitle}>
-                  Review and respond to employee leave applications
-                </div>
-              </div>
-
-              <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-                <button
-                  onClick={() => alert("Export will coming soon")}
-                  style={styles.secondaryBtn}
-                >
-                  Export
-                </button>
-
-                <button
-                  onClick={() => setFilters({ q: "", status: "ALL", type: "ALL", from: "", to: "" })}
-                  style={styles.secondaryBtn}
-                >
-                  Reset Filters
-                </button>
-              </div>
+        <div className="page-container">
+          <div className="header-row">
+            <div className="title-group">
+              <h2 className="title">Leave Requests</h2>
+              <p className="sub">Review and respond to employee leave applications</p>
+            </div>
+            <div className="btn-group">
+              <button className="btn" onClick={() => alert("Coming soon...")}>Export</button>
+              <button className="btn" onClick={() => setFilters({ q: "", status: "ALL", type: "ALL", from: "", to: "" })}>Reset Filters</button>
             </div>
           </div>
 
-          {/* KPI Row */}
-          <div style={styles.kpiGrid}>
+          <div className="kpi-grid">
             <KpiCard title="Pending" value={kpis.pending} hint="Needs your review" />
-            <KpiCard title="Approved" value={kpis.approved} hint="All time (UI demo)" />
-            <KpiCard title="Rejected" value={kpis.rejected} hint="All time (UI demo)" />
+            <KpiCard title="Approved" value={kpis.approved} hint="All time total" />
+            <KpiCard title="Rejected" value={kpis.rejected} hint="All time total" />
           </div>
 
-          {/* Filters */}
-          <div style={styles.filterCard}>
-            <div style={styles.filterGrid}>
+          <div className="card filter-card">
+            <div className="filter-grid">
               <div>
-                <div style={styles.label}>Search</div>
+                <label className="label">Search</label>
                 <input
+                  className="input"
                   value={filters.q}
                   onChange={(e) => setFilters((p) => ({ ...p, q: e.target.value }))}
-                  placeholder="Employee ID / Leave ID"
-                  style={styles.input}
+                  placeholder="Employee / Leave ID"
                 />
               </div>
-
               <div>
-                <div style={styles.label}>Status</div>
-                <select
-                  value={filters.status}
-                  onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}
-                  style={styles.select}
-                >
-                  <option value="ALL">All</option>
+                <label className="label">Status</label>
+                <select className="select" value={filters.status} onChange={(e) => setFilters((p) => ({ ...p, status: e.target.value }))}>
+                  <option value="ALL">All Status</option>
                   <option value="PENDING">Pending</option>
                   <option value="APPROVED">Approved</option>
                   <option value="REJECTED">Rejected</option>
                 </select>
               </div>
-
               <div>
-                <div style={styles.label}>Leave Type</div>
-                <select
-                  value={filters.type}
-                  onChange={(e) => setFilters((p) => ({ ...p, type: e.target.value }))}
-                  style={styles.select}
-                >
-                  <option value="ALL">All</option>
-                  <option value="CASUAL">CASUAL</option>
-                  <option value="MEDICAL">MEDICAL</option>
-                  <option value="ANNUAL">ANNUAL</option>
+                <label className="label">Leave Type</label>
+                <select className="select" value={filters.type} onChange={(e) => setFilters((p) => ({ ...p, type: e.target.value }))}>
+                  <option value="ALL">All Types</option>
+                  <option value="CASUAL">Casual</option>
+                  <option value="MEDICAL">Medical</option>
+                  <option value="ANNUAL">Annual</option>
                 </select>
               </div>
-
               <div>
-                <div style={styles.label}>From</div>
-                <input
-                  type="date"
-                  value={filters.from}
-                  onChange={(e) => setFilters((p) => ({ ...p, from: e.target.value }))}
-                  style={styles.input}
-                />
+                <label className="label">From</label>
+                <input className="input" type="date" value={filters.from} onChange={(e) => setFilters((p) => ({ ...p, from: e.target.value }))} />
               </div>
-
               <div>
-                <div style={styles.label}>To</div>
-                <input
-                  type="date"
-                  value={filters.to}
-                  onChange={(e) => setFilters((p) => ({ ...p, to: e.target.value }))}
-                  style={styles.input}
-                />
+                <label className="label">To</label>
+                <input className="input" type="date" value={filters.to} onChange={(e) => setFilters((p) => ({ ...p, to: e.target.value }))} />
               </div>
             </div>
           </div>
 
-          {/* Table */}
-          <div style={styles.tableCard}>
-            <div style={styles.tableHeader}>
-              <div style={{ fontWeight: 800, color: "#111827" }}>Requests</div>
-              <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 600 }}>
-                Showing {filtered.length} of {requests.length}
-              </div>
+          <div className="card table-card">
+            <div className="table-header">
+              <div className="table-title">Recent Requests</div>
+              <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 700 }}>{filtered.length} Requests Found</div>
             </div>
-
-            <div style={{ overflowX: "auto" }}>
-              <table style={styles.table}>
+            <div className="table-wrap">
+              <table className="table">
                 <thead>
                   <tr>
-                    {[
-                      "Leave ID",
-                      "Employee ID",
-                      "Leave Type",
-                      "Start Date",
-                      "End Date",
-                      "Days",
-                      "Reason",
-                      "Status",
-                      "Action",
-                    ].map((h) => (
-                      <th key={h} style={styles.th}>
-                        {h}
-                      </th>
-                    ))}
+                    <th>Leave ID</th>
+                    <th>Employee</th>
+                    <th>Type</th>
+                    <th>Start Date</th>
+                    <th>End Date</th>
+                    <th>Days</th>
+                    <th>Reason</th>
+                    <th>Status</th>
+                    <th>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filtered.length === 0 ? (
-                    <tr>
-                      <td colSpan={9} style={{ padding: 20, color: "#6b7280", fontWeight: 600, textAlign: "center" }}>
-                        No leave requests found.
-                      </td>
-                    </tr>
+                    <tr><td colSpan={9} style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>No requests matching filters.</td></tr>
                   ) : (
                     filtered.map((r) => (
-                      <tr key={r.leave_id} style={styles.tr}>
-                        <td style={styles.tdMono}>
-                          {r.leave_id}
-                        </td>
-                        <td style={styles.tdMono}>
-                          {r.employee_id}
-                        </td>
-                        <td style={styles.td}>
-                          {r.leave_type}
-                        </td>
-                        <td style={styles.td}>
-                          {fmtDate(r.start_date)}
-                        </td>
-                        <td style={styles.td}>
-                          {fmtDate(r.end_date)}
-                        </td>
-                        <td style={styles.td}>
-                          {daysBetweenInclusive(r.start_date, r.end_date)}
-                        </td>
-                        <td style={styles.td}>
-                          <div
-                            style={{
-                              maxWidth: 320,
-                              whiteSpace: "nowrap",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              color: "#374151",
-                            }}
-                            title={r.reason || ""}
-                          >
-                            {r.reason || "—"}
+                      <tr key={r.leave_id}>
+                        <td className="mono">#{r.leave_id}</td>
+                        <td className="mono">{r.employee_id}</td>
+                        <td>{r.leave_type}</td>
+                        <td>{fmtDate(r.start_date)}</td>
+                        <td>{fmtDate(r.end_date)}</td>
+                        <td>{daysBetweenInclusive(r.start_date, r.end_date)}</td>
+                        <td>
+                          <div style={{ maxWidth: 200, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={r.reason}>
+                            {r.reason}
                           </div>
                         </td>
-                        <td style={styles.td}>
-                          <Badge status={r.status} />
-                        </td>
-                        <td style={styles.td}>
-                          <button
-                            onClick={() => openReview(r)}
-                            style={styles.secondaryBtnSmall}
-                          >
-                            View
-                          </button>
+                        <td><Badge status={r.status} /></td>
+                        <td>
+                          <button className="btn" style={{ padding: "6px 12px", fontSize: 12 }} onClick={() => openReview(r)}>View</button>
                         </td>
                       </tr>
                     ))
@@ -448,281 +346,61 @@ export default function LeaveRequests() {
               </table>
             </div>
           </div>
-
-          {/* Drawer / Review Panel */}
-          <Drawer
-            open={drawerOpen}
-            onClose={closeReview}
-            title={selected ? `Review Leave #${selected.leave_id}` : "Review Leave"}
-          >
-            {selected ? (
-              <>
-                <div style={styles.drawerCard}>
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                    <div>
-                      <div style={{ fontSize: 16, fontWeight: 800, color: "#111827" }}>
-                        Employee ID: {selected.employee_id}
-                      </div>
-                      <div style={{ fontSize: 13, color: "#6b7280", fontWeight: 600, marginTop: 4 }}>
-                        Leave ID: {selected.leave_id}
-                      </div>
-                    </div>
-                    <div>
-                      <Badge status={selected.status} />
-                    </div>
-                  </div>
-
-                  <div style={{ height: 16 }} />
-
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-                    <Field label="Leave Type" value={selected.leave_type} />
-                    <Field label="Total Days" value={daysBetweenInclusive(selected.start_date, selected.end_date)} />
-                    <Field label="Start Date" value={fmtDate(selected.start_date)} />
-                    <Field label="End Date" value={fmtDate(selected.end_date)} />
-                  </div>
-
-                  <div style={{ marginTop: 16 }}>
-                    <div style={styles.label}>Reason</div>
-                    <div style={styles.reasonBox}>
-                      {selected.reason || "—"}
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ height: 16 }} />
-
-                <div style={styles.drawerCard}>
-                  <div style={styles.sectionTitle}>Manager Remark</div>
-                  <textarea
-                    value={remark}
-                    onChange={(e) => setRemark(e.target.value)}
-                    placeholder="Add a short remark..."
-                    rows={4}
-                    style={styles.textarea}
-                    disabled={selected.status !== "PENDING"}
-                  />
-
-                  <div style={{ height: 16 }} />
-
-                  <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-                    <button
-                      onClick={() => updateStatus("APPROVED")}
-                      disabled={selected.status !== "PENDING"}
-                      style={{
-                        ...styles.approveBtn,
-                        opacity: selected.status !== "PENDING" ? 0.5 : 1,
-                        cursor: selected.status !== "PENDING" ? "not-allowed" : "pointer"
-                      }}
-                    >
-                      Approve
-                    </button>
-
-                    <button
-                      onClick={() => updateStatus("REJECTED")}
-                      disabled={selected.status !== "PENDING"}
-                      style={{
-                        ...styles.rejectBtn,
-                        opacity: selected.status !== "PENDING" ? 0.5 : 1,
-                        cursor: selected.status !== "PENDING" ? "not-allowed" : "pointer"
-                      }}
-                    >
-                      Reject
-                    </button>
-
-                    <div style={{ flex: 1 }}></div>
-
-                    <button
-                      onClick={closeReview}
-                      style={styles.secondaryBtn}
-                    >
-                      Close
-                    </button>
-                  </div>
-                </div>
-              </>
-            ) : null}
-          </Drawer>
         </div>
+
+        <Drawer open={drawerOpen} onClose={closeReview} title={`Review Leave #${selected?.leave_id}`}>
+          {selected && (
+            <>
+              <div className="drawer-card">
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 20 }}>
+                  <Field label="Employee ID" value={selected.employee_id} />
+                  <Badge status={selected.status} />
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+                  <Field label="Leave Type" value={selected.leave_type} />
+                  <Field label="Duration" value={`${daysBetweenInclusive(selected.start_date, selected.end_date)} Days`} />
+                  <Field label="Start Date" value={fmtDate(selected.start_date)} />
+                  <Field label="End Date" value={fmtDate(selected.end_date)} />
+                </div>
+                <div style={{ marginTop: 10 }}>
+                  <div className="field-label">Reason</div>
+                  <div className="reason-box">{selected.reason}</div>
+                </div>
+              </div>
+
+              <div className="drawer-card">
+                <div className="field-label" style={{ marginBottom: 12 }}>Manager Remark</div>
+                <textarea
+                  className="textarea"
+                  value={remark}
+                  onChange={(e) => setRemark(e.target.value)}
+                  placeholder="Add a remark for the employee..."
+                  rows={4}
+                  disabled={selected.status !== "PENDING"}
+                />
+                <div className="drawer-foot">
+                  <button
+                    className="btn btn-approve"
+                    style={{ flex: 1, padding: "12px" }}
+                    onClick={() => updateStatus("APPROVED")}
+                    disabled={selected.status !== "PENDING"}
+                  >
+                    Approve Request
+                  </button>
+                  <button
+                    className="btn btn-reject"
+                    style={{ flex: 1, padding: "12px" }}
+                    onClick={() => updateStatus("REJECTED")}
+                    disabled={selected.status !== "PENDING"}
+                  >
+                    Reject Request
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
+        </Drawer>
       </div>
     </AppLayout>
   );
 }
-
-const styles = {
-  page: { position: "relative", minHeight: "100%", overflow: "hidden" },
-  container: { padding: 24, position: "relative", zIndex: 1, display: "grid", gap: 20 },
-
-  headerCard: {
-    background: "rgba(255, 255, 255, 0.95)",
-    backdropFilter: "blur(12px)",
-    border: "1px solid rgba(255, 255, 255, 0.5)",
-    borderRadius: 18,
-    padding: 24,
-    boxShadow: "0 8px 25px rgba(0,0,0,0.03)",
-  },
-  pageTitle: { fontSize: 24, fontWeight: 800, color: "#2c5530" },
-  pageSubtitle: { fontSize: 14, color: "#4b5563", marginTop: 4, opacity: 0.8 },
-
-  kpiGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: 16,
-  },
-
-  filterCard: {
-    background: "rgba(255, 255, 255, 0.9)",
-    backdropFilter: "blur(12px)",
-    border: "1px solid rgba(255, 255, 255, 0.5)",
-    borderRadius: 18,
-    padding: 20,
-    boxShadow: "0 8px 15px rgba(0,0,0,0.02)",
-  },
-  filterGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-    gap: 16,
-    alignItems: "end",
-  },
-  label: { fontSize: 12, color: "#6b7280", fontWeight: 700, textTransform: "uppercase", marginBottom: 6 },
-  input: {
-    width: "100%",
-    padding: "10px 12px",
-    borderRadius: 10,
-    border: "1px solid #e5e7eb",
-    outline: "none",
-    fontWeight: 600,
-    fontSize: 14,
-    background: "#fff",
-  },
-  select: {
-    width: "100%",
-    padding: "10px 12px",
-    borderRadius: 10,
-    border: "1px solid #e5e7eb",
-    outline: "none",
-    fontWeight: 600,
-    fontSize: 14,
-    background: "#fff",
-  },
-
-  tableCard: {
-    background: "rgba(255, 255, 255, 0.95)",
-    backdropFilter: "blur(12px)",
-    border: "1px solid rgba(255, 255, 255, 0.5)",
-    borderRadius: 18,
-    boxShadow: "0 10px 30px rgba(0,0,0,0.03)",
-    overflow: "hidden",
-  },
-  tableHeader: {
-    padding: 20,
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    borderBottom: "1px solid rgba(0,0,0,0.05)",
-  },
-  table: { width: "100%", borderCollapse: "separate", borderSpacing: "0 4px", minWidth: 900, padding: "0 12px 12px" },
-  th: {
-    textAlign: "left",
-    padding: "12px 16px",
-    fontSize: 12,
-    color: "#6b7280",
-    fontWeight: 700,
-    textTransform: "uppercase",
-  },
-  tr: {
-    transition: "transform 0.1s",
-    background: "transparent",
-  },
-  td: {
-    padding: "12px 16px",
-    background: "#f9fafb",
-    fontSize: 14,
-    color: "#374151",
-    verticalAlign: "middle",
-    fontWeight: 500,
-    firstOfType: { borderRadius: "10px 0 0 10px" },
-    lastOfType: { borderRadius: "0 10px 10px 0" }
-  },
-  tdMono: {
-    padding: "12px 16px",
-    background: "#f9fafb",
-    fontSize: 13,
-    color: "#111827",
-    fontWeight: 600,
-    fontFamily: "monospace",
-    firstOfType: { borderRadius: "10px 0 0 10px" }
-  },
-
-  // Buttons
-  secondaryBtn: {
-    padding: "8px 16px",
-    borderRadius: 10,
-    border: "1px solid #d1d5db",
-    background: "#fff",
-    color: "#374151",
-    fontWeight: 600,
-    cursor: "pointer",
-    fontSize: 13,
-  },
-  secondaryBtnSmall: {
-    padding: "6px 12px",
-    borderRadius: 8,
-    border: "1px solid #d1d5db",
-    background: "#fff",
-    color: "#374151",
-    fontWeight: 600,
-    cursor: "pointer",
-    fontSize: 12,
-  },
-
-  approveBtn: {
-    padding: "10px 20px",
-    borderRadius: 12,
-    border: "none",
-    background: "#d1fae5",
-    color: "#065f46",
-    fontWeight: 700,
-    cursor: "pointer",
-    fontSize: 14,
-  },
-  rejectBtn: {
-    padding: "10px 20px",
-    borderRadius: 12,
-    border: "none",
-    background: "#fee2e2",
-    color: "#991b1b",
-    fontWeight: 700,
-    cursor: "pointer",
-    fontSize: 14,
-  },
-
-  // Drawer
-  drawerCard: {
-    background: "#fff",
-    border: "1px solid #e2e8f0",
-    borderRadius: 16,
-    padding: 20,
-  },
-  sectionTitle: { fontSize: 14, fontWeight: 700, color: "#111827", marginBottom: 12, textTransform: "uppercase" },
-  reasonBox: {
-    padding: 14,
-    background: "#f8fafc",
-    border: "1px solid #e2e8f0",
-    borderRadius: 12,
-    fontWeight: 500,
-    color: "#334155",
-    lineHeight: 1.6,
-    fontSize: 14,
-  },
-  textarea: {
-    width: "100%",
-    padding: 14,
-    borderRadius: 12,
-    border: "1px solid #e2e8f0",
-    outline: "none",
-    fontWeight: 500,
-    resize: "vertical",
-    fontSize: 14,
-    background: "#fff",
-  },
-};

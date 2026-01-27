@@ -153,17 +153,9 @@ function Dashboard() {
                 </div>
 
                 <div style={styles.chartArea}>
-                  <svg style={styles.chartPlaceholder} viewBox="0 0 200 120" fill="none">
-                    <rect x="20" y="90" width="20" height="20" rx="4" fill="#4a7c4e" opacity="0.6" />
-                    <rect x="50" y="70" width="20" height="40" rx="4" fill="#4a7c4e" opacity="0.7" />
-                    <rect x="80" y="50" width="20" height="60" rx="4" fill="#4a7c4e" opacity="0.8" />
-                    <rect x="110" y="40" width="20" height="70" rx="4" fill="#4a7c4e" opacity="0.9" />
-                    <rect x="140" y="60" width="20" height="50" rx="4" fill="#4a7c4e" opacity="0.8" />
-                    <rect x="170" y="75" width="20" height="35" rx="4" fill="#4a7c4e" opacity="0.7" />
-
-                    <line x1="10" y1="110" x2="200" y2="110" stroke="#d1d5db" strokeWidth="1" />
-                    <line x1="10" y1="30" x2="10" y2="110" stroke="#d1d5db" strokeWidth="1" />
-                  </svg>
+                  <div style={{ ...styles.chartPlaceholder, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.02)", borderRadius: 12 }}>
+                    <span style={{ color: "#9ca3af", fontWeight: 600, fontSize: 14 }}>[ Payroll Summary Chart ]</span>
+                  </div>
                   <p style={styles.chartLabel}>Monthly payroll distribution</p>
                 </div>
               </div>
@@ -180,30 +172,9 @@ function Dashboard() {
                 </div>
 
                 <div style={styles.chartArea}>
-                  <svg style={styles.chartPlaceholder} viewBox="0 0 200 120" fill="none">
-                    <path
-                      d="M 10 90 Q 30 85, 40 80 T 70 70 T 100 60 T 130 65 T 160 70 T 190 75"
-                      stroke="#5a8c5e"
-                      strokeWidth="3"
-                      fill="none"
-                      strokeLinecap="round"
-                    />
-                    <path
-                      d="M 10 90 Q 30 85, 40 80 T 70 70 T 100 60 T 130 65 T 160 70 T 190 75 L 190 110 L 10 110 Z"
-                      fill="url(#gradient)"
-                      opacity="0.2"
-                    />
-
-                    <defs>
-                      <linearGradient id="gradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                        <stop offset="0%" stopColor="#5a8c5e" stopOpacity="0.8" />
-                        <stop offset="100%" stopColor="#5a8c5e" stopOpacity="0" />
-                      </linearGradient>
-                    </defs>
-
-                    <line x1="10" y1="110" x2="200" y2="110" stroke="#d1d5db" strokeWidth="1" />
-                    <line x1="10" y1="30" x2="10" y2="110" stroke="#d1d5db" strokeWidth="1" />
-                  </svg>
+                  <div style={{ ...styles.chartPlaceholder, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.02)", borderRadius: 12 }}>
+                    <span style={{ color: "#9ca3af", fontWeight: 600, fontSize: 14 }}>[ Attendance Trends Chart ]</span>
+                  </div>
                   <p style={styles.chartLabel}>Daily attendance percentage</p>
                 </div>
               </div>

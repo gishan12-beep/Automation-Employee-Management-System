@@ -152,314 +152,387 @@ export default function BankWithdrawals() {
   };
 
   const styles = {
-    page: { padding: 18 },
+    page: { padding: 0 },
     headerRow: {
       display: "flex",
       alignItems: "flex-start",
       justifyContent: "space-between",
-      gap: 12,
-      marginBottom: 14,
+      gap: 16,
+      marginBottom: 24,
       flexWrap: "wrap",
     },
-    title: { fontSize: 24, fontWeight: 900, margin: 0 },
-    sub: { margin: "6px 0 0", color: "#6b7280", fontSize: 14 },
+    title: { fontSize: 28, fontWeight: 900, color: "#2c5530", margin: 0 },
+    sub: { margin: "6px 0 0", color: "#4b5563", fontSize: 15 },
 
-    controls: { display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" },
+    controls: { display: "flex", gap: 12, flexWrap: "wrap", alignItems: "center" },
     select: {
-      padding: "10px 12px",
+      padding: "10px 14px",
       border: "1px solid #e5e7eb",
-      borderRadius: 10,
+      borderRadius: 12,
       background: "#fff",
       fontWeight: 700,
+      fontSize: 14,
+      outline: "none",
     },
     btn: {
-      padding: "10px 14px",
+      padding: "10px 20px",
       borderRadius: 12,
-      border: "1px solid #111827",
-      background: "#111827",
+      border: "none",
+      background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)",
       color: "#fff",
       fontWeight: 800,
       cursor: "pointer",
+      boxShadow: "0 4px 12px rgba(74, 124, 78, 0.2)",
+      transition: "all 0.2s",
     },
     btnGhost: {
-      padding: "10px 14px",
+      padding: "10px 16px",
       borderRadius: 12,
-      border: "1px solid #e5e7eb",
+      border: "1px solid #d1d5db",
       background: "#fff",
-      color: "#111827",
+      color: "#374151",
       fontWeight: 800,
       cursor: "pointer",
+      transition: "background 0.2s",
     },
 
-    cards: { display: "grid", gridTemplateColumns: "repeat(12, 1fr)", gap: 12, marginBottom: 16 },
+    cards: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 16, marginBottom: 20 },
     card: {
-      gridColumn: "span 6",
-      background: "#fff",
-      border: "1px solid #e5e7eb",
-      borderRadius: 16,
-      padding: 14,
-      boxShadow: "0 8px 20px rgba(17,24,39,0.06)",
+      background: "rgba(255, 255, 255, 0.9)",
+      backdropFilter: "blur(12px)",
+      border: "1px solid rgba(255, 255, 255, 0.5)",
+      borderRadius: 18,
+      padding: 20,
+      boxShadow: "0 8px 25px rgba(0,0,0,0.03)",
     },
-    cardLabel: { color: "#6b7280", fontWeight: 800, fontSize: 13 },
-    cardValue: { marginTop: 6, fontSize: 22, fontWeight: 950 },
+    cardLabel: { color: "#6b7280", fontWeight: 800, fontSize: 12, textTransform: "uppercase" },
+    cardValue: { marginTop: 8, fontSize: 24, fontWeight: 900, color: "#1f2937" },
 
-    tableWrap: { background: "#fff", border: "1px solid #e5e7eb", borderRadius: 16, overflow: "hidden" },
-    table: { width: "100%", borderCollapse: "collapse" },
+    tableWrap: {
+      background: "rgba(255, 255, 255, 0.95)",
+      backdropFilter: "blur(12px)",
+      border: "1px solid rgba(255, 255, 255, 0.5)",
+      borderRadius: 18,
+      overflow: "hidden",
+      boxShadow: "0 8px 30px rgba(0,0,0,0.03)",
+    },
+    table: { width: "100%", borderCollapse: "separate", borderSpacing: 0 },
     th: {
       textAlign: "left",
       fontSize: 12,
       color: "#6b7280",
-      padding: "12px 14px",
+      padding: "14px 16px",
       borderBottom: "1px solid #e5e7eb",
-      background: "#fafafa",
-      fontWeight: 900,
+      background: "#f9fafb",
+      fontWeight: 800,
+      textTransform: "uppercase",
     },
-    td: { padding: "12px 14px", borderBottom: "1px solid #f3f4f6", fontSize: 14, verticalAlign: "top" },
-    actions: { display: "flex", gap: 8, justifyContent: "flex-end" },
+    td: { padding: "14px 16px", borderBottom: "1px solid #f3f4f6", fontSize: 14, color: "#374151" },
+    actions: { display: "flex", gap: 10, justifyContent: "flex-end" },
 
-    error: { margin: "10px 0 0", color: "#b91c1c", fontWeight: 800, fontSize: 13 },
+    error: {
+      padding: "12px 16px",
+      background: "#fef2f2",
+      border: "1px solid #fee2e2",
+      borderRadius: 12,
+      color: "#b91c1c",
+      fontWeight: 700,
+      fontSize: 13,
+      marginBottom: 16,
+    },
 
     overlay: {
       position: "fixed",
       inset: 0,
-      background: "rgba(0,0,0,0.35)",
+      background: "rgba(15, 23, 42, 0.45)",
       display: "flex",
       alignItems: "center",
       justifyContent: "center",
-      padding: 14,
-      zIndex: 60,
+      padding: 20,
+      zIndex: 999,
+      backdropFilter: "blur(4px)",
     },
     modal: {
-      width: "min(640px, 96vw)",
+      width: "min(560px, 96vw)",
       background: "#fff",
-      borderRadius: 16,
-      border: "1px solid #e5e7eb",
-      boxShadow: "0 18px 55px rgba(0,0,0,0.25)",
+      borderRadius: 24,
+      border: "1px solid #e2e8f0",
+      boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25)",
       overflow: "hidden",
     },
     modalHead: {
-      padding: 14,
-      borderBottom: "1px solid #e5e7eb",
+      padding: "20px 24px",
+      borderBottom: "1px solid #e2e8f0",
       display: "flex",
       alignItems: "center",
       justifyContent: "space-between",
-      gap: 10,
+      gap: 12,
     },
-    modalTitle: { margin: 0, fontSize: 16, fontWeight: 950 },
-    modalBody: { padding: 14 },
-    grid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 },
-    label: { fontSize: 12, color: "#6b7280", fontWeight: 900, marginBottom: 6 },
-    input: { width: "100%", padding: "10px 12px", border: "1px solid #e5e7eb", borderRadius: 12, outline: "none" },
-    textarea: {
+    modalTitle: { margin: 0, fontSize: 18, fontWeight: 900, color: "#0f172a" },
+    modalBody: { padding: "24px" },
+    grid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 },
+    label: { fontSize: 12, color: "#6b7280", fontWeight: 800, marginBottom: 8, textTransform: "uppercase" },
+    input: {
       width: "100%",
-      padding: "10px 12px",
-      border: "1px solid #e5e7eb",
+      padding: "12px 14px",
+      border: "1px solid #e2e8f0",
       borderRadius: 12,
       outline: "none",
-      minHeight: 90,
+      fontSize: 14,
+      fontWeight: 600,
+      transition: "border 0.2s",
+    },
+    textarea: {
+      width: "100%",
+      padding: "12px 14px",
+      border: "1px solid #e2e8f0",
+      borderRadius: 12,
+      outline: "none",
+      fontSize: 14,
+      fontWeight: 600,
+      minHeight: 100,
       resize: "vertical",
     },
-    modalFoot: { padding: 14, borderTop: "1px solid #e5e7eb", display: "flex", justifyContent: "flex-end", gap: 10 },
+    modalFoot: {
+      padding: "16px 24px",
+      borderTop: "1px solid #e2e8f0",
+      display: "flex",
+      justifyContent: "flex-end",
+      gap: 12,
+      background: "#f8fafc",
+    },
   };
+
+  const styleTag = (
+    <style>{`
+      .page-wrapper { position: relative; min-height: 100%; overflow: hidden; }
+      .page-container { padding: 24px; position: relative; z-index: 1; }
+      .btn:hover:not(:disabled) { transform: translateY(-1px); boxShadow: 0 6px 16px rgba(74, 124, 78, 0.35); }
+      .btn:active:not(:disabled) { transform: translateY(0); }
+      .btnGhost:hover:not(:disabled) { background: #f9fafb; border-color: #d1d5db; }
+      input:focus, textarea:focus { border-color: #4a7c4e; box-shadow: 0 0 0 3px rgba(74, 124, 78, 0.1); }
+    `}</style>
+  );
 
   return (
     <AppLayout>
-      <div style={styles.page}>
-        <div style={styles.headerRow}>
-          <div>
-            <h1 style={styles.title}>Bank Withdrawals</h1>
-            <p style={styles.sub}>
-              Record cash withdrawn from the bank. These records are used in monthly cash/coin reports automatically.
-            </p>
-          </div>
+      <div className="page-wrapper">
+        <style>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-20px) translateX(10px); }
+          }
+          @keyframes floatReverse {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(20px) translateX(-10px); }
+          }
+          .floating-circle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
+          .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(76, 175, 80, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
+          .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(56, 142, 60, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
+          .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(67, 160, 71, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
+        `}</style>
 
-          <div style={styles.controls}>
-            <select style={styles.select} value={month} onChange={(e) => setMonth(Number(e.target.value))}>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
-                <option key={m} value={m}>
-                  {monthName(m)}
-                </option>
-              ))}
-            </select>
+        <div className="floating-circle fc-1"></div>
+        <div className="floating-circle fc-2"></div>
+        <div className="floating-circle fc-3"></div>
 
-            <select style={styles.select} value={year} onChange={(e) => setYear(Number(e.target.value))}>
-              {[year - 2, year - 1, year, year + 1].map((y) => (
-                <option key={y} value={y}>
-                  {y}
-                </option>
-              ))}
-            </select>
+        <div className="page-container">
+          <div style={styles.headerRow}>
+            <div>
+              <h1 style={styles.title}>Bank Withdrawals</h1>
+              <p style={styles.sub}>
+                Record cash withdrawn from the bank. These records are used in monthly cash/coin reports automatically.
+              </p>
+            </div>
 
-            <button style={styles.btn} onClick={openCreate}>
-              + Add Withdrawal
-            </button>
-          </div>
-        </div>
+            <div style={styles.controls}>
+              <select style={styles.select} value={month} onChange={(e) => setMonth(Number(e.target.value))}>
+                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((m) => (
+                  <option key={m} value={m}>
+                    {monthName(m)}
+                  </option>
+                ))}
+              </select>
 
-        <div style={styles.cards}>
-          <div style={styles.card}>
-            <div style={styles.cardLabel}>Total Withdrawn ({monthName(month)} {year})</div>
-            <div style={styles.cardValue}>{formatLKR(totalForMonth)}</div>
-            <div style={{ marginTop: 8, color: "#6b7280", fontSize: 13 }}>
-              Transactions: <b>{rows.length}</b>
+              <select style={styles.select} value={year} onChange={(e) => setYear(Number(e.target.value))}>
+                {[year - 2, year - 1, year, year + 1].map((y) => (
+                  <option key={y} value={y}>
+                    {y}
+                  </option>
+                ))}
+              </select>
+
+              <button style={styles.btn} onClick={openCreate}>
+                + Add Withdrawal
+              </button>
             </div>
           </div>
 
-          <div style={styles.card}>
-            <div style={styles.cardLabel}>System Status</div>
-            <div style={styles.cardValue}>{loading ? "Loading..." : "Ready"}</div>
-            <div style={{ marginTop: 8, color: "#6b7280", fontSize: 13 }}>
-              You can add, edit, and delete withdrawal records for reconciliation.
+          <div style={styles.cards}>
+            <div style={styles.card}>
+              <div style={styles.cardLabel}>Total Withdrawn ({monthName(month)} {year})</div>
+              <div style={styles.cardValue}>{formatLKR(totalForMonth)}</div>
+              <div style={{ marginTop: 8, color: "#6b7280", fontSize: 13 }}>
+                Transactions: <b>{rows.length}</b>
+              </div>
+            </div>
+
+            <div style={styles.card}>
+              <div style={styles.cardLabel}>System Status</div>
+              <div style={styles.cardValue}>{loading ? "Loading..." : "Ready"}</div>
+              <div style={{ marginTop: 8, color: "#6b7280", fontSize: 13 }}>
+                You can add, edit, and delete withdrawal records for reconciliation.
+              </div>
             </div>
           </div>
-        </div>
 
-        {error ? <div style={styles.error}>{error}</div> : null}
+          {error ? <div style={styles.error}>{error}</div> : null}
 
-        <div style={styles.tableWrap}>
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>Date</th>
-                <th style={styles.th}>Bank Ref</th>
-                <th style={styles.th}>Amount</th>
-                <th style={styles.th}>Notes</th>
-                <th style={{ ...styles.th, textAlign: "right" }}>Actions</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {loading ? (
+          <div style={styles.tableWrap}>
+            <table style={styles.table}>
+              <thead>
                 <tr>
-                  <td style={styles.td} colSpan={5}>
-                    Loading withdrawals...
-                  </td>
+                  <th style={styles.th}>Date</th>
+                  <th style={styles.th}>Bank Ref</th>
+                  <th style={styles.th}>Amount</th>
+                  <th style={styles.th}>Notes</th>
+                  <th style={{ ...styles.th, textAlign: "right" }}>Actions</th>
                 </tr>
-              ) : rows.length === 0 ? (
-                <tr>
-                  <td style={styles.td} colSpan={5}>
-                    No withdrawals found for this month.
-                  </td>
-                </tr>
-              ) : (
-                rows.map((r) => (
-                  <tr key={r.id}>
-                    <td style={styles.td}>{String(r.date).slice(0, 10)}</td>
-                    <td style={styles.td}>{r.bank_ref}</td>
-                    <td style={styles.td}>
-                      <b>{formatLKR(r.amount)}</b>
-                    </td>
-                    <td style={styles.td}>{r.notes || <span style={{ color: "#9ca3af" }}>—</span>}</td>
-                    <td style={styles.td}>
-                      <div style={styles.actions}>
-                        <button style={styles.btnGhost} onClick={() => openEdit(r)}>
-                          Edit
-                        </button>
-                        <button
-                          style={{ ...styles.btnGhost, borderColor: "#fecaca", color: "#b91c1c" }}
-                          onClick={() => onDelete(r)}
-                        >
-                          Delete
-                        </button>
-                      </div>
+              </thead>
+
+              <tbody>
+                {loading ? (
+                  <tr>
+                    <td style={styles.td} colSpan={5}>
+                      Loading withdrawals...
                     </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+                ) : rows.length === 0 ? (
+                  <tr>
+                    <td style={styles.td} colSpan={5}>
+                      No withdrawals found for this month.
+                    </td>
+                  </tr>
+                ) : (
+                  rows.map((r) => (
+                    <tr key={r.id}>
+                      <td style={styles.td}>{String(r.date).slice(0, 10)}</td>
+                      <td style={styles.td}>{r.bank_ref}</td>
+                      <td style={styles.td}>
+                        <b>{formatLKR(r.amount)}</b>
+                      </td>
+                      <td style={styles.td}>{r.notes || <span style={{ color: "#9ca3af" }}>—</span>}</td>
+                      <td style={styles.td}>
+                        <div style={styles.actions}>
+                          <button style={styles.btnGhost} onClick={() => openEdit(r)}>
+                            Edit
+                          </button>
+                          <button
+                            style={{ ...styles.btnGhost, borderColor: "#fecaca", color: "#b91c1c" }}
+                            onClick={() => onDelete(r)}
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
 
-        {open ? (
-          <div
-            style={styles.overlay}
-            onMouseDown={() => {
-              setOpen(false);
-              resetForm();
-            }}
-          >
+          {open ? (
             <div
-              style={styles.modal}
-              onMouseDown={(e) => {
-                e.stopPropagation();
+              style={styles.overlay}
+              onMouseDown={() => {
+                setOpen(false);
+                resetForm();
               }}
             >
-              <div style={styles.modalHead}>
-                <h3 style={styles.modalTitle}>
-                  {mode === "create" ? "Add Withdrawal" : "Edit Withdrawal"}
-                </h3>
-                <button
-                  style={styles.btnGhost}
-                  onClick={() => {
-                    setOpen(false);
-                    resetForm();
-                  }}
-                >
-                  Close
-                </button>
-              </div>
-
-              <div style={styles.modalBody}>
-                <div style={styles.grid}>
-                  <div>
-                    <div style={styles.label}>Date</div>
-                    <input style={styles.input} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-                  </div>
-
-                  <div>
-                    <div style={styles.label}>Amount (LKR)</div>
-                    <input
-                      style={styles.input}
-                      inputMode="decimal"
-                      placeholder="e.g., 20000"
-                      value={amount}
-                      onChange={(e) => setAmount(e.target.value)}
-                    />
-                  </div>
-
-                  <div style={{ gridColumn: "span 2" }}>
-                    <div style={styles.label}>Bank Reference</div>
-                    <input
-                      style={styles.input}
-                      placeholder="e.g., BNK-REF-8191"
-                      value={bankRef}
-                      onChange={(e) => setBankRef(e.target.value)}
-                    />
-                  </div>
-
-                  <div style={{ gridColumn: "span 2" }}>
-                    <div style={styles.label}>Notes (optional)</div>
-                    <textarea
-                      style={styles.textarea}
-                      placeholder="Optional note"
-                      value={notes}
-                      onChange={(e) => setNotes(e.target.value)}
-                    />
-                  </div>
+              <div
+                style={styles.modal}
+                onMouseDown={(e) => {
+                  e.stopPropagation();
+                }}
+              >
+                <div style={styles.modalHead}>
+                  <h3 style={styles.modalTitle}>
+                    {mode === "create" ? "Add Withdrawal" : "Edit Withdrawal"}
+                  </h3>
+                  <button
+                    style={styles.btnGhost}
+                    onClick={() => {
+                      setOpen(false);
+                      resetForm();
+                    }}
+                  >
+                    Close
+                  </button>
                 </div>
 
-                {error ? <div style={styles.error}>{error}</div> : null}
-              </div>
+                <div style={styles.modalBody}>
+                  <div style={styles.grid}>
+                    <div>
+                      <div style={styles.label}>Date</div>
+                      <input style={styles.input} type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+                    </div>
 
-              <div style={styles.modalFoot}>
-                <button
-                  style={styles.btnGhost}
-                  onClick={() => {
-                    setOpen(false);
-                    resetForm();
-                  }}
-                  disabled={saving}
-                >
-                  Cancel
-                </button>
+                    <div>
+                      <div style={styles.label}>Amount (LKR)</div>
+                      <input
+                        style={styles.input}
+                        inputMode="decimal"
+                        placeholder="e.g., 20000"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                      />
+                    </div>
 
-                <button style={styles.btn} onClick={onSave} disabled={saving}>
-                  {saving ? "Saving..." : "Save"}
-                </button>
+                    <div style={{ gridColumn: "span 2" }}>
+                      <div style={styles.label}>Bank Reference</div>
+                      <input
+                        style={styles.input}
+                        placeholder="e.g., BNK-REF-8191"
+                        value={bankRef}
+                        onChange={(e) => setBankRef(e.target.value)}
+                      />
+                    </div>
+
+                    <div style={{ gridColumn: "span 2" }}>
+                      <div style={styles.label}>Notes (optional)</div>
+                      <textarea
+                        style={styles.textarea}
+                        placeholder="Optional note"
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {error ? <div style={styles.error}>{error}</div> : null}
+                </div>
+
+                <div style={styles.modalFoot}>
+                  <button
+                    style={styles.btnGhost}
+                    onClick={() => {
+                      setOpen(false);
+                      resetForm();
+                    }}
+                    disabled={saving}
+                  >
+                    Cancel
+                  </button>
+
+                  <button style={styles.btn} onClick={onSave} disabled={saving}>
+                    {saving ? "Saving..." : "Save"}
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-        ) : null}
+          ) : null}
+        </div>
       </div>
     </AppLayout>
   );
