@@ -11,8 +11,17 @@ export const deactivateEmployeeApi = async (employee_id) => {
   return res.data;
 };
 
-// (Optional) if you add list endpoint later
-export const listEmployeesApi = async () => {
+export const getEmployeesApi = async () => {
   const res = await api.get("/manager/employees");
+  return res.data;
+};
+
+export const getDepartmentsApi = async () => {
+  const res = await api.get("/manager/departments");
+  return res.data;
+};
+
+export const updateEmployeeApi = async (employee_id, payload) => {
+  const res = await api.put(`/manager/employees/${employee_id}`, payload);
   return res.data;
 };

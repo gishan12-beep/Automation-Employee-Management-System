@@ -4,8 +4,9 @@ import AppLayout from "../../../components/layout/AppLayout";
 import {
   createEmployeeApi,
   deactivateEmployeeApi,
-  // getDepartmentsApi,
-  // getEmployeesApi,
+  getDepartmentsApi,
+  getEmployeesApi,
+  updateEmployeeApi,
 } from "../../../services/managerEmployeeService";
 
 /**
@@ -16,56 +17,18 @@ import {
  * salary_configurations(config_id, employee_id, salary_type, basic_rate, is_epf_eligible, effective_date)
  */
 
-const fallbackDepartments = [
-  { id: 1, name: "Production", description: null },
-  { id: 2, name: "Packaging", description: null },
-  { id: 3, name: "Logistics", description: null },
-];
 
-const dummyEmployees = [
-  {
-    employee_id: "1001",
-    department_id: 1,
-    first_name: "Kamal",
-    last_name: "Perera",
-    nic: "200012345678",
-    email: "kamal1001@gmail.com",
-    phone: "0771234567",
-    status: "INACTIVE",
-    created_at: "2026-01-20 19:22:29",
 
-    // ✅ Salary config (optional demo fields)
-    salary_type: "DAILY",
-    basic_rate: 2500.0,
-    is_epf_eligible: 0,
-    effective_date: "2026-01-01",
-  },
-  {
-    employee_id: "1002",
-    department_id: 2,
-    first_name: "Bandara",
-    last_name: "-",
-    nic: "200327911040",
-    email: "gishanb27@gmail.com",
-    phone: "0719364037",
-    status: "ACTIVE",
-    created_at: "2026-01-20 19:50:56",
 
-    salary_type: "MONTHLY",
-    basic_rate: 75000.0,
-    is_epf_eligible: 1,
-    effective_date: "2026-01-01",
-  },
-];
 
 function EmployeeManagement() {
-  const [employees, setEmployees] = useState(dummyEmployees);
+  const [employees, setEmployees] = useState([]);
 
   // eslint-disable-next-line no-unused-vars
-  const [departments, setDepartments] = useState(fallbackDepartments);
+  const [departments, setDepartments] = useState([]);
 
   const [selectedEmpId, setSelectedEmpId] = useState(
-    dummyEmployees?.[0]?.employee_id || null
+    null
   );
 
   const [search, setSearch] = useState("");
@@ -85,19 +48,19 @@ function EmployeeManagement() {
   const [newCreds, setNewCreds] = useState(null);
 
   useEffect(() => {
-    // (async () => {
-    //   try {
-    //     const d = await getDepartmentsApi();
-    //     setDepartments(Array.isArray(d) ? d : d.departments || []);
-    //   } catch (e) {
-    //     setDepartments(fallbackDepartments);
-    //   }
-    //
-    //   try {
-    //     const emps = await getEmployeesApi();
-    //     setEmployees(Array.isArray(emps) ? emps : emps.employees || []);
-    //   } catch (e) {}
-    // })();
+    (async () => {
+      try {
+        const d = await getDepartmentsApi();
+        setDepartments(Array.isArray(d) ? d : d.departments || []);
+      } catch (e) {
+        setDepartments([]);
+      }
+
+      try {
+        const emps = await getEmployeesApi();
+        setEmployees(Array.isArray(emps) ? emps : emps.employees || []);
+      } catch (e) { }
+    })();
   }, []);
 
   const deptMap = useMemo(() => {
@@ -248,21 +211,51 @@ function EmployeeManagement() {
 
     // ✅ If you don’t have update API yet, keep edit as UI-only
     if (isExisting) {
-      setEmployees((prev) =>
-        prev.map((emp) =>
-          String(emp.employee_id) === String(formData.employee_id)
-            ? {
-              ...emp,
-              ...formData,
-              department_id: Number(formData.department_id),
-              basic_rate: formData.basic_rate === "" ? "" : Number(formData.basic_rate),
-              is_epf_eligible: Number(formData.is_epf_eligible) ? 1 : 0,
-            }
-            : emp
-        )
-      );
-      setSelectedEmpId(formData.employee_id);
-      closeModal();
+      try {
+        const payload = {
+          department_id: Number(formData.department_id),
+          first_name: String(formData.first_name).trim(),
+          last_name: String(formData.last_name || "-").trim(),
+          nic: String(formData.nic).trim(),
+          email: String(formData.email).trim(),
+          phone: String(formData.phone).trim(),
+          status: String(formData.status || "ACTIVE").trim(),
+          salary_configuration: {
+            salary_type: String(formData.salary_type).trim(),
+            basic_rate: Number(formData.basic_rate),
+            is_epf_eligible: Number(formData.is_epf_eligible) ? 1 : 0,
+            effective_date: String(formData.effective_date).trim(),
+          },
+        };
+
+        const updatedData = await updateEmployeeApi(formData.employee_id, payload);
+        const updatedEmp = updatedData.employee;
+
+        // Merge helper for updating list
+        setEmployees((prev) =>
+          prev.map((emp) =>
+            String(emp.employee_id) === String(formData.employee_id)
+              ? {
+                ...emp,
+                ...updatedEmp,
+                salary_type: payload.salary_configuration.salary_type,
+                basic_rate: payload.salary_configuration.basic_rate,
+                is_epf_eligible: payload.salary_configuration.is_epf_eligible,
+                effective_date: payload.salary_configuration.effective_date,
+              }
+              : emp
+          )
+        );
+        setSelectedEmpId(formData.employee_id);
+        closeModal();
+      } catch (err) {
+        const msg =
+          err?.response?.data?.message ||
+          err?.response?.data?.error ||
+          err.message ||
+          "Failed to update employee";
+        alert(msg);
+      }
       return;
     }
 
@@ -780,6 +773,8 @@ function EmployeeManagement() {
                       >
                         <option value="ACTIVE">ACTIVE</option>
                         <option value="INACTIVE">INACTIVE</option>
+                        <option value="RESIGNED">RESIGNED</option>
+                        <option value="TERMINATED">TERMINATED</option>
                       </select>
                     ) : (
                       <div style={styles.readValue}>{formData.status || "-"}</div>

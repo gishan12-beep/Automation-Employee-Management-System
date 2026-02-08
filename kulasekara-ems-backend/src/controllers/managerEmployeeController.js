@@ -204,3 +204,142 @@ export const deactivateEmployee = async (req, res) => {
     conn.release();
   }
 };
+
+/**
+ * GET /api/manager/employees
+ * - Fetch all employees + salary config
+ */
+export const getEmployees = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT e.*, 
+              s.salary_type, s.basic_rate, s.is_epf_eligible, s.effective_date
+       FROM employee e
+       LEFT JOIN salary_configurations s ON e.employee_id = s.employee_id
+       ORDER BY e.created_at DESC`
+    );
+    return res.json(rows);
+  } catch (err) {
+    return res.status(500).json({ message: "Fetch employees failed", error: err.message });
+  }
+};
+
+/**
+ * GET /api/manager/departments
+ * - Fetch all departments
+ */
+export const getDepartments = async (req, res) => {
+  try {
+    const [rows] = await pool.query("SELECT * FROM departments ORDER BY id ASC");
+    return res.json(rows);
+  } catch (err) {
+    return res.status(500).json({ message: "Fetch departments failed", error: err.message });
+  }
+};
+
+/**
+ * PUT /api/manager/employees/:employee_id
+ * - Updates employee details
+ * - Updates salary config (if provided)
+ */
+export const updateEmployee = async (req, res) => {
+  const { employee_id } = req.params;
+  const {
+    department_id,
+    first_name,
+    last_name,
+    nic,
+    email,
+    phone,
+    status,
+    salary_configuration,
+  } = req.body;
+
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+
+    // 1) Update Employee Table
+    await conn.query(
+      `UPDATE employee 
+       SET department_id=?, first_name=?, last_name=?, nic=?, email=?, phone=?, status=?
+       WHERE employee_id=?`,
+      [
+        Number(department_id),
+        String(first_name),
+        String(last_name),
+        String(nic),
+        String(email),
+        String(phone),
+        String(status),
+        employee_id,
+      ]
+    );
+
+    // 1.5) Sync User Active Status
+    // If status is ACTIVE -> is_active=1, else (INACTIVE/RESIGNED/TERMINATED) -> is_active=0
+    const isActive = status === 'ACTIVE' ? 1 : 0;
+    await conn.query(
+      `UPDATE user SET is_active = ? WHERE employee_id = ?`,
+      [isActive, employee_id]
+    );
+
+    // 2) Update Salary Config (if present)
+    if (salary_configuration) {
+      const { salary_type, basic_rate, is_epf_eligible, effective_date } = salary_configuration;
+
+      const [existingConfig] = await conn.query(
+        "SELECT config_id FROM salary_configurations WHERE employee_id=?",
+        [employee_id]
+      );
+
+      if (existingConfig.length > 0) {
+        await conn.query(
+          `UPDATE salary_configurations
+           SET salary_type=?, basic_rate=?, is_epf_eligible=?, effective_date=?
+           WHERE employee_id=?`,
+          [
+            String(salary_type),
+            Number(basic_rate),
+            Number(is_epf_eligible) ? 1 : 0,
+            String(effective_date),
+            employee_id,
+          ]
+        );
+      } else {
+        await conn.query(
+          `INSERT INTO salary_configurations (employee_id, salary_type, basic_rate, is_epf_eligible, effective_date)
+           VALUES (?, ?, ?, ?, ?)`,
+          [
+            employee_id,
+            String(salary_type),
+            Number(basic_rate),
+            Number(is_epf_eligible) ? 1 : 0,
+            String(effective_date),
+          ]
+        );
+      }
+    }
+
+    await conn.commit();
+
+    return res.json({
+      message: "Employee updated successfully",
+      employee: {
+        employee_id,
+        department_id,
+        first_name,
+        last_name,
+        nic,
+        email,
+        phone,
+        status,
+      },
+    });
+  } catch (err) {
+    await conn.rollback();
+    return res.status(500).json({ message: "Update failed", error: err.message });
+  } finally {
+    conn.release();
+  }
+};
