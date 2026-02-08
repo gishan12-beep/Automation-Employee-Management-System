@@ -1,30 +1,66 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import AppLayout from "../../components/layout/AppLayout";
+import { getEmployeesApi } from "../../services/managerEmployeeService";
+import { markAttendanceApi } from "../../services/managerAttendanceService";
 
 function Dashboard() {
+  const navigate = useNavigate();
   const [hoveredCard, setHoveredCard] = useState(null);
+
+  // Attendance Modal State
+  const [isAttModalOpen, setIsAttModalOpen] = useState(false);
+  const [employees, setEmployees] = useState([]);
+  const [attForm, setAttForm] = useState({
+    employee_id: "",
+    date: new Date().toISOString().slice(0, 10),
+    status: "PRESENT",
+    check_in: "09:00",
+    check_out: "",
+  });
+
+  // Fetch employees when modal opens
+  useEffect(() => {
+    if (isAttModalOpen && employees.length === 0) {
+      (async () => {
+        try {
+          const res = await getEmployeesApi();
+          setEmployees(Array.isArray(res) ? res : res.employees || []);
+        } catch (err) {
+          console.error("Failed to load employees for attendance", err);
+        }
+      })();
+    }
+  }, [isAttModalOpen, employees]);
+
+  const handleAttChange = (e) => {
+    const { name, value } = e.target;
+    setAttForm((p) => ({ ...p, [name]: value }));
+  };
+
+  const submitAttendance = async () => {
+    if (!attForm.employee_id) return alert("Please select an employee");
+    if (!attForm.date) return alert("Please select a date");
+
+    try {
+      await markAttendanceApi(attForm);
+      alert("Attendance marked successfully!");
+      setIsAttModalOpen(false);
+      // Reset form
+      setAttForm({
+        employee_id: "",
+        date: new Date().toISOString().slice(0, 10),
+        status: "PRESENT",
+        check_in: "09:00",
+        check_out: "",
+      });
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to mark attendance");
+    }
+  };
 
   return (
     <>
-      {/* Inline CSS Animations */}
-      <style>{`
-        @keyframes float {
-          0%, 100% { transform: translateY(0px) translateX(0px); }
-          50% { transform: translateY(-20px) translateX(10px); }
-        }
-        @keyframes floatReverse {
-          0%, 100% { transform: translateY(0px) translateX(0px); }
-          50% { transform: translateY(20px) translateX(-10px); }
-        }
-        .floating-circle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
-        .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(76, 175, 80, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
-        .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(56, 142, 60, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
-        .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(67, 160, 71, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .fade-in { animation: fadeIn 0.5s ease-out; }
-      `}</style>
-
       <AppLayout>
         <div style={styles.page}>
           <div className="floating-circle fc-1"></div>
@@ -181,7 +217,6 @@ function Dashboard() {
             </div>
 
             {/* Quick Actions Section */}
-            {/* Quick Actions Section */}
             <div className="fade-in" style={styles.quickActionsPanel}>
               <div style={styles.panelHeader}>
                 <div style={styles.panelTitleSection}>
@@ -193,28 +228,32 @@ function Dashboard() {
               </div>
 
               <div style={styles.quickActionsGrid}>
-                <button style={styles.actionButton}>
+                {/* 1) Add Employee */}
+                <button style={styles.actionButton} onClick={() => navigate("/manager/employees")}>
                   <svg style={styles.actionIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                   </svg>
                   <span style={styles.actionText}>Add Employee</span>
                 </button>
 
-                <button style={styles.actionButton}>
+                {/* 2) Mark Attendance */}
+                <button style={styles.actionButton} onClick={() => setIsAttModalOpen(true)}>
                   <svg style={styles.actionIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
                   </svg>
                   <span style={styles.actionText}>Mark Attendance</span>
                 </button>
 
-                <button style={styles.actionButton}>
+                {/* 3) Process Payroll */}
+                <button style={styles.actionButton} onClick={() => navigate("/manager/payroll")}>
                   <svg style={styles.actionIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
                   <span style={styles.actionText}>Process Payroll</span>
                 </button>
 
-                <button style={styles.actionButton}>
+                {/* 4) Generate Report */}
+                <button style={styles.actionButton} onClick={() => navigate("/manager/reports")}>
                   <svg style={styles.actionIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
@@ -223,8 +262,95 @@ function Dashboard() {
               </div>
             </div>
           </div>
+
+          {/* ATTENDANCE MODAL */}
+          {isAttModalOpen && (
+            <div style={styles.modalOverlay} onClick={() => setIsAttModalOpen(false)}>
+              <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
+                <div style={styles.modalHeader}>
+                  <h3 style={styles.modalTitle}>Mark Attendance</h3>
+                  <button style={styles.iconBtn} onClick={() => setIsAttModalOpen(false)}>✕</button>
+                </div>
+                <div style={styles.modalBody}>
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>Employee</label>
+                    <select
+                      name="employee_id"
+                      value={attForm.employee_id}
+                      onChange={handleAttChange}
+                      style={styles.select}
+                    >
+                      <option value="">-- Select Employee --</option>
+                      {employees.map((emp) => (
+                        <option key={emp.employee_id} value={emp.employee_id}>
+                          {emp.first_name} {emp.last_name} ({emp.employee_id})
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>Date</label>
+                    <input
+                      type="date"
+                      name="date"
+                      value={attForm.date}
+                      onChange={handleAttChange}
+                      style={styles.input}
+                    />
+                  </div>
+                  <div style={styles.formGroup}>
+                    <label style={styles.label}>Status</label>
+                    <select
+                      name="status"
+                      value={attForm.status}
+                      onChange={handleAttChange}
+                      style={styles.select}
+                    >
+                      <option value="PRESENT">PRESENT</option>
+                      <option value="ABSENT">ABSENT</option>
+                      <option value="LATE">LATE</option>
+                      <option value="HALF_DAY">HALF_DAY</option>
+                      <option value="LEAVE">LEAVE</option>
+                    </select>
+                  </div>
+                  <div style={styles.row}>
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>Check In</label>
+                      <input
+                        type="time"
+                        name="check_in"
+                        value={attForm.check_in}
+                        onChange={handleAttChange}
+                        style={styles.input}
+                      />
+                    </div>
+                    <div style={styles.formGroup}>
+                      <label style={styles.label}>Check Out</label>
+                      <input
+                        type="time"
+                        name="check_out"
+                        value={attForm.check_out}
+                        onChange={handleAttChange}
+                        style={styles.input}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div style={styles.modalFooter}>
+                  <button style={styles.btnSecondary} onClick={() => setIsAttModalOpen(false)}>Cancel</button>
+                  <button style={styles.btnPrimary} onClick={submitAttendance}>Save Attendance</button>
+                </div>
+              </div>
+            </div>
+          )}
+
         </div>
       </AppLayout>
+
+      {/* Inline Styles for Modal */}
+      <style>{`
+         /* ... existing styles ... */
+      `}</style>
     </>
   );
 }
@@ -232,6 +358,7 @@ function Dashboard() {
 export default Dashboard;
 
 const styles = {
+  // ... Keep existing styles ...
   page: { position: "relative", minHeight: "100%", overflow: "hidden" },
   container: { padding: 24, position: "relative", zIndex: 1 },
 
@@ -432,7 +559,7 @@ const styles = {
   },
   quickActionsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
     gap: 16,
   },
   actionButton: {
@@ -459,4 +586,42 @@ const styles = {
     fontWeight: 700,
     color: "#374151",
   },
+
+  // Modal Styles
+  modalOverlay: {
+    position: "fixed",
+    top: 0, left: 0, right: 0, bottom: 0,
+    background: "rgba(0,0,0,0.4)",
+    backdropFilter: "blur(4px)",
+    zIndex: 1000,
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modal: {
+    background: "#fff",
+    borderRadius: 20,
+    width: "90%",
+    maxWidth: 500,
+    boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+    animation: "fadeIn 0.2s ease-out",
+  },
+  modalHeader: {
+    padding: "20px 24px",
+    borderBottom: "1px solid #f3f4f6",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  modalTitle: { margin: 0, fontSize: 18, fontWeight: 700, color: "#111827" },
+  iconBtn: { background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#6b7280" },
+  modalBody: { padding: 24, display: "flex", flexDirection: "column", gap: 16 },
+  formGroup: { display: "flex", flexDirection: "column", gap: 6 },
+  label: { fontSize: 12, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.05em" },
+  select: { padding: "10px", borderRadius: 8, border: "1px solid #d1d5db", fontSize: 14, outline: "none" },
+  input: { padding: "10px", borderRadius: 8, border: "1px solid #d1d5db", fontSize: 14, outline: "none" },
+  row: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 },
+  modalFooter: { padding: "20px 24px", borderTop: "1px solid #f3f4f6", display: "flex", justifyContent: "flex-end", gap: 12 },
+  btnSecondary: { padding: "10px 20px", borderRadius: 10, border: "1px solid #d1d5db", background: "#fff", cursor: "pointer", fontWeight: 600, color: "#374151" },
+  btnPrimary: { padding: "10px 20px", borderRadius: 10, border: "none", background: "#4a7c4e", color: "#fff", cursor: "pointer", fontWeight: 600 },
 };
