@@ -3,7 +3,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
 import { Modal } from "../../../components/common/Modal";
 import WorkDetailsForm from "./WorkDetailsForm";
-import { getEmployeesApi, getDepartmentsApi } from "../../../services/managerEmployeeService";
+import { getEmployeesApi, getDepartmentsApi, getEmployeeAttendanceStatsApi } from "../../../services/managerEmployeeService";
 
 // Dummy employees (replace with DB)
 // Dummy employees (replaced with DB)
@@ -44,6 +44,9 @@ export default function AttendanceList() {
   // selected employee (for work dashboard)
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
+  // formatted attendance for selected employee
+  const [attendanceStats, setAttendanceStats] = useState({ checkIn: "-", checkOut: "-" });
+
   // date filter for work details dashboard
   const [workDate, setWorkDate] = useState(() => new Date().toISOString().slice(0, 10));
 
@@ -52,6 +55,32 @@ export default function AttendanceList() {
 
   // modal for add work
   const [showModal, setShowModal] = useState(false);
+
+  // Fetch attendance stats when selectedEmployee changes is handled separately
+  useEffect(() => {
+    if (!selectedEmployee) {
+      setAttendanceStats({ checkIn: "-", checkOut: "-" });
+      return;
+    }
+
+    (async () => {
+      try {
+        const res = await getEmployeeAttendanceStatsApi(selectedEmployee.employeeID);
+        const record = res.attendance;
+        if (record) {
+          setAttendanceStats({
+            checkIn: record.check_in ? record.check_in.slice(0, 5) : "-",
+            checkOut: record.check_out ? record.check_out.slice(0, 5) : "-",
+          });
+        } else {
+          setAttendanceStats({ checkIn: "-", checkOut: "-" });
+        }
+      } catch (err) {
+        console.error("Failed to fetch attendance stats", err);
+        setAttendanceStats({ checkIn: "-", checkOut: "-" });
+      }
+    })();
+  }, [selectedEmployee]);
 
   useEffect(() => {
     (async () => {
@@ -89,7 +118,7 @@ export default function AttendanceList() {
         }));
 
         setEmployees(mapped);
-        
+
         // Auto-select first if available
         if (mapped.length > 0) setSelectedEmployee(mapped[0]);
 
@@ -195,8 +224,8 @@ export default function AttendanceList() {
                   <InfoBox label="EMPLOYEE ID" value={selectedEmployee.employeeID} />
                   <InfoBox label="SALARY TYPE" value={selectedEmployee.salaryType} />
                   <InfoBox label="EMAIL" value={selectedEmployee.email} />
-                  <InfoBox label="LAST CHECK-IN" value={selectedEmployee.lastCheckIn || "—"} />
-                  <InfoBox label="LAST CHECK-OUT" value={selectedEmployee.lastCheckOut || "—"} />
+                  <InfoBox label="LAST CHECK-IN" value={attendanceStats.checkIn} />
+                  <InfoBox label="LAST CHECK-OUT" value={attendanceStats.checkOut} />
                 </div>
               </div>
             </div>

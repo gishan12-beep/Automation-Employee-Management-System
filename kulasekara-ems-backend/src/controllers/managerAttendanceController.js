@@ -50,3 +50,30 @@ export const markAttendance = async (req, res) => {
         conn.release();
     }
 };
+
+/**
+ * GET /api/manager/attendance/:employee_id/stats
+ * - Get latest attendance info for an employee (e.g., today's or most recent)
+ */
+export const getEmployeeAttendanceStats = async (req, res) => {
+    const { employee_id } = req.params;
+
+    try {
+        // Get the latest attendance record
+        const [rows] = await pool.query(
+            `SELECT * FROM attendance 
+             WHERE employee_id = ? 
+             ORDER BY date DESC, attendance_id DESC 
+             LIMIT 1`,
+            [employee_id]
+        );
+
+        if (rows.length === 0) {
+            return res.json({ attendance: null });
+        }
+
+        return res.json({ attendance: rows[0] });
+    } catch (err) {
+        return res.status(500).json({ message: "Fetch stats failed", error: err.message });
+    }
+};

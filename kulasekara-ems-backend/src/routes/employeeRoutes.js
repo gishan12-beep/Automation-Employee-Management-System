@@ -2,6 +2,12 @@ import express from "express";
 import { requireAuth, requireRole } from "../middleware/authMiddleware.js";
 import { blockIfMustChangePassword } from "../middleware/mustChangePasswordMiddleware.js";
 
+import {
+  getTodayAttendance,
+  markCheckIn,
+  markCheckOut
+} from "../controllers/employeeAttendanceController.js";
+
 const router = express.Router();
 
 /**
@@ -16,9 +22,14 @@ router.use(
   blockIfMustChangePassword
 );
 
-// Example employee dashboard API
+// Dashboard
 router.get("/dashboard", (req, res) => {
   res.json({ message: "Employee dashboard access granted" });
 });
+
+// Attendance
+router.get("/attendance/today", getTodayAttendance);
+router.post("/attendance/check-in", markCheckIn);
+router.put("/attendance/check-out", markCheckOut);
 
 export default router;

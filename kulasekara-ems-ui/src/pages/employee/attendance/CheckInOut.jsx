@@ -1,6 +1,6 @@
-// src/pages/employee/attendance/MyAttendance.jsx
 import React, { useEffect, useMemo, useState } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
+import { getTodayAttendanceApi, markCheckInApi, markCheckOutApi } from "../../../services/employeeService";
 
 /* ---------------- helpers ---------------- */
 const pad2 = (n) => String(n).padStart(2, "0");
@@ -151,6 +151,45 @@ export default function MyAttendance() {
     return () => clearInterval(interval);
   }, []);
 
+  // Fetch initial state
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getTodayAttendanceApi();
+        if (res.attendance) {
+          // Backend returns HH:MM:SS, let's make it ISO for calculation if needed
+          // Or just store the raw backend record and adjust calculation.
+          // The current code expects ISO strings for calculation. 
+          // Let's assume we construct ISO from today + time string.
+
+          const rec = res.attendance;
+          const toIso = (timeStr) => timeStr ? `${today}T${timeStr}` : null;
+
+          setRecords([{
+            attendance_id: rec.attendance_id,
+            employee_id: rec.employee_id,
+            date: rec.date.slice(0, 10), // ensure date string
+            check_in: toIso(rec.check_in),
+            check_out: toIso(rec.check_out),
+            status: rec.status
+          }]);
+        } else {
+          // No record yet
+          setRecords([{
+            attendance_id: 'temp',
+            employee_id: employeeId,
+            date: today,
+            check_in: null,
+            check_out: null,
+            status: "ABSENT",
+          }]);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    })();
+  }, [today, employeeId]);
+
   // UI-only records (store check_in/check_out as ISO timestamps for second-accurate timer)
   const [records, setRecords] = useState(() => [
     {
@@ -186,34 +225,48 @@ export default function MyAttendance() {
   );
 
   /* -------- actions -------- */
-  const handleCheckIn = () => {
-    const current = new Date();
-    setRecords((prev) =>
-      prev.map((r) =>
-        r.date === today
-          ? {
+  const handleCheckIn = async () => {
+    try {
+      const res = await markCheckInApi();
+      // check_in returned as HH:MM:SS
+      const timeIso = `${today}T${res.check_in}`;
+
+      setRecords((prev) =>
+        prev.map((r) =>
+          r.date === today
+            ? {
               ...r,
-              check_in: current.toISOString(),
+              check_in: timeIso,
               status: "PRESENT",
             }
-          : r
-      )
-    );
+            : r
+        )
+      );
+    } catch (err) {
+      alert(err.response?.data?.message || "Check-in failed");
+    }
   };
 
-  const handleCheckOut = () => {
-    const current = new Date();
-    setRecords((prev) =>
-      prev.map((r) =>
-        r.date === today
-          ? {
+  const handleCheckOut = async () => {
+    try {
+      const res = await markCheckOutApi();
+      // check_out returned as HH:MM:SS
+      const timeIso = `${today}T${res.check_out}`;
+
+      setRecords((prev) =>
+        prev.map((r) =>
+          r.date === today
+            ? {
               ...r,
-              check_out: current.toISOString(),
+              check_out: timeIso,
               status: "PRESENT",
             }
-          : r
-      )
-    );
+            : r
+        )
+      );
+    } catch (err) {
+      alert(err.response?.data?.message || "Check-out failed");
+    }
   };
 
   // Button logic
@@ -310,7 +363,7 @@ export default function MyAttendance() {
           <div style={styles.cardHead}>
             <div style={styles.cardTitle}>Attendance History</div>
             <div style={{ fontSize: 12, opacity: 0.7 }}>
-             Attendance` table
+              Attendance` table
             </div>
           </div>
 
