@@ -162,13 +162,17 @@ export default function MyAttendance() {
           // The current code expects ISO strings for calculation. 
           // Let's assume we construct ISO from today + time string.
 
+          // Map backend record to UI state
+          // Always set date to 'today' so todayRecord finds it.
+          // This bridges any potential UTC vs specific TZ date shift for the "current shift".
+
           const rec = res.attendance;
           const toIso = (timeStr) => timeStr ? `${today}T${timeStr}` : null;
 
           setRecords([{
             attendance_id: rec.attendance_id,
             employee_id: rec.employee_id,
-            date: rec.date.slice(0, 10), // ensure date string
+            date: today, // Force match
             check_in: toIso(rec.check_in),
             check_out: toIso(rec.check_out),
             status: rec.status
