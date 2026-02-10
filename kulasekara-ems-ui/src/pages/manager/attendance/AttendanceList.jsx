@@ -3,36 +3,11 @@ import React, { useEffect, useMemo, useState } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
 import { Modal } from "../../../components/common/Modal";
 import WorkDetailsForm from "./WorkDetailsForm";
+import { getEmployeesApi, getDepartmentsApi } from "../../../services/managerEmployeeService";
 
 // Dummy employees (replace with DB)
-const employeesData = [
-  {
-    id: 1,
-    employeeID: "EMP001",
-    name: "Pasindu Suranga",
-    role: "Employee",
-    department: "Production",
-    email: "Pasindusuranga@gmail.com",
-    status: "Active",
-    salaryType: "Monthly",
-    lastCheckIn: "08:00",
-    lastCheckOut: "16:00",
-    image: "https://via.placeholder.com/64",
-  },
-  {
-    id: 2,
-    employeeID: "EMP002",
-    name: "Janith wickramasinghe",
-    role: "Employee",
-    department: "Production",
-    email: "janith@gmail.com",
-    status: "Active",
-    salaryType: "Daily Wage",
-    lastCheckIn: "08:15",
-    lastCheckOut: "16:30",
-    image: "https://via.placeholder.com/64",
-  },
-];
+// Dummy employees (replaced with DB)
+// const employeesData = ...
 
 // Dummy work details (WORKDETAIL table shape)
 const workDetailsDummy = [
@@ -79,11 +54,51 @@ export default function AttendanceList() {
   const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    setEmployees(employeesData);
-    setWorkDetails(workDetailsDummy);
+    (async () => {
+      try {
+        // Fetch departments for mapping
+        let depts = [];
+        try {
+          const dRes = await getDepartmentsApi();
+          depts = Array.isArray(dRes) ? dRes : dRes.departments || [];
+        } catch (e) {
+          console.error("Failed departments", e);
+        }
+        const deptMap = {};
+        depts.forEach((d) => {
+          deptMap[d.id] = d.name;
+        });
 
-    // auto-select first employee (optional)
-    setSelectedEmployee(employeesData[0] || null);
+        // Fetch employees
+        const res = await getEmployeesApi();
+        const rawEmps = Array.isArray(res) ? res : res.employees || [];
+
+        // Map to UI
+        const mapped = rawEmps.map((e) => ({
+          id: e.employee_id, // use employee_id as unique key
+          employeeID: e.employee_id,
+          name: `${e.first_name} ${e.last_name}`,
+          role: "Employee", // default role
+          department: deptMap[e.department_id] || "Unknown",
+          email: e.email,
+          status: e.status === "ACTIVE" ? "Active" : "Inactive",
+          salaryType: e.salary_type || "Monthly", // from join
+          lastCheckIn: "-", // Not yet fetched/linked
+          lastCheckOut: "-",
+          image: "https://via.placeholder.com/64",
+        }));
+
+        setEmployees(mapped);
+        
+        // Auto-select first if available
+        if (mapped.length > 0) setSelectedEmployee(mapped[0]);
+
+      } catch (err) {
+        console.error("Failed to load employees", err);
+      }
+    })();
+
+    setWorkDetails(workDetailsDummy);
   }, []);
 
   const isDayWorker = (emp) => (emp?.salaryType || "").toLowerCase().includes("daily");
