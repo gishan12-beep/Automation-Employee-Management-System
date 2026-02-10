@@ -2,6 +2,7 @@
 import { pool } from "../config/db.js";
 import bcrypt from "bcrypt";
 import { generateTempPassword } from "../utils/passwordUtils.js";
+import { sendCredentialsEmail } from "../utils/mailer.js";
 
 
 /**
@@ -154,6 +155,13 @@ export const createEmployee = async (req, res) => {
     );
 
     await conn.commit();
+
+    // ✅ Send credentials via email (async, allow fail)
+    try {
+      await sendCredentialsEmail(email, username, tempPassword);
+    } catch (emailErr) {
+      console.error("Failed to send credentials email:", emailErr);
+    }
 
     // ✅ Return temp password ONCE to manager
     return res.status(201).json({
