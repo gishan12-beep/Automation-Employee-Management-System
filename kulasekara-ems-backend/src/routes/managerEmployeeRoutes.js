@@ -5,6 +5,7 @@ import {
   getEmployees,
   getDepartments,
   updateEmployee,
+  getDashboardStats,
 } from "../controllers/managerEmployeeController.js";
 import { requireAuth, requireRole } from "../middleware/authMiddleware.js";
 
@@ -21,6 +22,9 @@ router.get("/employees", requireAuth, requireRole("MANAGER"), getEmployees);
 
 // Manager gets departments
 router.get("/departments", requireAuth, requireRole("MANAGER"), getDepartments);
+
+// Manager gets dashboard stats
+router.get("/stats", requireAuth, requireRole("MANAGER"), getDashboardStats);
 
 // Manager removes (soft) employee
 router.patch(

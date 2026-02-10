@@ -25,3 +25,8 @@ export const updateEmployeeApi = async (employee_id, payload) => {
   const res = await api.put(`/manager/employees/${employee_id}`, payload);
   return res.data;
 };
+
+export const getDashboardStatsApi = async () => {
+  const res = await api.get("/manager/stats");
+  return res.data;
+};

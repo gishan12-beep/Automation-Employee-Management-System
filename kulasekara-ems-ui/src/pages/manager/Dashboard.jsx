@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../../components/layout/AppLayout";
-import { getEmployeesApi } from "../../services/managerEmployeeService";
+import { getEmployeesApi, getDashboardStatsApi } from "../../services/managerEmployeeService";
 import { markAttendanceApi } from "../../services/managerAttendanceService";
 
 function Dashboard() {
@@ -11,6 +11,8 @@ function Dashboard() {
   // Attendance Modal State
   const [isAttModalOpen, setIsAttModalOpen] = useState(false);
   const [employees, setEmployees] = useState([]);
+  const [stats, setStats] = useState(null);
+
   const [attForm, setAttForm] = useState({
     employee_id: "",
     date: new Date().toISOString().slice(0, 10),
@@ -18,6 +20,18 @@ function Dashboard() {
     check_in: "09:00",
     check_out: "",
   });
+
+  // Fetch stats on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const data = await getDashboardStatsApi();
+        setStats(data);
+      } catch (err) {
+        console.error("Failed to load dashboard stats", err);
+      }
+    })();
+  }, []);
 
   // Fetch employees when modal opens
   useEffect(() => {
@@ -106,7 +120,7 @@ function Dashboard() {
                 </div>
                 <div style={styles.cardText}>
                   <p style={styles.cardLabel}>Total Employees</p>
-                  <p style={styles.cardValue}>55</p>
+                  <p style={styles.cardValue}>{stats?.activeCount || 0}</p>
                   <p style={styles.cardHint}>Active members</p>
                 </div>
               </div>

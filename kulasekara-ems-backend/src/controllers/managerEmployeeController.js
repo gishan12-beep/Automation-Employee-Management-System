@@ -3,6 +3,22 @@ import { pool } from "../config/db.js";
 import bcrypt from "bcrypt";
 import { generateTempPassword } from "../utils/passwordUtils.js";
 
+
+/**
+ * GET /api/manager/stats
+ * - Returns dashboard statistics
+ */
+export const getDashboardStats = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT COUNT(*) as activeCount FROM employee WHERE status = 'ACTIVE'`
+    );
+    return res.json({ activeCount: rows[0].activeCount });
+  } catch (err) {
+    return res.status(500).json({ message: "Fetch stats failed", error: err.message });
+  }
+};
+
 /**
  * POST /api/manager/employees
  * - Creates employee row (manual employee_id)
