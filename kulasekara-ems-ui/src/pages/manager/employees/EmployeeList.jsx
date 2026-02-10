@@ -900,14 +900,20 @@ function EmployeeManagement() {
 
                 <div style={{ display: "flex", gap: "10px", marginTop: "12px", flexWrap: "wrap" }}>
                   <button
-                    style={styles.btnSecondary}
-                    onClick={() => navigator.clipboard.writeText(newCreds.username)}
+                    style={{ ...styles.btnSecondary, flex: 1 }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(newCreds.username);
+                      alert("Username copied!");
+                    }}
                   >
                     Copy Username
                   </button>
                   <button
-                    style={styles.btnPrimary}
-                    onClick={() => navigator.clipboard.writeText(newCreds.tempPassword)}
+                    style={{ ...styles.btnPrimary, flex: 1 }}
+                    onClick={() => {
+                      navigator.clipboard.writeText(newCreds.tempPassword);
+                      alert("Password copied!");
+                    }}
                   >
                     Copy Password
                   </button>
