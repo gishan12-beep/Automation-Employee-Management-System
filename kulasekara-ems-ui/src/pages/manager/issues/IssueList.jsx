@@ -1,6 +1,7 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
+import { ListFilter } from "lucide-react";
 
 const STORAGE_KEY = "kulasekara_manager_issues_v3";
 
@@ -137,6 +138,23 @@ export default function IssueList() {
   const [category, setCategory] = useState("ALL");
   const [q, setQ] = useState("");
 
+  // Filter popup state
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const filterRef = useRef(null);
+
+  // Close popup on click outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (filterRef.current && !filterRef.current.contains(event.target)) {
+        setShowFilterMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
   const filtered = useMemo(() => {
     const text = q.trim().toLowerCase();
     return issues.filter((i) => {
@@ -187,49 +205,60 @@ export default function IssueList() {
                 Review employee issues and add manager remarks for resolution tracking.
               </div>
             </div>
-          </div>
 
-          <IssuesDashboard issues={issues} />
-
-          {/* filters */}
-          <div style={styles.filtersRow}>
-            <div style={styles.selectGroup}>
-              <label style={styles.label}>Status</label>
-              <select value={status} onChange={(e) => setStatus(e.target.value)} style={styles.select}>
-                {STATUS.map((s) => (
-                  <option key={s} value={s}>
-                    {s.replace("_", " ")}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={styles.selectGroup}>
-              <label style={styles.label}>Category</label>
-              <select value={category} onChange={(e) => setCategory(e.target.value)} style={styles.select}>
-                {CATEGORY.map((c) => (
-                  <option key={c} value={c}>
-                    {c.replace("_", " ")}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ flex: 1 }}>
-              <label style={styles.label}>Search</label>
+            {/* Controls moved to Header */}
+            <div style={styles.headerControls}>
               <div style={styles.searchWrap}>
                 <input
                   value={q}
                   onChange={(e) => setQ(e.target.value)}
-                  placeholder="Search by issue id, employee, subject..."
+                  placeholder="Search..."
                   style={styles.searchInput}
                 />
-                <button style={styles.secondaryBtn} onClick={() => setQ("")}>
-                  Clear
+              </div>
+
+              <div style={{ position: "relative" }} ref={filterRef}>
+                <button
+                  style={{
+                    ...styles.secondaryBtn,
+                    background: showFilterMenu ? "#e5e7eb" : "white"
+                  }}
+                  onClick={() => setShowFilterMenu(!showFilterMenu)}
+                >
+                  <ListFilter size={18} style={{ marginRight: 8 }} />
+                  Filters
                 </button>
+
+                {showFilterMenu && (
+                  <div style={styles.filterPopup}>
+                    <div style={styles.filterGroup}>
+                      <label style={styles.label}>Status</label>
+                      <select value={status} onChange={(e) => setStatus(e.target.value)} style={styles.select}>
+                        {STATUS.map((s) => (
+                          <option key={s} value={s}>
+                            {s.replace("_", " ")}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div style={styles.filterGroup}>
+                      <label style={styles.label}>Category</label>
+                      <select value={category} onChange={(e) => setCategory(e.target.value)} style={styles.select}>
+                        {CATEGORY.map((c) => (
+                          <option key={c} value={c}>
+                            {c.replace("_", " ")}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
+
+          <IssuesDashboard issues={issues} />
 
           {/* table */}
           <div style={styles.tableCard}>
@@ -373,20 +402,20 @@ const styles = {
 
   searchWrap: { display: "flex", gap: 10 },
   searchInput: {
-    flex: 1,
+    minWidth: 260,
     border: "1px solid #e5e7eb",
     borderRadius: 10,
-    padding: "10px 12px",
+    padding: "0 12px",
     outline: "none",
     fontSize: 14,
     background: "#f9fafb",
-    height: 42,
+    height: 36,
     fontWeight: 600
   },
 
   // buttons
   secondaryBtn: {
-    height: 42,
+    height: 36,
     padding: "0 16px",
     borderRadius: 12,
     border: "1px solid #d1d5db",
@@ -443,4 +472,30 @@ const styles = {
     verticalAlign: "top",
     firstOfType: { borderRadius: "8px 0 0 8px" }
   },
+
+  // New styles
+  headerControls: {
+    display: "flex",
+    gap: 12,
+    alignItems: "center",
+  },
+  filterPopup: {
+    position: "absolute",
+    top: 50,
+    right: 0,
+    width: 260,
+    background: "white",
+    borderRadius: 16,
+    boxShadow: "0 10px 40px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)",
+    padding: 16,
+    zIndex: 20, // ensure above other items
+    display: "flex",
+    flexDirection: "column",
+    gap: 12,
+  },
+  filterGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+  }
 };

@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
+import { MoreVertical, ListFilter } from "lucide-react";
 import PayrollPreview from "./PayrollPreview";
 import SalarySlipGenerator from "./SalarySlipGenerator";
 
@@ -190,6 +191,44 @@ export default function ProcessPayroll() {
   const [generated, setGenerated] = useState({});
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [slipEmployee, setSlipEmployee] = useState(null);
+
+  // Dropdown state
+  const [activeDropdown, setActiveDropdown] = useState(null);
+  const dropdownRef = useRef(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setActiveDropdown(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  const toggleDropdown = (id, e) => {
+    e.stopPropagation();
+    setActiveDropdown(activeDropdown === id ? null : id);
+  };
+
+  // Filter menu state
+  const [showFilterMenu, setShowFilterMenu] = useState(false);
+  const filterRef = useRef(null);
+
+  useEffect(() => {
+    function handleClickOutsideFilter(event) {
+      if (filterRef.current && !filterRef.current.contains(event.target)) {
+        setShowFilterMenu(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutsideFilter);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutsideFilter);
+    };
+  }, []);
 
   const departments = useMemo(() => {
     const uniq = Array.from(new Set(mockEmployees.map((e) => e.department)));
@@ -414,37 +453,7 @@ export default function ProcessPayroll() {
       </div>
 
       <div style={styles.filters}>
-        {renderPeriodPicker()}
-
-        <Field label="Department">
-          <select
-            value={department}
-            onChange={(e) => setDepartment(e.target.value)}
-            style={styles.input}
-          >
-            {departments.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-        </Field>
-
-        <Field label="Salary Type">
-          <select
-            value={salaryType}
-            onChange={(e) => setSalaryType(e.target.value)}
-            style={styles.input}
-          >
-            <option value="All">All</option>
-            {salaryTypes.map((t) => (
-              <option key={t} value={t}>
-                {t}
-              </option>
-            ))}
-          </select>
-        </Field>
-
+        {/* Search Bar - Always Visible */}
         <Field label="Search" grow>
           <input
             value={query}
@@ -453,6 +462,61 @@ export default function ProcessPayroll() {
             style={styles.input}
           />
         </Field>
+
+        {/* Filter Button & Popup */}
+        <div style={{ position: "relative" }} ref={filterRef}>
+          <button
+            style={{
+              ...styles.secondaryBtn,
+              background: showFilterMenu ? "#e5e7eb" : "white"
+            }}
+            onClick={() => setShowFilterMenu(!showFilterMenu)}
+          >
+            <ListFilter size={18} style={{ marginRight: 8 }} />
+            Filters
+          </button>
+
+          {showFilterMenu && (
+            <div style={styles.filterPopup}>
+              <div style={styles.filterGroup}>
+                {renderPeriodPicker()}
+              </div>
+
+              <div style={styles.filterGroup}>
+                <Field label="Department">
+                  <select
+                    value={department}
+                    onChange={(e) => setDepartment(e.target.value)}
+                    style={styles.input}
+                  >
+                    {departments.map((d) => (
+                      <option key={d} value={d}>
+                        {d}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+
+              <div style={styles.filterGroup}>
+                <Field label="Salary Type">
+                  <select
+                    value={salaryType}
+                    onChange={(e) => setSalaryType(e.target.value)}
+                    style={styles.input}
+                  >
+                    <option value="All">All</option>
+                    {salaryTypes.map((t) => (
+                      <option key={t} value={t}>
+                        {t}
+                      </option>
+                    ))}
+                  </select>
+                </Field>
+              </div>
+            </div>
+          )}
+        </div>
 
         <button style={styles.primaryBtn} onClick={generateAll}>
           Generate All
@@ -526,31 +590,70 @@ export default function ProcessPayroll() {
                       {p.paidOn && <div style={styles.empMeta}>Paid on {p.paidOn}</div>}
                     </td>
 
-                    <td style={{ ...styles.td, textAlign: "right" }}>
-                      <button style={styles.smallBtn} onClick={() => openPreview(emp)}>
-                        Preview
-                      </button>
+                    <td style={{ ...styles.td, textAlign: "right", position: "relative" }}>
                       <button
-                        style={{ ...styles.smallBtn, ...(isGenerated ? styles.btnDisabled : {}) }}
-                        disabled={isGenerated}
-                        onClick={() => generatePayroll(emp)}
+                        style={styles.ghostBtn}
+                        onClick={(e) => toggleDropdown(emp.employeeID, e)}
                       >
-                        Generate
+                        <MoreVertical size={16} color="#374151" />
                       </button>
-                      <button
-                        style={{ ...styles.smallBtn, ...(isGenerated ? {} : styles.btnDisabled) }}
-                        disabled={!isGenerated}
-                        onClick={() => openSlip(emp)}
-                      >
-                        Slip
-                      </button>
-                      <button
-                        style={{ ...styles.smallBtn, ...(paid ? styles.btnDisabled : {}) }}
-                        disabled={paid}
-                        onClick={() => markPaid(emp)}
-                      >
-                        Paid
-                      </button>
+
+                      {activeDropdown === emp.employeeID && (
+                        <div style={styles.dropdownMenu} ref={dropdownRef}>
+                          <button
+                            style={styles.dropdownItem}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openPreview(emp);
+                              setActiveDropdown(null);
+                            }}
+                          >
+                            Preview
+                          </button>
+                          <button
+                            style={{
+                              ...styles.dropdownItem,
+                              ...(isGenerated ? styles.dropdownDisabled : {}),
+                            }}
+                            disabled={isGenerated}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              generatePayroll(emp);
+                              setActiveDropdown(null);
+                            }}
+                          >
+                            Generate
+                          </button>
+                          <button
+                            style={{
+                              ...styles.dropdownItem,
+                              ...(!isGenerated ? styles.dropdownDisabled : {}),
+                            }}
+                            disabled={!isGenerated}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              openSlip(emp);
+                              setActiveDropdown(null);
+                            }}
+                          >
+                            Slip
+                          </button>
+                          <button
+                            style={{
+                              ...styles.dropdownItem,
+                              ...(paid ? styles.dropdownDisabled : {}),
+                            }}
+                            disabled={paid}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markPaid(emp);
+                              setActiveDropdown(null);
+                            }}
+                          >
+                            Paid
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
                 );
@@ -671,6 +774,8 @@ const styles = {
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
+    zIndex: 20,
+    position: "relative",
   },
   field: { display: "flex", flexDirection: "column", gap: 8, minWidth: 180 },
   label: { fontSize: 12, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.3px" },
@@ -780,4 +885,85 @@ const styles = {
     transition: "all 0.2s",
   },
   btnDisabled: { opacity: 0.5, cursor: "not-allowed", background: "#f3f4f6" },
+
+  ghostBtn: {
+    background: "transparent",
+    border: "none",
+    padding: 8,
+    cursor: "pointer",
+    borderRadius: "50%",
+    transition: "background 0.2s",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    marginLeft: "auto",
+  },
+  dropdownMenu: {
+    position: "absolute",
+    top: 40,
+    right: 10,
+    background: "white",
+    borderRadius: 12,
+    boxShadow: "0 10px 25px rgba(0,0,0,0.1), 0 4px 10px rgba(0,0,0,0.05)",
+    border: "1px solid rgba(0,0,0,0.05)",
+    padding: 6,
+    zIndex: 50,
+    minWidth: 140,
+    display: "flex",
+    flexDirection: "column",
+    gap: 2,
+    backdropFilter: "blur(10px)",
+  },
+  dropdownItem: {
+    padding: "10px 14px",
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    textAlign: "left",
+    fontSize: 13,
+    fontWeight: 600,
+    color: "#374151",
+    borderRadius: 8,
+    transition: "background 0.1s",
+    display: "block",
+    width: "100%",
+  },
+  dropdownDisabled: {
+    color: "#9ca3af",
+    cursor: "not-allowed",
+  },
+
+  secondaryBtn: {
+    height: 42,
+    borderRadius: 12,
+    border: "1px solid #e5e7eb",
+    padding: "0 16px",
+    fontWeight: 600,
+    cursor: "pointer",
+    background: "white",
+    color: "#374151",
+    display: "flex",
+    alignItems: "center",
+    transition: "all 0.2s",
+    fontSize: 13,
+  },
+  filterPopup: {
+    position: "absolute",
+    top: 50,
+    right: 0,
+    width: 280,
+    background: "white",
+    borderRadius: 16,
+    boxShadow: "0 10px 40px rgba(0,0,0,0.1), 0 0 0 1px rgba(0,0,0,0.05)",
+    padding: 16,
+    zIndex: 100,
+    display: "flex",
+    flexDirection: "column",
+    gap: 16,
+  },
+  filterGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 4
+  }
 };
