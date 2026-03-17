@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
+import { leaveService } from "../../../services/leaveService";
 
 // helpers
 const Badge = ({ status }) => {
@@ -54,29 +55,40 @@ const KpiCard = ({ title, value, hint }) => (
 export default function ApplyLeave() {
   const employee_id = localStorage.getItem("employee_id") || "EMP001";
 
-  const [myRequests, setMyRequests] = useState([
-    {
-      leave_id: 2001,
-      employee_id,
-      leave_type: "CASUAL",
-      start_date: "2026-01-26",
-      end_date: "2026-01-26",
-      reason: "Personal matter.",
-      status: "PENDING",
-    },
-    {
-      leave_id: 2002,
-      employee_id,
-      leave_type: "ANNUAL",
-      start_date: "2026-02-10",
-      end_date: "2026-02-12",
-      reason: "Family function.",
-      status: "APPROVED",
-    },
-  ]);
+  const [myRequests, setMyRequests] = useState([]);
+  const [leaveTypes, setLeaveTypes] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchMyLeaves();
+    fetchTypes();
+  }, []);
+
+  const fetchTypes = async () => {
+    try {
+      const data = await leaveService.fetchLeaveTypes("EMPLOYEE");
+      setLeaveTypes(data);
+      if (data && data.length > 0) {
+        setForm((p) => ({ ...p, leave_type_id: data[0].id }));
+      }
+    } catch (err) {
+      console.error("Failed to fetch leave types:", err);
+    }
+  };
+
+  const fetchMyLeaves = async () => {
+    try {
+      const data = await leaveService.fetchMyLeaveRequests();
+      setMyRequests(data);
+    } catch (err) {
+      console.error("Failed to load requests:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const [form, setForm] = useState({
-    leave_type: "CASUAL",
+    leave_type_id: "",
     start_date: "",
     end_date: "",
     reason: "",
@@ -94,7 +106,7 @@ export default function ApplyLeave() {
 
   const validate = () => {
     const e = {};
-    if (!form.leave_type) e.leave_type = "Leave type is required.";
+    if (!form.leave_type_id) e.leave_type_id = "Leave type is required.";
     if (!form.start_date) e.start_date = "Start date is required.";
     if (!form.end_date) e.end_date = "End date is required.";
 
@@ -109,27 +121,29 @@ export default function ApplyLeave() {
     return Object.keys(e).length === 0;
   };
 
-  const onSubmit = (ev) => {
+  const onSubmit = async (ev) => {
     ev.preventDefault();
     setSuccessMsg("");
     if (!validate()) return;
 
-    const nextId = Math.max(0, ...myRequests.map((r) => Number(r.leave_id || 0))) + 1;
-    const newReq = {
-      leave_id: nextId,
-      employee_id,
-      leave_type: form.leave_type,
-      start_date: form.start_date,
-      end_date: form.end_date,
-      reason: form.reason?.trim() || null,
-      status: "PENDING",
-    };
+    try {
+      await leaveService.submitLeaveRequest({
+        leave_type_id: form.leave_type_id,
+        start_date: form.start_date,
+        end_date: form.end_date,
+        reason: form.reason?.trim() || null,
+      });
 
-    setMyRequests((prev) => [newReq, ...prev]);
-    setForm({ leave_type: "CASUAL", start_date: "", end_date: "", reason: "" });
-    setErrors({});
-    setSuccessMsg("Leave request submitted successfully.");
-    setTimeout(() => setSuccessMsg(""), 3000);
+      // Refresh list
+      await fetchMyLeaves();
+
+      setForm({ leave_type_id: leaveTypes.length > 0 ? leaveTypes[0].id : "", start_date: "", end_date: "", reason: "" });
+      setErrors({});
+      setSuccessMsg("Leave request submitted successfully.");
+      setTimeout(() => setSuccessMsg(""), 3000);
+    } catch (err) {
+      alert("Failed to submit request.");
+    }
   };
 
   return (
@@ -237,14 +251,16 @@ export default function ApplyLeave() {
                   <label className="label">Leave Type</label>
                   <select
                     className="select"
-                    value={form.leave_type}
-                    onChange={(e) => setForm((p) => ({ ...p, leave_type: e.target.value }))}
+                    value={form.leave_type_id}
+                    onChange={(e) => setForm((p) => ({ ...p, leave_type_id: e.target.value }))}
                   >
-                    <option value="CASUAL">CASUAL</option>
-                    <option value="MEDICAL">MEDICAL</option>
-                    <option value="ANNUAL">ANNUAL</option>
+                    {leaveTypes.map((type) => (
+                      <option key={type.id || type.type_name} value={type.id}>
+                        {type.type_name}
+                      </option>
+                    ))}
                   </select>
-                  {errors.leave_type && <span className="error-text">{errors.leave_type}</span>}
+                  {errors.leave_type_id && <span className="error-text">{errors.leave_type_id}</span>}
                 </div>
 
                 <div>
@@ -299,7 +315,7 @@ export default function ApplyLeave() {
                   type="button"
                   className="btn btn-ghost"
                   onClick={() => {
-                    setForm({ leave_type: "CASUAL", start_date: "", end_date: "", reason: "" });
+                    setForm({ leave_type_id: leaveTypes.length > 0 ? leaveTypes[0].id : "", start_date: "", end_date: "", reason: "" });
                     setErrors({});
                   }}
                 >
@@ -329,25 +345,37 @@ export default function ApplyLeave() {
                     <th>End Date</th>
                     <th>Days</th>
                     <th>Reason</th>
+                    <th>Remark</th>
                     <th>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {myRequests.map((r) => (
-                    <tr key={r.leave_id}>
-                      <td className="mono">#{r.leave_id}</td>
-                      <td>{r.leave_type}</td>
-                      <td>{fmtDate(r.start_date)}</td>
-                      <td>{fmtDate(r.end_date)}</td>
-                      <td>{daysBetweenInclusive(r.start_date, r.end_date)}</td>
-                      <td>
-                        <div style={{ maxWidth: 300, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={r.reason}>
-                          {r.reason || "—"}
-                        </div>
-                      </td>
-                      <td><Badge status={r.status} /></td>
-                    </tr>
-                  ))}
+                  {loading ? (
+                    <tr><td colSpan={7} style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>Loading...</td></tr>
+                  ) : myRequests.length === 0 ? (
+                    <tr><td colSpan={7} style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>No leave requests found.</td></tr>
+                  ) : (
+                    myRequests.map((r) => (
+                      <tr key={r.leave_id}>
+                        <td className="mono">#{r.leave_id}</td>
+                        <td>{r.leave_type}</td>
+                        <td>{fmtDate(r.start_date)}</td>
+                        <td>{fmtDate(r.end_date)}</td>
+                        <td>{daysBetweenInclusive(r.start_date, r.end_date)}</td>
+                        <td>
+                          <div style={{ maxWidth: 200, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={r.reason}>
+                            {r.reason || "—"}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ maxWidth: 200, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis", color: "#6b7280" }} title={r.manager_remark}>
+                            {r.manager_remark || "—"}
+                          </div>
+                        </td>
+                        <td><Badge status={r.status} /></td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

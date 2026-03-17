@@ -8,6 +8,12 @@ import {
   markCheckOut
 } from "../controllers/employeeAttendanceController.js";
 
+import {
+  getEmployeeLeaves,
+  submitLeaveRequest,
+  fetchLeaveTypes
+} from "../controllers/leaveController.js";
+
 const router = express.Router();
 
 /**
@@ -31,5 +37,10 @@ router.get("/dashboard", (req, res) => {
 router.get("/attendance/today", getTodayAttendance);
 router.post("/attendance/check-in", markCheckIn);
 router.put("/attendance/check-out", markCheckOut);
+
+// Leave Requests
+router.get("/leaves", getEmployeeLeaves);
+router.post("/leaves", submitLeaveRequest);
+router.get("/leave-types", fetchLeaveTypes);
 
 export default router;

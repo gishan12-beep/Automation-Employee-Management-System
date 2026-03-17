@@ -18,10 +18,10 @@ router.post("/employees", requireAuth, requireRole("MANAGER"), createEmployee);
 router.put("/employees/:employee_id", requireAuth, requireRole("MANAGER"), updateEmployee);
 
 // Manager gets employees
-router.get("/employees", requireAuth, requireRole("MANAGER"), getEmployees);
+router.get("/employees", requireAuth, requireRole("MANAGER", "ACCOUNTANT"), getEmployees);
 
 // Manager gets departments
-router.get("/departments", requireAuth, requireRole("MANAGER"), getDepartments);
+router.get("/departments", requireAuth, requireRole("MANAGER", "ACCOUNTANT"), getDepartments);
 
 // Manager gets dashboard stats
 router.get("/stats", requireAuth, requireRole("MANAGER"), getDashboardStats);

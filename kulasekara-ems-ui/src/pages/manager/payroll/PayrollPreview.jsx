@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 
 const LKR = (n) =>
   new Intl.NumberFormat("en-LK", {
@@ -7,30 +7,8 @@ const LKR = (n) =>
     maximumFractionDigits: 0,
   }).format(Number(n || 0));
 
-export default function PayrollPreview({ employee, input, payroll, onClose }) {
+export default function PayrollPreview({ employee, payroll, onClose }) {
   const [tab, setTab] = useState("Breakdown");
-
-  const att = input?.attendance || {};
-  const work = input?.workDetails || [];
-  const ot = input?.overtime || [];
-  const inc = input?.incentives || [];
-  const allowances = input?.allowances || [];
-  const deductions = input?.deductions || [];
-
-  const isMonthly = payroll.isMonthly;
-  const isDaily = payroll.isDaily;
-
-  // ✅ Hide Overtime tab for Daily
-  const tabs = useMemo(() => {
-    const base = ["Breakdown", "Attendance", "Work Details", "Incentives", "Allowances", "Deductions"];
-    if (!isDaily) base.splice(3, 0, "Overtime"); // insert after Work Details
-    return base;
-  }, [isDaily]);
-
-  // safety: if tab becomes invalid (daily), fallback
-  React.useEffect(() => {
-    if (!tabs.includes(tab)) setTab("Breakdown");
-  }, [tabs, tab]);
 
   return (
     <div style={styles.overlay} onMouseDown={onClose}>
@@ -41,244 +19,47 @@ export default function PayrollPreview({ employee, input, payroll, onClose }) {
               Payroll Preview — {employee.name} ({employee.employeeID})
             </div>
             <div style={styles.sub}>
-              Period: <b>{payroll.period.label}</b> • {employee.department} • {employee.salaryType}
-              {isMonthly ? ` • EPF/ETF: ${employee.epfEtfEligible ? "Eligible" : "Not eligible"}` : ""}
+              {employee.department} • {employee.status}
             </div>
           </div>
           <button style={styles.close} onClick={onClose}>✕</button>
         </div>
 
         <div style={styles.tabs}>
-          {tabs.map((t) => (
             <button
-              key={t}
-              style={{ ...styles.tab, ...(tab === t ? styles.tabActive : {}) }}
-              onClick={() => setTab(t)}
+              style={{ ...styles.tab, styles: styles.tabActive }}
             >
-              {t}
+              Breakdown
             </button>
-          ))}
         </div>
 
         <div style={styles.body}>
           {tab === "Breakdown" && (
             <div style={styles.grid2}>
               <Panel title="Salary Breakdown">
-                {isMonthly ? (
-                  <Row label="Base Salary (Monthly)" value={LKR(payroll.basePay)} />
-                ) : (
-                  <>
-                    <Row label="Task Earnings (Period)" value={LKR(payroll.taskEarnings)} />
-                    <div style={styles.note}>
-                      {isDaily ? "Daily wage: task-based (NO overtime)." : "Weekly wage: task-based + overtime (if any)."}
-                    </div>
-                  </>
-                )}
 
-                {!isDaily && <Row label="Overtime Total" value={LKR(payroll.overtimeTotal)} />}
-
-                <Row label="Incentives" value={LKR(payroll.incentiveTotal)} />
-                <Row label="Allowances" value={LKR(payroll.allowanceTotal)} />
+                <Row label="Basic Earnings" value={LKR(payroll.basicSalary)} />
+                <Row label="Overtime Total" value={LKR(payroll.otPay)} />
+                <Row label="Incentives" value={LKR(payroll.incentives)} />
 
                 <hr style={styles.hr} />
                 <Row label="Gross Pay" value={LKR(payroll.gross)} strong />
               </Panel>
 
               <Panel title="Deductions & Net Pay">
-                {isMonthly ? (
-                  <>
-                    <Row label="EPF (Employee)" value={LKR(payroll.epfEmployee)} />
-                    <div style={styles.note}>
-                      Employer side: EPF = {LKR(payroll.employerEPF)} • ETF = {LKR(payroll.employerETF)}
-                    </div>
-                  </>
-                ) : (
-                  <div style={styles.note}>EPF/ETF deductions apply only for monthly employees.</div>
-                )}
 
-                <Row label="Other Deductions" value={LKR(payroll.otherDeductions)} />
+                <Row label="EPF (Employee)" value={LKR(payroll.epfEmployee)} />
+                <div style={styles.note}>
+                  Employer side: EPF = {LKR(payroll.epfEmployer)} • ETF = {LKR(payroll.etfEmployer)}
+                </div>
+
+                <Row label="Other Deductions" value={LKR(payroll.deductions)} />
                 <hr style={styles.hr} />
-                <Row label="Total Deductions" value={LKR(payroll.totalDeductions)} />
-                <Row label="Net Pay" value={LKR(payroll.net)} strong />
+                <Row label="Total Deductions" value={LKR((payroll.epfEmployee || 0) + (payroll.deductions || 0))} />
+                <Row label="Net Pay" value={LKR(payroll.netPay)} strong />
               </Panel>
 
-              <Panel title="Attendance Summary">
-                <Row label="Present Days" value={att.presentDays ?? payroll.attendance.presentDays ?? 0} />
-                <Row label="Half Days" value={att.halfDays ?? payroll.attendance.halfDays ?? 0} />
-                <Row label="Absent Days" value={att.absentDays ?? payroll.attendance.absentDays ?? 0} />
-                <Row label="Total Hours" value={att.totalHours ?? payroll.attendance.totalHours ?? 0} />
-              </Panel>
             </div>
-          )}
-
-          {tab === "Attendance" && (
-            <Panel title="Attendance Logs">
-              {att.logs?.length ? (
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>Date</th>
-                      <th style={styles.th}>Check In</th>
-                      <th style={styles.th}>Check Out</th>
-                      <th style={styles.th}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {att.logs.map((x, idx) => (
-                      <tr key={idx}>
-                        <td style={styles.td}>{x.date}</td>
-                        <td style={styles.td}>{x.in}</td>
-                        <td style={styles.td}>{x.out}</td>
-                        <td style={styles.td}>{x.status}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div style={styles.empty}>No attendance logs available.</div>
-              )}
-            </Panel>
-          )}
-
-          {tab === "Work Details" && (
-            <Panel title="Work Details (Task Earnings)">
-              {work.length ? (
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>Date</th>
-                      <th style={styles.th}>Task</th>
-                      <th style={styles.th}>Qty</th>
-                      <th style={styles.th}>Hours</th>
-                      <th style={styles.th}>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {work.map((x, idx) => (
-                      <tr key={idx}>
-                        <td style={styles.td}>{x.date}</td>
-                        <td style={styles.td}>{x.task}</td>
-                        <td style={styles.td}>{x.qty}</td>
-                        <td style={styles.td}>{x.hours}</td>
-                        <td style={styles.td}>{LKR(x.amount)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div style={styles.empty}>No work details.</div>
-              )}
-            </Panel>
-          )}
-
-          {!isDaily && tab === "Overtime" && (
-            <Panel title="Overtime">
-              {ot.length ? (
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>Date</th>
-                      <th style={styles.th}>Hours</th>
-                      <th style={styles.th}>Rate</th>
-                      <th style={styles.th}>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {ot.map((x, idx) => (
-                      <tr key={idx}>
-                        <td style={styles.td}>{x.date}</td>
-                        <td style={styles.td}>{x.hours}</td>
-                        <td style={styles.td}>{LKR(x.rate)}</td>
-                        <td style={styles.td}>{LKR(x.amount)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div style={styles.empty}>No overtime records.</div>
-              )}
-            </Panel>
-          )}
-
-          {tab === "Incentives" && (
-            <Panel title="Incentives">
-              {inc.length ? (
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>Date</th>
-                      <th style={styles.th}>Description</th>
-                      <th style={styles.th}>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {inc.map((x, idx) => (
-                      <tr key={idx}>
-                        <td style={styles.td}>{x.date}</td>
-                        <td style={styles.td}>{x.desc}</td>
-                        <td style={styles.td}>{LKR(x.amount)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div style={styles.empty}>No incentives.</div>
-              )}
-            </Panel>
-          )}
-
-          {tab === "Allowances" && (
-            <Panel title="Allowances">
-              {allowances.length ? (
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>Date</th>
-                      <th style={styles.th}>Description</th>
-                      <th style={styles.th}>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {allowances.map((x, idx) => (
-                      <tr key={idx}>
-                        <td style={styles.td}>{x.date}</td>
-                        <td style={styles.td}>{x.desc}</td>
-                        <td style={styles.td}>{LKR(x.amount)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div style={styles.empty}>No allowances.</div>
-              )}
-            </Panel>
-          )}
-
-          {tab === "Deductions" && (
-            <Panel title="Other Deductions (Advance / Loan / Penalty)">
-              {deductions.length ? (
-                <table style={styles.table}>
-                  <thead>
-                    <tr>
-                      <th style={styles.th}>Date</th>
-                      <th style={styles.th}>Description</th>
-                      <th style={styles.th}>Amount</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {deductions.map((x, idx) => (
-                      <tr key={idx}>
-                        <td style={styles.td}>{x.date}</td>
-                        <td style={styles.td}>{x.desc}</td>
-                        <td style={styles.td}>{LKR(x.amount)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <div style={styles.empty}>No deductions.</div>
-              )}
-            </Panel>
           )}
         </div>
 

@@ -11,10 +11,17 @@ import { sendCredentialsEmail } from "../utils/mailer.js";
  */
 export const getDashboardStats = async (req, res) => {
   try {
-    const [rows] = await pool.query(
+    const [empRows] = await pool.query(
       `SELECT COUNT(*) as activeCount FROM employee WHERE status = 'ACTIVE'`
     );
-    return res.json({ activeCount: rows[0].activeCount });
+    const [leaveRows] = await pool.query(
+      "SELECT COUNT(*) as pendingCount FROM leave_requests WHERE status = 'PENDING'"
+    );
+
+    return res.json({
+      activeCount: empRows[0].activeCount,
+      pendingLeaveCount: leaveRows[0].pendingCount
+    });
   } catch (err) {
     return res.status(500).json({ message: "Fetch stats failed", error: err.message });
   }
@@ -71,11 +78,11 @@ export const createEmployee = async (req, res) => {
   const is_epf_eligible = Number(salary_configuration.is_epf_eligible) ? 1 : 0;
   const effective_date = String(salary_configuration.effective_date);
 
-  if (!["MONTHLY", "DAILY"].includes(salary_type)) {
-    return res.status(400).json({ message: "salary_type must be MONTHLY or DAILY" });
-  }
-  if (Number.isNaN(basic_rate) || basic_rate <= 0) {
-    return res.status(400).json({ message: "basic_rate must be a number > 0" });
+  // For DAILY employees, basic_rate can be 0 (derived from work logs)
+  if (salary_type === "MONTHLY") {
+    if (Number.isNaN(basic_rate) || basic_rate <= 0) {
+      return res.status(400).json({ message: "basic_rate must be a number > 0 for MONTHLY" });
+    }
   }
 
   const conn = await pool.getConnection();
@@ -240,10 +247,12 @@ export const getEmployees = async (req, res) => {
               s.salary_type, s.basic_rate, s.is_epf_eligible, s.effective_date
        FROM employee e
        LEFT JOIN salary_configurations s ON e.employee_id = s.employee_id
-       ORDER BY e.created_at DESC`
+       ORDER BY e.employee_id ASC`
     );
+    console.log(`[BACKEND] getEmployees: Fetched ${rows.length} rows`);
     return res.json(rows);
   } catch (err) {
+    console.error("Fetch employees failed:", err);
     return res.status(500).json({ message: "Fetch employees failed", error: err.message });
   }
 };

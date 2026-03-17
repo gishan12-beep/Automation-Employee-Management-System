@@ -1,28 +1,35 @@
+import api from "./api"; // Assuming api wrapper exists
+
+// Employee: Get My History/Payroll for a specific month
+export const getMyPayrollApi = async (month, year) => {
+  try {
+    const res = await api.get(`/payroll/me/${month}/${year}`);
+    return res.data?.history || [];
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
+};
+
+// Keeping this for SalaryHistory UI mapping if needed, but it should be replaced by getMyPayrollApi
 export const getMySalaryHistory = async () => {
-  return [
-    {
-      slipId: "SLIP-2025-09-EMP001",
-      employeeId: "EMP001",
-      employeeName: "Kamal Perera",
-      role: "Machine Operator",
-      periodStart: "2025-09-01",
-      periodEnd: "2025-09-30",
-      paidOn: "2025-10-05",
-      earnings: { basic: 75000, overtime: 5000, incentives: 3000, allowances: 2000 },
-      deductions: { epf: 7500, etf: 1500, other: 1000 },
-    },
-    {
-      slipId: "SLIP-2025-08-EMP001",
-      employeeId: "EMP001",
-      employeeName: "Kamal Perera",
-      role: "Machine Operator",
-      periodStart: "2025-08-01",
-      periodEnd: "2025-08-31",
-      paidOn: "2025-09-05",
-      earnings: { basic: 75000, overtime: 2500, incentives: 2500, allowances: 2000 },
-      deductions: { epf: 7500, etf: 1500, other: 500 },
-    },
-  ];
+  try {
+    const res = await api.get("/payroll/me");
+    return res.data.history.map((run) => ({
+      slipId: `SLIP-${run.year}-${String(run.month).padStart(2, "0")}-${run.employee_id}`,
+      employeeId: run.employee_id,
+      month: run.month,
+      year: run.year,
+      basic: run.basic_earnings,
+      gross: run.gross_pay,
+      net: run.net_pay,
+      epf: run.epf_employee,
+      status: run.status,
+    }));
+  } catch (err) {
+    console.error(err);
+    return [];
+  }
 };
 
 export const getMySalarySlipById = async (slipId) => {
@@ -30,8 +37,40 @@ export const getMySalarySlipById = async (slipId) => {
   return all.find((x) => x.slipId === slipId) || null;
 };
 
+// Manager: Process Entire Payroll
+export const processPayrollApi = async (month, year) => {
+  await api.post(`/payroll/process/${month}/${year}`);
+};
 
+// Manager: Process Single Employee Payroll
+export const processSingleEmployeeApi = async (month, year, employeeId) => {
+  const res = await api.post(`/payroll/process/${month}/${year}/${employeeId}`);
+  return res.data;
+};
 
+// Shared/Manager: Get Summary
+export const getPayrollSummaryApi = async (month, year) => {
+  const res = await api.get(`/payroll/summary/${month}/${year}`);
+  // Mapping backend format to frontend expected format
+  // Backend returns: { summary: {...}, details: [ { payroll_id, ... } ] }
+  const runs = res.data?.details || [];
+  return runs.map((r) => ({
+    payrollId: r.payroll_id,
+    employeeId: r.employee_id,
+    name: `${r.first_name} ${r.last_name}`,
+    department: r.department,
+    basic_earnings: r.basic_earnings,
+    total_ot_pay: r.total_ot_pay,
+    total_incentives: r.total_incentives,
+    total_deductions: r.total_deductions,
+    gross: r.gross_pay,
+    epf_employee: r.epf_employee,
+    epf_employer: r.epf_employer,
+    etf_employer: r.etf_employer,
+    net: r.net_pay,
+    status: r.status,
+  }));
+};
 
 export const getMyFinalSettlementPreview = async () => {
   // UI mock. Later calculate using attendance + payroll + deductions

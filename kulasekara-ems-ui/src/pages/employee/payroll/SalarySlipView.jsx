@@ -12,105 +12,20 @@ export default function SalarySlipView() {
   // If navigated from SalaryHistory, data comes via location.state
   const payrollFromState = location?.state?.payroll;
 
-  // ✅ Dummy fallback (if user refreshes the page)
-  const payroll = useMemo(() => {
+  // Real fallback (if user refreshes the page we should technically fetch it by slipId but for now just show a message)
+  const payroll = payrollFromState;
+
+  if (!payroll) {
     return (
-      payrollFromState || {
-        payroll_id: 12,
-        employee_id: "EMP001",
-        month: 12,
-        year: 2025,
-        basic_earnings: 85000,
-        total_ot_pay: 6500,
-        gross_pay: 91500,
-        epf_employee: 7320,
-        epf_employer: 10980,
-        etf_employer: 2745,
-        net_pay: 84180,
-        generated_at: "2026-01-05 10:15:00",
-      }
+      <AppLayout>
+        <div style={{ padding: 40, textAlign: 'center' }}>
+          <h2>Payslip Not Found</h2>
+          <p>Please select a payslip from your Salary History.</p>
+          <button onClick={() => navigate('/employee/payroll/salary-history')} style={{ padding: '10px 20px', cursor: 'pointer' }}>Go Back</button>
+        </div>
+      </AppLayout>
     );
-  }, [payrollFromState]);
-
-  const styles = {
-    page: { background: "#f6f7fb", minHeight: "100vh" },
-    wrap: { maxWidth: 900, margin: "0 auto", padding: "18px 16px" },
-
-    topRow: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      gap: 10,
-      flexWrap: "wrap",
-    },
-    title: { margin: 0, fontSize: 20, fontWeight: 900, color: "#111827" },
-    sub: { margin: "6px 0 0", fontSize: 13, color: "#6b7280" },
-
-    btnRow: { display: "flex", gap: 10, flexWrap: "wrap" },
-    btn: {
-      padding: "10px 12px",
-      borderRadius: 10,
-      border: "1px solid #111827",
-      background: "#111827",
-      color: "#fff",
-      cursor: "pointer",
-      fontWeight: 800,
-    },
-    btnGhost: {
-      padding: "10px 12px",
-      borderRadius: 10,
-      border: "1px solid #e5e7eb",
-      background: "#fff",
-      color: "#111827",
-      cursor: "pointer",
-      fontWeight: 800,
-    },
-
-    card: {
-      marginTop: 14,
-      background: "#fff",
-      border: "1px solid #e5e7eb",
-      borderRadius: 14,
-      boxShadow: "0 6px 18px rgba(17,24,39,0.06)",
-      overflow: "hidden",
-    },
-    cardHd: { padding: "14px 14px 10px", borderBottom: "1px solid #eef2f7" },
-    cardBd: { padding: 14 },
-
-    headerGrid: {
-      display: "grid",
-      gridTemplateColumns: "1fr 1fr",
-      gap: 12,
-    },
-    infoBox: { border: "1px solid #eef2f7", borderRadius: 12, padding: 12, background: "#fbfdff" },
-    label: { fontSize: 12, color: "#6b7280", marginBottom: 6 },
-    value: { fontSize: 13, color: "#111827", fontWeight: 800 },
-
-    kpiRow: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginTop: 12 },
-    kpi: { border: "1px solid #eef2f7", borderRadius: 12, padding: 12 },
-    kpiLbl: { fontSize: 12, color: "#6b7280", marginBottom: 6 },
-    kpiVal: { fontSize: 18, fontWeight: 900, color: "#111827" },
-
-    split: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginTop: 12 },
-
-    sectionTitle: { margin: "2px 0 10px", fontSize: 13, fontWeight: 900, color: "#111827" },
-    row: { display: "flex", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: "1px dashed #eef2f7" },
-    left: { fontSize: 13, color: "#374151" },
-    right: { fontSize: 13, fontWeight: 900, color: "#111827" },
-
-    totalRow: {
-      display: "flex",
-      justifyContent: "space-between",
-      gap: 12,
-      padding: "12px 0",
-      borderTop: "1px solid #eef2f7",
-      marginTop: 4,
-    },
-    totalLeft: { fontSize: 13, fontWeight: 900, color: "#111827" },
-    totalRight: { fontSize: 14, fontWeight: 900, color: "#111827" },
-
-    note: { marginTop: 10, fontSize: 12, color: "#6b7280" },
-  };
+  }
 
   const period = `${String(payroll.month).padStart(2, "0")}/${payroll.year}`;
 
@@ -138,17 +53,24 @@ export default function SalarySlipView() {
             </div>
           </div>
 
-          <div style={styles.card}>
+          {/* This wrapper is the print area */}
+          <div id="printable-slip" style={styles.card}>
+            <style>{`
+                 @media print {
+                     body * { visibility: hidden; }
+                     #printable-slip, #printable-slip * { visibility: visible; }
+                     #printable-slip { position: absolute; left: 0; top: 0; width: 100%; border: none; box-shadow: none; }
+                     .btnRow { display: none !important; }
+                 }
+            `}</style>
+
             <div style={styles.cardHd}>
-              <div style={{ fontWeight: 900, color: "#111827" }}>Payslip Summary</div>
+              <div style={{ fontWeight: 900, color: "#111827", fontSize: 18 }}>Kulasekara Oil Mills</div>
+              <div style={{ fontSize: 13, color: '#6b7280' }}>Payslip Statement for {period}</div>
             </div>
 
             <div style={styles.cardBd}>
               <div style={styles.headerGrid}>
-                <div style={styles.infoBox}>
-                  <div style={styles.label}>Employee ID</div>
-                  <div style={styles.value}>{payroll.employee_id || "—"}</div>
-                </div>
                 <div style={styles.infoBox}>
                   <div style={styles.label}>Pay Period</div>
                   <div style={styles.value}>{period}</div>
@@ -209,6 +131,14 @@ export default function SalarySlipView() {
                   </div>
 
                   <div style={styles.row}>
+                    <div style={styles.left}>Other Deductions / Overrides</div>
+                    {/* Infer deductions taken manually since this is just a single net patch now. Not ideal but functional if we don't have detail fields */}
+                    <div style={styles.right}>
+                      LKR {money(Number(payroll.gross_pay || 0) - Number(payroll.net_pay || 0) - Number(payroll.epf_employee || 0))}
+                    </div>
+                  </div>
+
+                  <div style={{ ...styles.row, borderBottom: "none", marginTop: 12 }}>
                     <div style={styles.left}>EPF (Employer)</div>
                     <div style={styles.right}>LKR {money(payroll.epf_employer)}</div>
                   </div>
@@ -226,7 +156,7 @@ export default function SalarySlipView() {
               </div>
 
               <div style={styles.note}>
-                Note: This is a UI-only slip preview. Once backend is connected, values will be loaded from payroll_runs.
+                This slip was generated automatically by the payroll system.
               </div>
             </div>
           </div>
@@ -235,3 +165,84 @@ export default function SalarySlipView() {
     </AppLayout>
   );
 }
+
+const styles = {
+  page: { background: "#f6f7fb", minHeight: "100vh" },
+  wrap: { maxWidth: 900, margin: "0 auto", padding: "18px 16px" },
+
+  topRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 10,
+    flexWrap: "wrap",
+  },
+  title: { margin: 0, fontSize: 20, fontWeight: 900, color: "#111827" },
+  sub: { margin: "6px 0 0", fontSize: 13, color: "#6b7280" },
+
+  btnRow: { display: "flex", gap: 10, flexWrap: "wrap" },
+  btn: {
+    padding: "10px 18px",
+    borderRadius: 10,
+    border: "none",
+    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)",
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: 800,
+  },
+  btnGhost: {
+    padding: "10px 18px",
+    borderRadius: 10,
+    border: "1px solid #e5e7eb",
+    background: "#fff",
+    color: "#111827",
+    cursor: "pointer",
+    fontWeight: 800,
+  },
+
+  card: {
+    marginTop: 24,
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: 14,
+    boxShadow: "0 6px 18px rgba(17,24,39,0.06)",
+    overflow: "hidden",
+  },
+  cardHd: { padding: "24px 24px 16px", borderBottom: "2px solid #4a7c4e" },
+  cardBd: { padding: 24 },
+
+  headerGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr 1fr",
+    gap: 16,
+    marginBottom: 24
+  },
+  infoBox: { border: "1px solid #eef2f7", borderRadius: 12, padding: 16, background: "#fbfdff" },
+  label: { fontSize: 12, color: "#6b7280", marginBottom: 6, fontWeight: 700, textTransform: 'uppercase' },
+  value: { fontSize: 15, color: "#111827", fontWeight: 800 },
+
+  kpiRow: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginTop: 12, marginBottom: 24 },
+  kpi: { border: "1px solid #eef2f7", borderRadius: 12, padding: 16, background: '#f8fafc' },
+  kpiLbl: { fontSize: 12, color: "#6b7280", marginBottom: 6, fontWeight: 700, textTransform: 'uppercase' },
+  kpiVal: { fontSize: 20, fontWeight: 900, color: "#111827" },
+
+  split: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginTop: 12 },
+
+  sectionTitle: { margin: "2px 0 16px", fontSize: 14, fontWeight: 900, color: "#111827", borderBottom: '1px dashed #e2e8f0', paddingBottom: 8 },
+  row: { display: "flex", justifyContent: "space-between", gap: 12, padding: "10px 0", borderBottom: "1px dashed #eef2f7" },
+  left: { fontSize: 13, color: "#374151" },
+  right: { fontSize: 14, fontWeight: 900, color: "#111827" },
+
+  totalRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    gap: 12,
+    padding: "16px 0 4px",
+    borderTop: "2px solid #e2e8f0",
+    marginTop: 8,
+  },
+  totalLeft: { fontSize: 14, fontWeight: 900, color: "#111827" },
+  totalRight: { fontSize: 18, fontWeight: 900, color: "#2c5530" },
+
+  note: { marginTop: 32, fontSize: 12, color: "#9ca3af", fontStyle: 'italic', textAlign: 'center' },
+};

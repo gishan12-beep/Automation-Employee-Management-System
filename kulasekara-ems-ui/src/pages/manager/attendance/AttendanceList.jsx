@@ -4,38 +4,7 @@ import AppLayout from "../../../components/layout/AppLayout";
 import { Modal } from "../../../components/common/Modal";
 import WorkDetailsForm from "./WorkDetailsForm";
 import { getEmployeesApi, getDepartmentsApi, getEmployeeAttendanceStatsApi } from "../../../services/managerEmployeeService";
-
-// Dummy employees (replace with DB)
-// Dummy employees (replaced with DB)
-// const employeesData = ...
-
-// Dummy work details (WORKDETAIL table shape)
-const workDetailsDummy = [
-  {
-    workDetailID: "WD20251010-EMP002-001",
-    employeeID: "EMP002",
-    date: "2025-10-10",
-    taskDescription: "Peeled coconuts",
-    quantity: 120,
-    hoursWorked: 7.5,
-  },
-  {
-    workDetailID: "WD20251010-EMP002-002",
-    employeeID: "EMP003",
-    date: "2025-10-10",
-    taskDescription: "Packed bottles",
-    quantity: 55,
-    hoursWorked: 2.0,
-  },
-  {
-    workDetailID: "WD20251011-EMP002-001",
-    employeeID: "EMP004",
-    date: "2025-10-11",
-    taskDescription: "Cleaning area",
-    quantity: 1,
-    hoursWorked: 1.5,
-  },
-];
+import { getEmployeeWorkLogsApi } from "../../../services/workLogService";
 
 export default function AttendanceList() {
   const [employees, setEmployees] = useState([]);
@@ -56,7 +25,7 @@ export default function AttendanceList() {
   // modal for add work
   const [showModal, setShowModal] = useState(false);
 
-  // Fetch attendance stats when selectedEmployee changes is handled separately
+  // Fetch attendance stats when selectedEmployee changes
   useEffect(() => {
     if (!selectedEmployee) {
       setAttendanceStats({ checkIn: "-", checkOut: "-" });
@@ -82,6 +51,25 @@ export default function AttendanceList() {
     })();
   }, [selectedEmployee]);
 
+  // Fetch work logs when selectedEmployee or workDate changes
+  useEffect(() => {
+    if (!selectedEmployee) {
+      setWorkDetails([]);
+      return;
+    }
+
+    (async () => {
+      try {
+        const res = await getEmployeeWorkLogsApi(selectedEmployee.employeeID, workDate);
+        setWorkDetails(res.logs || []);
+      } catch (err) {
+        console.error("Failed to fetch work logs", err);
+        setWorkDetails([]);
+      }
+    })();
+  }, [selectedEmployee, workDate]);
+
+  // Load employees on mount
   useEffect(() => {
     (async () => {
       try {
@@ -126,8 +114,6 @@ export default function AttendanceList() {
         console.error("Failed to load employees", err);
       }
     })();
-
-    setWorkDetails(workDetailsDummy);
   }, []);
 
   const isDayWorker = (emp) => (emp?.salaryType || "").toLowerCase().includes("daily");
@@ -141,21 +127,17 @@ export default function AttendanceList() {
     });
   }, [employees, search]);
 
-  // work details filtered by selected employee + date
   const selectedWorkDetails = useMemo(() => {
-    if (!selectedEmployee) return [];
-    return workDetails.filter(
-      (w) => w.employeeID === selectedEmployee.employeeID && (!workDate || w.date === workDate)
-    );
-  }, [workDetails, selectedEmployee, workDate]);
+    return workDetails;
+  }, [workDetails]);
 
   // summary cards
   const workSummary = useMemo(() => {
-    const totalHours = selectedWorkDetails.reduce((sum, r) => sum + Number(r.hoursWorked || 0), 0);
     const totalQty = selectedWorkDetails.reduce((sum, r) => sum + Number(r.quantity || 0), 0);
+    const totalValue = selectedWorkDetails.reduce((sum, r) => sum + Number(r.total_amount || 0), 0);
     const tasks = selectedWorkDetails.length;
 
-    return { totalHours, totalQty, tasks };
+    return { totalQty, totalValue, tasks };
   }, [selectedWorkDetails]);
 
   const openAddWork = () => {
@@ -165,9 +147,14 @@ export default function AttendanceList() {
 
   const closeModal = () => setShowModal(false);
 
-  // demo: add new work detail to local state (later replace with API)
-  const handleSaveWorkDetail = (payload) => {
-    setWorkDetails((prev) => [payload, ...prev]);
+  // Refresh work logs after save
+  const handleSaveWorkDetail = async (payload) => {
+    try {
+      const res = await getEmployeeWorkLogsApi(selectedEmployee.employeeID, workDate);
+      setWorkDetails(res.logs || []);
+    } catch (err) {
+      console.error("Failed to refresh logs", err);
+    }
   };
 
   return (
@@ -270,7 +257,7 @@ export default function AttendanceList() {
             <>
               {/* Summary cards */}
               <div style={ui.summaryRow}>
-                <SummaryCard label="Total Hours" value={workSummary.totalHours.toFixed(2)} />
+                <SummaryCard label="Total Amount" value={`Rs ${workSummary.totalValue.toFixed(2)}`} />
                 <SummaryCard label="Total Quantity" value={workSummary.totalQty} />
                 <SummaryCard label="Tasks" value={workSummary.tasks} />
               </div>
@@ -283,7 +270,8 @@ export default function AttendanceList() {
                       <th style={ui.th}>DATE</th>
                       <th style={ui.th}>TASK</th>
                       <th style={ui.th}>QUANTITY</th>
-                      <th style={ui.th}>HOURS</th>
+                      <th style={ui.th}>RATE</th>
+                      <th style={ui.th}>TOTAL</th>
                       <th style={{ ...ui.th, textAlign: "right" }}>ACTIONS</th>
                     </tr>
                   </thead>
@@ -291,20 +279,21 @@ export default function AttendanceList() {
                   <tbody>
                     {selectedWorkDetails.length === 0 ? (
                       <tr>
-                        <td colSpan={5} style={ui.emptyCell}>
+                        <td colSpan={6} style={ui.emptyCell}>
                           No work details found for this date.
                         </td>
                       </tr>
                     ) : (
                       selectedWorkDetails.map((w) => (
-                        <tr key={w.workDetailID} style={ui.tr}>
-                          <td style={ui.td}>{w.date}</td>
+                        <tr key={w.log_id} style={ui.tr}>
+                          <td style={ui.td}>{new Date(w.date).toLocaleDateString()}</td>
                           <td style={ui.td}>
-                            <div style={{ fontWeight: 800, color: "#1e293b" }}>{w.taskDescription}</div>
-                            <div style={ui.subTextSmall}>{w.workDetailID}</div>
+                            <div style={{ fontWeight: 800, color: "#1e293b" }}>{w.task_name}</div>
+                            <div style={ui.subTextSmall}>Log #{w.log_id}</div>
                           </td>
-                          <td style={ui.td}>{w.quantity}</td>
-                          <td style={ui.td}>{w.hoursWorked}</td>
+                          <td style={ui.td}>{w.quantity} {w.unit_measure}</td>
+                          <td style={ui.td}>Rs {Number(w.applied_rate).toFixed(2)}</td>
+                          <td style={ui.td}><b>Rs {Number(w.total_amount).toFixed(2)}</b></td>
                           <td style={{ ...ui.td, textAlign: "right" }}>
                             <div style={ui.actionRow}>
                               <button
@@ -654,7 +643,7 @@ const ui = {
   },
 
   // Table
-  tableWrap: { width: "100%", overflowX: "auto" },
+  tableWrap: { width: "100%", overflowY: "auto", maxHeight: "500px" },
   table: { width: "100%", borderCollapse: "collapse" },
   th: {
     textAlign: "left",
@@ -662,10 +651,13 @@ const ui = {
     fontSize: "11px",
     fontWeight: 700,
     color: "#4a7c4e",
-    background: "rgba(74, 124, 78, 0.04)",
+    background: "#f8fafc", // Solid background for sticky
     textTransform: "uppercase",
     borderBottom: "1px solid rgba(74, 124, 78, 0.1)",
     letterSpacing: "0.5px",
+    position: "sticky",
+    top: 0,
+    zIndex: 10,
   },
   td: {
     padding: "16px 24px",

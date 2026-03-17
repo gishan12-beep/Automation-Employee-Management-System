@@ -6,6 +6,9 @@ import managerEmployeeRoutes from "./routes/managerEmployeeRoutes.js";
 import passwordResetRoutes from "./routes/passwordReset.routes.js";
 import employeeRoutes from "./routes/employeeRoutes.js";
 import managerAttendanceRoutes from "./routes/managerAttendanceRoutes.js";
+import payrollRoutes from "./routes/payrollRoutes.js";
+import leaveRoutes from "./routes/leaveRoutes.js";
+import workLogRoutes from "./routes/workLogRoutes.js";
 
 dotenv.config();
 
@@ -21,5 +24,8 @@ app.use("/api/auth", passwordResetRoutes);
 app.use("/api/manager", managerEmployeeRoutes);
 app.use("/api/manager", managerAttendanceRoutes);
 app.use("/api/employee", employeeRoutes);
+app.use("/api/payroll", payrollRoutes);
+app.use("/api/manager", leaveRoutes);
+app.use("/api/manager", workLogRoutes);
 
 export default app;

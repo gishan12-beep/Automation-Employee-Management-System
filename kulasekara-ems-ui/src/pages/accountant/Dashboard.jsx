@@ -2,39 +2,60 @@ import React, { useEffect, useMemo, useState } from "react";
 import AppLayout from "../../components/layout/AppLayout";
 import { useNavigate } from "react-router-dom";
 import { formatLKR } from "../../utils/salaryUtils";
+import { getPayrollSummaryApi } from "../../services/accountantPayrollService";
 
 export default function Dashboard() {
   const navigate = useNavigate();
 
-  // ✅ role protection (optional)
+  // ✅ role protection
   const role = (localStorage.getItem("role") || "ACCOUNTANT").toUpperCase();
   useEffect(() => {
     if (role !== "ACCOUNTANT") navigate("/");
   }, [role, navigate]);
 
-  // ✅ mock summary (replace with API)
-  const [summary] = useState({
-    month: "Jan",
-    year: 2026,
-    totals: {
-      employees: 18,
-      totalPayrollNet: 785000,
-      totalEPF: 52000,
-      totalETF: 12000,
-      pendingAudits: 3,
-    },
+  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState({
+    employees: 0,
+    totalNet: 0,
+    totalEpfEtf: 0,
+    month: "",
+    year: ""
   });
 
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      try {
+        const now = new Date();
+        const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+        const res = await getPayrollSummaryApi({ month: monthStr });
+
+        const summary = res.summary || {};
+
+        setData({
+          employees: (res.rows || []).length,
+          totalNet: summary.totalNet || 0,
+          totalEpfEtf: summary.totalEpfEtf || 0,
+          month: now.toLocaleString('default', { month: 'short' }),
+          year: now.getFullYear()
+        });
+      } catch (err) {
+        console.error("Failed to load dashboard stats", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
   const cards = useMemo(() => {
-    const t = summary.totals;
     return [
-      { label: "Employees", value: t.employees, hint: "Active employees" },
-      { label: "Total Payroll (Net)", value: formatLKR(t.totalPayrollNet), hint: `${summary.month} ${summary.year}` },
-      { label: "EPF Total", value: formatLKR(t.totalEPF), hint: "Employee + Employer" },
-      { label: "ETF Total", value: formatLKR(t.totalETF), hint: "ETF contribution" },
-      { label: "Pending Audits", value: t.pendingAudits, hint: "Need review" },
+      { label: "Employees", value: data.employees, hint: "Active employees" },
+      { label: "Total Payroll (Net)", value: formatLKR(data.totalNet), hint: `${data.month} ${data.year}` },
+      { label: "EPF/ETF Total", value: formatLKR(data.totalEpfEtf), hint: "Emp + Er contrib." },
+      { label: "Pending Actions", value: "—", hint: "Awaiting review" },
     ];
-  }, [summary]);
+  }, [data]);
 
   return (
     <AppLayout>
@@ -48,24 +69,28 @@ export default function Dashboard() {
           </div>
 
           <div style={styles.quickRow}>
-            <button style={styles.btnSecondary} onClick={() => navigate("/accountant/payroll/management")}>
+            <button style={styles.btnSecondary} onClick={() => navigate("/accountant/payroll-summary")}>
               Payroll Management
             </button>
-            <button style={styles.btnPrimary} onClick={() => navigate("/accountant/reports")}>
-              Reports
+            <button style={styles.btnPrimary} onClick={() => navigate("/accountant/epf-etf")}>
+              EPF/ETF Reports
             </button>
           </div>
         </div>
 
-        <div style={styles.cardGrid}>
-          {cards.map((c) => (
-            <div key={c.label} style={styles.card}>
-              <div style={styles.cardLabel}>{c.label}</div>
-              <div style={styles.cardValue}>{c.value}</div>
-              <div style={styles.cardHint}>{c.hint}</div>
-            </div>
-          ))}
-        </div>
+        {loading ? (
+          <div style={{ padding: 20, textAlign: 'center', opacity: 0.7 }}>Loading overview...</div>
+        ) : (
+          <div style={styles.cardGrid}>
+            {cards.map((c) => (
+              <div key={c.label} style={styles.card}>
+                <div style={styles.cardLabel}>{c.label}</div>
+                <div style={styles.cardValue}>{c.value}</div>
+                <div style={styles.cardHint}>{c.hint}</div>
+              </div>
+            ))}
+          </div>
+        )}
 
         <div style={styles.panelGrid}>
           <div style={styles.panel}>
@@ -76,21 +101,20 @@ export default function Dashboard() {
               <ActionCard
                 title="Payroll Summary"
                 desc="View monthly payroll totals & breakdown."
-                onClick={() => navigate("/accountant/reports/payroll-summary")}
+                onClick={() => navigate("/accountant/payroll-summary")}
               />
               <ActionCard
-                title="Payroll Audit"
-                desc="Review payroll changes and approvals."
-                onClick={() => navigate("/accountant/payroll/audit")}
-              />
-              <ActionCard
-                title="EPF/ETF"
+                title="EPF / ETF"
                 desc="Manage contributions and generate reports."
-                onClick={() => navigate("/accountant/epf-etf/management")}
+                onClick={() => navigate("/accountant/epf-etf")}
+              />
+              <ActionCard
+                title="Bank Withdrawals"
+                desc="Track and manage bank salary transfers."
+                onClick={() => navigate("/accountant/withdrawals")}
               />
             </div>
           </div>
-
         </div>
       </div>
     </AppLayout>

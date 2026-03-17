@@ -7,20 +7,12 @@ const LKR = (n) =>
     maximumFractionDigits: 0,
   }).format(Number(n || 0));
 
-export default function SalarySlipGenerator({ employee, input, payroll, onClose }) {
-  const isMonthly = payroll.isMonthly;
-  const isDaily = payroll.isDaily;
+export default function SalarySlipGenerator({ employee, payroll, onClose }) {
+  // Now payroll is the exact mapped object from ProcessPayroll's summary API
 
   const slipNo = useMemo(() => {
-    const base = payroll.period.mode === "Monthly"
-      ? payroll.period.value.replace("-", "")
-      : payroll.period.mode === "Weekly"
-        ? payroll.period.value.replace("-", "")
-        : payroll.period.value.replaceAll("-", "");
-    return `SLIP-${base}-${employee.employeeID}`;
-  }, [payroll.period, employee.employeeID]);
-
-  const att = input?.attendance || {};
+    return `SLIP-${employee.employeeID}-${Date.now().toString().slice(-6)}`;
+  }, [employee.employeeID]);
 
   const onPrint = () => window.print();
 
@@ -31,7 +23,7 @@ export default function SalarySlipGenerator({ employee, input, payroll, onClose 
           <div>
             <div style={styles.title}>Salary Slip</div>
             <div style={styles.sub}>
-              Kulasekara Oil Mills • Period: <b>{payroll.period.label}</b>
+              Kulasekara Oil Mills
             </div>
           </div>
           <div style={styles.actions}>
@@ -45,7 +37,7 @@ export default function SalarySlipGenerator({ employee, input, payroll, onClose 
           <div style={styles.sheetHeader}>
             <div>
               <div style={styles.company}>Kulasekara Oil Mills</div>
-              <div style={styles.sheetMeta}>Salary Slip • {payroll.period.label}</div>
+              <div style={styles.sheetMeta}>Salary Slip</div>
             </div>
             <div style={styles.rightMeta}>
               <div><b>Slip No:</b> {slipNo}</div>
@@ -57,30 +49,16 @@ export default function SalarySlipGenerator({ employee, input, payroll, onClose 
             <Info label="Employee ID" value={employee.employeeID} />
             <Info label="Employee Name" value={employee.name} />
             <Info label="Department" value={employee.department} />
-            <Info label="Salary Type" value={employee.salaryType} />
-            <Info label="Period" value={payroll.period.label} />
-            <Info label="Attendance" value={`${att.presentDays ?? 0} Present, ${att.absentDays ?? 0} Absent`} />
+            <Info label="Status" value={employee.status} />
           </div>
 
           <div style={styles.breakdownGrid}>
             <div style={styles.card}>
               <div style={styles.cardTitle}>Earnings</div>
 
-              {isMonthly ? (
-                <Line label="Base Salary (Monthly)" value={LKR(payroll.basePay)} />
-              ) : (
-                <>
-                  <Line label="Task Earnings (Period)" value={LKR(payroll.taskEarnings)} />
-                  <div style={styles.note}>
-                    {isDaily ? "Daily wage: task-based (NO overtime)." : "Weekly wage: task-based + overtime (if any)."}
-                  </div>
-                </>
-              )}
-
-              {!isDaily && <Line label="Overtime" value={LKR(payroll.overtimeTotal)} />}
-
-              <Line label="Incentives" value={LKR(payroll.incentiveTotal)} />
-              <Line label="Allowances" value={LKR(payroll.allowanceTotal)} />
+              <Line label="Basic Earnings" value={LKR(payroll.basicSalary)} />
+              <Line label="Overtime Pay" value={LKR(payroll.otPay)} />
+              <Line label="Incentives" value={LKR(payroll.incentives)} />
 
               <hr style={styles.hr} />
               <Line label="Gross Pay" value={LKR(payroll.gross)} strong />
@@ -89,21 +67,14 @@ export default function SalarySlipGenerator({ employee, input, payroll, onClose 
             <div style={styles.card}>
               <div style={styles.cardTitle}>Deductions</div>
 
-              {isMonthly ? (
-                <>
-                  <Line label="EPF (Employee)" value={LKR(payroll.epfEmployee)} />
-                  <div style={styles.note}>
-                    Employer side: EPF {LKR(payroll.employerEPF)} • ETF {LKR(payroll.employerETF)}
-                  </div>
-                </>
-              ) : (
-                <div style={styles.note}>EPF/ETF deductions apply only for monthly employees.</div>
-              )}
-
-              <Line label="Other Deductions" value={LKR(payroll.otherDeductions)} />
+              <Line label="EPF (Employee)" value={LKR(payroll.epfEmployee)} />
+              <div style={styles.note}>
+                Employer side: EPF {LKR(payroll.epfEmployer)} • ETF {LKR(payroll.etfEmployer)}
+              </div>
+              <Line label="Other Deductions" value={LKR(payroll.deductions)} />
               <hr style={styles.hr} />
-              <Line label="Total Deductions" value={LKR(payroll.totalDeductions)} />
-              <Line label="Net Pay" value={LKR(payroll.net)} strong />
+              <Line label="Total Deductions" value={LKR((payroll.epfEmployee || 0) + (payroll.deductions || 0))} />
+              <Line label="Net Pay" value={LKR(payroll.netPay)} strong />
             </div>
           </div>
 

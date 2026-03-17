@@ -1,191 +1,64 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
+import { getMyPayrollApi } from "../../../services/payrollService";
 
 const money = (n) =>
   Number(n || 0).toLocaleString("en-LK", { minimumFractionDigits: 2 });
 
+const pad2 = (n) => String(n).padStart(2, "0");
+
 export default function SalaryHistory() {
   const navigate = useNavigate();
 
-  // ✅ Dummy payroll runs based on your payroll_runs schema
-  const dummyHistory = useMemo(
-    () => [
-      {
-        payroll_id: 12,
-        month: 12,
-        year: 2025,
-        basic_earnings: 85000,
-        total_ot_pay: 6500,
-        gross_pay: 91500,
-        epf_employee: 7320,
-        epf_employer: 10980,
-        etf_employer: 2745,
-        net_pay: 84180,
-        generated_at: "2026-01-05 10:15:00",
-      },
-      {
-        payroll_id: 11,
-        month: 11,
-        year: 2025,
-        basic_earnings: 84000,
-        total_ot_pay: 4200,
-        gross_pay: 88200,
-        epf_employee: 7056,
-        epf_employer: 10584,
-        etf_employer: 2646,
-        net_pay: 81144,
-        generated_at: "2025-12-05 10:12:00",
-      },
-      {
-        payroll_id: 10,
-        month: 10,
-        year: 2025,
-        basic_earnings: 82000,
-        total_ot_pay: 3000,
-        gross_pay: 85000,
-        epf_employee: 6800,
-        epf_employer: 10200,
-        etf_employer: 2550,
-        net_pay: 78200,
-        generated_at: "2025-11-05 10:09:00",
-      },
-      {
-        payroll_id: 9,
-        month: 9,
-        year: 2025,
-        basic_earnings: 80000,
-        total_ot_pay: 2500,
-        gross_pay: 82500,
-        epf_employee: 6600,
-        epf_employer: 9900,
-        etf_employer: 2475,
-        net_pay: 75900,
-        generated_at: "2025-10-05 10:05:00",
-      },
-    ],
-    []
-  );
+  const [history, setHistory] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1; // 1-12
+
+  const [year, setYear] = useState(currentYear);
+  const [month, setMonth] = useState(currentMonth);
+
   const years = useMemo(() => {
     const arr = [];
-    for (let y = currentYear; y >= currentYear - 5; y--) arr.push(y);
+    for (let y = currentYear + 1; y >= currentYear - 5; y--) arr.push(y);
     return arr;
   }, [currentYear]);
 
-  const [year, setYear] = useState(currentYear);
-  const [query, setQuery] = useState("");
+  const months = useMemo(() => Array.from({ length: 12 }, (_, i) => i + 1), []);
 
-  const filtered = useMemo(() => {
-    return dummyHistory
-      .filter((r) => (year ? r.year === year : true))
-      .filter((r) => {
-        if (!query.trim()) return true;
-        const q = query.trim().toLowerCase();
-        const period = `${String(r.month).padStart(2, "0")}/${r.year}`.toLowerCase();
-        return period.includes(q);
-      })
-      .sort((a, b) => (b.year - a.year) || (b.month - a.month));
-  }, [dummyHistory, year, query]);
+  const loadHistory = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // getMyPayrollApi is now configured to take month, year
+      const data = await getMyPayrollApi(pad2(month), year);
 
-  const styles = {
-    page: { background: "#f6f7fb", minHeight: "100vh" },
-    wrap: { maxWidth: 1050, margin: "0 auto", padding: "18px 16px" },
-
-    headerRow: {
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "flex-end",
-      gap: 12,
-      flexWrap: "wrap",
-    },
-    title: { margin: 0, fontSize: 20, fontWeight: 900, color: "#111827" },
-    sub: { margin: "6px 0 0", fontSize: 13, color: "#6b7280" },
-
-    controls: { display: "flex", gap: 10, alignItems: "end", flexWrap: "wrap" },
-    label: { fontSize: 12, color: "#6b7280", marginBottom: 6, display: "block" },
-    input: {
-      padding: "10px 10px",
-      borderRadius: 10,
-      border: "1px solid #e5e7eb",
-      outline: "none",
-      minWidth: 220,
-      background: "#fff",
-    },
-    select: {
-      padding: "10px 10px",
-      borderRadius: 10,
-      border: "1px solid #e5e7eb",
-      outline: "none",
-      minWidth: 140,
-      background: "#fff",
-    },
-
-    card: {
-      marginTop: 14,
-      background: "#fff",
-      border: "1px solid #e5e7eb",
-      borderRadius: 14,
-      boxShadow: "0 6px 18px rgba(17,24,39,0.06)",
-      overflow: "hidden",
-    },
-
-    tableWrap: { overflowX: "auto" },
-    table: { width: "100%", borderCollapse: "separate", borderSpacing: 0 },
-    th: {
-      textAlign: "left",
-      fontSize: 12,
-      color: "#6b7280",
-      padding: "12px 12px",
-      borderBottom: "1px solid #eef2f7",
-      background: "#fbfdff",
-      position: "sticky",
-      top: 0,
-      zIndex: 1,
-      whiteSpace: "nowrap",
-    },
-    td: {
-      padding: "12px 12px",
-      fontSize: 13,
-      color: "#111827",
-      borderBottom: "1px solid #f3f4f6",
-      whiteSpace: "nowrap",
-    },
-    row: { cursor: "pointer" },
-
-    pill: {
-      display: "inline-block",
-      padding: "6px 10px",
-      borderRadius: 999,
-      background: "#eef2ff",
-      color: "#3730a3",
-      fontSize: 12,
-      fontWeight: 800,
-    },
-    net: { fontWeight: 900 },
-
-    empty: { padding: 16, color: "#6b7280", fontSize: 13 },
-    hint: { marginTop: 10, fontSize: 12, color: "#6b7280" },
-
-    kpiRow: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 10, marginTop: 14 },
-    kpi: {
-      background: "#fff",
-      border: "1px solid #e5e7eb",
-      borderRadius: 14,
-      boxShadow: "0 6px 18px rgba(17,24,39,0.06)",
-      padding: 14,
-    },
-    kpiLbl: { fontSize: 12, color: "#6b7280", marginBottom: 6 },
-    kpiVal: { fontSize: 18, fontWeight: 900, color: "#111827" },
+      // Since it's a specific month/year, the response might be a single object or empty array.
+      // If the backend returns an array of runs for that month, use it. If it returns an object, wrap in array.
+      const dataArray = Array.isArray(data) ? data : (data ? [data] : []);
+      setHistory(dataArray);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to load payroll history. " + (err.response?.data?.message || err.message));
+      setHistory([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
+  useEffect(() => {
+    loadHistory();
+  }, [month, year]);
+
   const totals = useMemo(() => {
-    const netTotal = filtered.reduce((s, r) => s + Number(r.net_pay || 0), 0);
-    const grossTotal = filtered.reduce((s, r) => s + Number(r.gross_pay || 0), 0);
-    const otTotal = filtered.reduce((s, r) => s + Number(r.total_ot_pay || 0), 0);
+    const netTotal = history.reduce((s, r) => s + Number(r.net_pay || 0), 0);
+    const grossTotal = history.reduce((s, r) => s + Number(r.gross_pay || 0), 0);
+    const otTotal = history.reduce((s, r) => s + Number(r.total_ot_pay || 0), 0);
     return { netTotal, grossTotal, otTotal };
-  }, [filtered]);
+  }, [history]);
 
   return (
     <AppLayout>
@@ -199,13 +72,14 @@ export default function SalaryHistory() {
 
             <div style={styles.controls}>
               <div>
-                <span style={styles.label}>Search (MM/YYYY)</span>
-                <input
-                  style={styles.input}
-                  value={query}
-                  onChange={(e) => setQuery(e.target.value)}
-                  placeholder="e.g., 12/2025"
-                />
+                <span style={styles.label}>Month</span>
+                <select style={styles.select} value={month} onChange={(e) => setMonth(Number(e.target.value))}>
+                  {months.map((m) => (
+                    <option key={m} value={m}>
+                      {pad2(m)}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -221,17 +95,19 @@ export default function SalaryHistory() {
             </div>
           </div>
 
+          {error && <div style={styles.error}>{error}</div>}
+
           <div style={styles.kpiRow}>
             <div style={styles.kpi}>
-              <div style={styles.kpiLbl}>Total Gross (filtered)</div>
+              <div style={styles.kpiLbl}>Total Gross</div>
               <div style={styles.kpiVal}>LKR {money(totals.grossTotal)}</div>
             </div>
             <div style={styles.kpi}>
-              <div style={styles.kpiLbl}>Total OT Pay (filtered)</div>
+              <div style={styles.kpiLbl}>Total OT Pay</div>
               <div style={styles.kpiVal}>LKR {money(totals.otTotal)}</div>
             </div>
             <div style={styles.kpi}>
-              <div style={styles.kpiLbl}>Total Net Pay (filtered)</div>
+              <div style={styles.kpiLbl}>Total Net Pay</div>
               <div style={styles.kpiVal}>LKR {money(totals.netTotal)}</div>
             </div>
           </div>
@@ -251,19 +127,23 @@ export default function SalaryHistory() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.length === 0 ? (
+                  {loading ? (
+                    <tr>
+                      <td style={styles.empty} colSpan={7}>Loading...</td>
+                    </tr>
+                  ) : history.length === 0 ? (
                     <tr>
                       <td style={styles.empty} colSpan={7}>
-                        No records found for selected year / search.
+                        No records found for {pad2(month)}/{year}.
                       </td>
                     </tr>
                   ) : (
-                    filtered.map((r) => (
+                    history.map((r) => (
                       <tr
                         key={r.payroll_id}
                         style={styles.row}
                         onClick={() =>
-                          navigate("/employee/salary-slip", {
+                          navigate(`/employee/salary-slip/${r.payroll_id}`, {
                             state: { payroll: r },
                           })
                         }
@@ -301,3 +181,100 @@ export default function SalaryHistory() {
     </AppLayout>
   );
 }
+
+const styles = {
+  page: { background: "#f6f7fb", minHeight: "100vh" },
+  wrap: { maxWidth: 1050, margin: "0 auto", padding: "18px 16px" },
+
+  headerRow: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-end",
+    gap: 12,
+    flexWrap: "wrap",
+  },
+  title: { margin: 0, fontSize: 20, fontWeight: 900, color: "#111827" },
+  sub: { margin: "6px 0 0", fontSize: 13, color: "#6b7280" },
+
+  controls: { display: "flex", gap: 10, alignItems: "end", flexWrap: "wrap" },
+  label: { fontSize: 12, color: "#6b7280", marginBottom: 6, display: "block", fontWeight: 700 },
+  select: {
+    padding: "10px 14px",
+    borderRadius: 10,
+    border: "1px solid #e5e7eb",
+    outline: "none",
+    minWidth: 100,
+    background: "#fff",
+    color: "#111827",
+    fontWeight: 600
+  },
+
+  card: {
+    marginTop: 14,
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: 14,
+    boxShadow: "0 6px 18px rgba(17,24,39,0.06)",
+    overflow: "hidden",
+  },
+
+  tableWrap: { overflowX: "auto" },
+  table: { width: "100%", borderCollapse: "separate", borderSpacing: 0 },
+  th: {
+    textAlign: "left",
+    fontSize: 12,
+    color: "#6b7280",
+    padding: "12px 16px",
+    borderBottom: "1px solid #eef2f7",
+    background: "#fbfdff",
+    position: "sticky",
+    top: 0,
+    zIndex: 1,
+    whiteSpace: "nowrap",
+    textTransform: "uppercase",
+    fontWeight: 800
+  },
+  td: {
+    padding: "16px 16px",
+    fontSize: 14,
+    color: "#111827",
+    borderBottom: "1px solid #f3f4f6",
+    whiteSpace: "nowrap",
+  },
+  row: { cursor: "pointer", transition: "background 0.2s" },
+
+  pill: {
+    display: "inline-block",
+    padding: "6px 10px",
+    borderRadius: 999,
+    background: "#eef2ff",
+    color: "#3730a3",
+    fontSize: 12,
+    fontWeight: 800,
+  },
+  net: { fontWeight: 800, color: "#2c5530" },
+
+  empty: { padding: 32, color: "#6b7280", fontSize: 14, textAlign: "center", fontStyle: "italic" },
+  hint: { marginTop: 12, fontSize: 12, color: "#6b7280", fontStyle: "italic" },
+
+  error: {
+    background: "#fee2e2",
+    color: "#991b1b",
+    padding: "16px",
+    borderRadius: "12px",
+    marginTop: "16px",
+    fontWeight: 600,
+    border: "1px solid #fecaca"
+  },
+
+  kpiRow: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginTop: 20 },
+  kpi: {
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: 14,
+    boxShadow: "0 6px 18px rgba(17,24,39,0.06)",
+    padding: 20,
+  },
+  kpiLbl: { fontSize: 12, color: "#6b7280", marginBottom: 6, fontWeight: 700, textTransform: "uppercase" },
+  kpiVal: { fontSize: 20, fontWeight: 900, color: "#111827" },
+};

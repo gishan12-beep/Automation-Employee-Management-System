@@ -1,5 +1,6 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
+import { leaveService } from "../../../services/leaveService";
 
 // Helpers
 const daysBetweenInclusive = (from, to) => {
@@ -77,35 +78,34 @@ const Field = ({ label, value }) => (
 );
 
 export default function LeaveRequests() {
-  const [requests, setRequests] = useState([
-    {
-      leave_id: 1001,
-      employee_id: "EMP001",
-      leave_type: "MEDICAL",
-      start_date: "2026-01-22",
-      end_date: "2026-01-24",
-      reason: "Doctor recommended rest due to fever.",
-      status: "PENDING",
-    },
-    {
-      leave_id: 1002,
-      employee_id: "EMP012",
-      leave_type: "ANNUAL",
-      start_date: "2026-02-05",
-      end_date: "2026-02-07",
-      reason: "Family function and travel arrangements.",
-      status: "APPROVED",
-    },
-    {
-      leave_id: 1003,
-      employee_id: "EMP008",
-      leave_type: "CASUAL",
-      start_date: "2026-01-30",
-      end_date: "2026-01-30",
-      reason: "Personal matter to attend.",
-      status: "PENDING",
-    },
-  ]);
+  const [requests, setRequests] = useState([]);
+  const [leaveTypes, setLeaveTypes] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchLeaves();
+    fetchTypes();
+  }, []);
+
+  const fetchTypes = async () => {
+    try {
+      const data = await leaveService.fetchLeaveTypes("MANAGER");
+      setLeaveTypes(data);
+    } catch (err) {
+      console.error("Failed to load types:", err);
+    }
+  };
+
+  const fetchLeaves = async () => {
+    try {
+      const data = await leaveService.fetchLeaveRequests();
+      setRequests(data);
+    } catch (err) {
+      console.error("Failed to load requests:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const [filters, setFilters] = useState({ q: "", status: "ALL", type: "ALL", from: "", to: "" });
   const [selected, setSelected] = useState(null);
@@ -133,7 +133,7 @@ export default function LeaveRequests() {
 
   const openReview = (req) => {
     setSelected(req);
-    setRemark("");
+    setRemark(req.manager_remark || "");
     setDrawerOpen(true);
   };
 
@@ -143,14 +143,22 @@ export default function LeaveRequests() {
     setRemark("");
   };
 
-  const updateStatus = (newStatus) => {
+  const updateStatus = async (newStatus) => {
     if (!selected) return;
     if (newStatus === "REJECTED" && !(remark || "").trim()) {
       alert("Please add a remark before rejecting.");
       return;
     }
-    setRequests((p) => p.map((r) => (r.leave_id === selected.leave_id ? { ...r, status: newStatus } : r)));
-    setSelected((p) => (p ? { ...p, status: newStatus } : p));
+
+    try {
+      await leaveService.updateLeaveRequestStatus(selected.leave_id, newStatus, remark);
+      // Update local state
+      setRequests((p) => p.map((r) => (r.leave_id === selected.leave_id ? { ...r, status: newStatus, manager_remark: remark } : r)));
+      setSelected((p) => (p ? { ...p, status: newStatus, manager_remark: remark } : p));
+      closeReview();
+    } catch (error) {
+      alert("Failed to update status. Please try again.");
+    }
   };
 
   return (
@@ -282,9 +290,11 @@ export default function LeaveRequests() {
                 <label className="label">Leave Type</label>
                 <select className="select" value={filters.type} onChange={(e) => setFilters((p) => ({ ...p, type: e.target.value }))}>
                   <option value="ALL">All Types</option>
-                  <option value="CASUAL">Casual</option>
-                  <option value="MEDICAL">Medical</option>
-                  <option value="ANNUAL">Annual</option>
+                  {leaveTypes.map((t) => (
+                    <option key={t.id || t.type_name} value={t.type_name}>
+                      {t.type_name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div>
@@ -319,7 +329,9 @@ export default function LeaveRequests() {
                   </tr>
                 </thead>
                 <tbody>
-                  {filtered.length === 0 ? (
+                  {loading ? (
+                    <tr><td colSpan={9} style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>Loading...</td></tr>
+                  ) : filtered.length === 0 ? (
                     <tr><td colSpan={9} style={{ textAlign: "center", padding: 40, color: "#9ca3af" }}>No requests matching filters.</td></tr>
                   ) : (
                     filtered.map((r) => (

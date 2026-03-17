@@ -1,0 +1,89 @@
+import {
+    getAllLeaveRequests,
+    updateLeaveStatus,
+    getLeaveRequestsByEmployee,
+    createLeaveRequest,
+    getLeaveTypes,
+} from "../repositories/leaveRepository.js";
+
+// Fetch leave types
+export const fetchLeaveTypes = async (req, res) => {
+    try {
+        const types = await getLeaveTypes();
+        res.json(types);
+    } catch (err) {
+        console.error("Error fetching leave types:", err);
+        res.status(500).json({ error: "Failed to fetch leave types" });
+    }
+};
+
+// Manager gets all leave requests
+export const getLeaveRequests = async (req, res) => {
+    try {
+        const leaves = await getAllLeaveRequests();
+        res.json(leaves);
+    } catch (err) {
+        console.error("Error fetching leave requests:", err);
+        res.status(500).json({ error: "Failed to fetch leave requests" });
+    }
+};
+
+// Manager updates the status of a leave request
+export const updateLeaveRequestStatus = async (req, res) => {
+    try {
+        const leaveId = req.params.id;
+        const { status, remark } = req.body; // we can log remark if needed later or add it to DB if schema changes
+
+        if (!["PENDING", "APPROVED", "REJECTED"].includes(status)) {
+            return res.status(400).json({ error: "Invalid status" });
+        }
+
+        const result = await updateLeaveStatus(leaveId, status, remark || null);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ error: "Leave request not found" });
+        }
+
+        res.json({ message: `Leave request ${status} successfully` });
+    } catch (err) {
+        console.error("Error updating leave status:", err);
+        res.status(500).json({ error: "Failed to update leave status" });
+    }
+};
+
+// Employee gets their own leave requests
+export const getEmployeeLeaves = async (req, res) => {
+    try {
+        const employeeId = req.user.employee_id;
+        const leaves = await getLeaveRequestsByEmployee(employeeId);
+        res.json(leaves);
+    } catch (err) {
+        console.error("Error fetching employee leaves:", err);
+        res.status(500).json({ error: "Failed to fetch leave requests" });
+    }
+};
+
+// Employee submits a leave request
+export const submitLeaveRequest = async (req, res) => {
+    try {
+        const employeeId = req.user.employee_id;
+        const { leave_type_id, start_date, end_date, reason } = req.body;
+
+        if (!leave_type_id || !start_date || !end_date) {
+            return res.status(400).json({ error: "Leave type ID, start date, and end date are required." });
+        }
+
+        const leaveId = await createLeaveRequest({
+            employee_id: employeeId,
+            leave_type_id,
+            start_date,
+            end_date,
+            reason,
+        });
+
+        res.status(201).json({ message: "Leave request submitted successfully", leave_id: leaveId });
+    } catch (err) {
+        console.error("Error submitting leave request:", err);
+        res.status(500).json({ error: "Failed to submit leave request" });
+    }
+};

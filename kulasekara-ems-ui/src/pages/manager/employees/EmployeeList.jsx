@@ -47,6 +47,20 @@ function EmployeeManagement() {
   const [credsOpen, setCredsOpen] = useState(false);
   const [newCreds, setNewCreds] = useState(null);
 
+  // Dropdown state
+  const [menuOpenId, setMenuOpenId] = useState(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      // If click is not on a dropdown or a dots button, close all menus
+      if (!event.target.closest(".action-dropdown-trigger") && !event.target.closest(".action-dropdown-menu")) {
+        setMenuOpenId(null);
+      }
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, []);
+
   useEffect(() => {
     (async () => {
       try {
@@ -202,10 +216,15 @@ function EmployeeManagement() {
 
     // ---- validation (salary configuration) ----
     if (!String(formData.salary_type || "").trim()) return alert("Please select Salary Type.");
-    if (formData.basic_rate === "" || formData.basic_rate === null || formData.basic_rate === undefined)
-      return alert("Please fill Basic Rate.");
-    if (Number.isNaN(Number(formData.basic_rate)) || Number(formData.basic_rate) <= 0)
-      return alert("Basic Rate must be a valid number greater than 0.");
+
+    // Only validate Basic Rate for MONTHLY employees
+    if (formData.salary_type === "MONTHLY") {
+      if (formData.basic_rate === "" || formData.basic_rate === null || formData.basic_rate === undefined)
+        return alert("Please fill Basic Rate.");
+      if (Number.isNaN(Number(formData.basic_rate)) || Number(formData.basic_rate) <= 0)
+        return alert("Basic Rate must be a valid number greater than 0.");
+    }
+
     if (!String(formData.effective_date || "").trim())
       return alert("Please select Effective Date.");
 
@@ -222,7 +241,7 @@ function EmployeeManagement() {
           status: String(formData.status || "ACTIVE").trim(),
           salary_configuration: {
             salary_type: String(formData.salary_type).trim(),
-            basic_rate: Number(formData.basic_rate),
+            basic_rate: formData.salary_type === "DAILY" ? 0 : Number(formData.basic_rate),
             is_epf_eligible: Number(formData.is_epf_eligible) ? 1 : 0,
             effective_date: String(formData.effective_date).trim(),
           },
@@ -273,7 +292,7 @@ function EmployeeManagement() {
       // ✅ salary_configurations table fields (nested)
       salary_configuration: {
         salary_type: String(formData.salary_type).trim(), // MONTHLY | DAILY
-        basic_rate: Number(formData.basic_rate),
+        basic_rate: formData.salary_type === "DAILY" ? 0 : Number(formData.basic_rate),
         is_epf_eligible: Number(formData.is_epf_eligible) ? 1 : 0,
         effective_date: String(formData.effective_date).trim(), // YYYY-MM-DD
       },
@@ -430,56 +449,8 @@ function EmployeeManagement() {
 
                 <div style={styles.profileGrid}>
                   <div style={styles.infoItem}>
-                    <div style={styles.infoLabel}>Employee ID</div>
-                    <div style={styles.infoValue}>{selectedEmployee.employee_id}</div>
-                  </div>
-
-                  <div style={styles.infoItem}>
-                    <div style={styles.infoLabel}>NIC</div>
-                    <div style={styles.infoValue}>{selectedEmployee.nic || "-"}</div>
-                  </div>
-
-                  <div style={styles.infoItem}>
-                    <div style={styles.infoLabel}>Email</div>
-                    <div style={styles.infoValue}>{selectedEmployee.email || "-"}</div>
-                  </div>
-
-                  <div style={styles.infoItem}>
                     <div style={styles.infoLabel}>Phone</div>
                     <div style={styles.infoValue}>{selectedEmployee.phone || "-"}</div>
-                  </div>
-
-                  <div style={styles.infoItem}>
-                    <div style={styles.infoLabel}>Created At</div>
-                    <div style={styles.infoValue}>{selectedEmployee.created_at || "-"}</div>
-                  </div>
-
-                  <div style={styles.infoItem}>
-                    <div style={styles.infoLabel}>Department ID</div>
-                    <div style={styles.infoValue}>{selectedEmployee.department_id ?? "-"}</div>
-                  </div>
-
-                  {/* ✅ Salary config display */}
-                  <div style={styles.infoItem}>
-                    <div style={styles.infoLabel}>Salary Type</div>
-                    <div style={styles.infoValue}>{selectedEmployee.salary_type || "-"}</div>
-                  </div>
-
-                  <div style={styles.infoItem}>
-                    <div style={styles.infoLabel}>Basic Rate</div>
-                    <div style={styles.infoValue}>{moneyText(selectedEmployee.basic_rate)}</div>
-                  </div>
-
-                  <div style={styles.infoItem}>
-                    <div style={styles.infoLabel}>EPF Eligible</div>
-                    <div style={styles.infoValue}>
-                      {Number(selectedEmployee.is_epf_eligible) ? "YES" : "NO"}
-                    </div>
-                  </div>
-
-                  <div style={styles.infoItem}>
-                    <div style={styles.infoLabel}>Effective Date</div>
-                    <div style={styles.infoValue}>{selectedEmployee.effective_date || "-"}</div>
                   </div>
                 </div>
               </div>
@@ -523,106 +494,129 @@ function EmployeeManagement() {
             <div style={styles.countPill}>{filteredEmployees.length} employees</div>
           </div>
 
-          <table style={styles.table}>
-            <thead>
-              <tr>
-                <th style={styles.th}>ID</th>
-                <th style={styles.th}>Name</th>
-                <th style={styles.th}>Department</th>
-                <th style={styles.th}>Status</th>
-                <th style={{ ...styles.th, textAlign: "right" }}>Actions</th>
-              </tr>
-            </thead>
+          <div style={styles.tableWrapper}>
+            <table style={styles.table}>
+              <thead>
+                <tr>
+                  <th style={styles.th}>ID</th>
+                  <th style={styles.th}>Name</th>
+                  <th style={styles.th}>Department</th>
+                  <th style={styles.th}>Status</th>
+                  <th style={{ ...styles.th, textAlign: "right" }}>Actions</th>
+                </tr>
+              </thead>
 
-            <tbody>
-              {filteredEmployees.map((emp) => {
-                const isSelected = String(emp.employee_id) === String(selectedEmpId);
+              <tbody>
+                {filteredEmployees.map((emp) => {
+                  const isSelected = String(emp.employee_id) === String(selectedEmpId);
 
-                return (
-                  <tr
-                    key={emp.employee_id}
-                    style={{ ...styles.tr, ...(isSelected ? styles.trSelected : {}) }}
-                    onClick={() => setSelectedEmpId(emp.employee_id)}
-                    title="Click to show this profile on top"
-                  >
-                    <td style={styles.td}>{emp.employee_id}</td>
+                  return (
+                    <tr
+                      key={emp.employee_id}
+                      style={{ ...styles.tr, ...(isSelected ? styles.trSelected : {}) }}
+                      onClick={() => setSelectedEmpId(emp.employee_id)}
+                      title="Click to show this profile on top"
+                    >
+                      <td style={styles.td}>{emp.employee_id}</td>
 
-                    <td style={styles.tdName}>
-                      <div style={styles.nameCell}>
-                        <div style={styles.rowAvatar}>
-                          {String(emp.first_name || "")
-                            .trim()
-                            .slice(0, 1)
-                            .toUpperCase() || "E"}
+                      <td style={styles.tdName}>
+                        <div style={styles.nameCell}>
+                          <div style={styles.rowAvatar}>
+                            {String(emp.first_name || "")
+                              .trim()
+                              .slice(0, 1)
+                              .toUpperCase() || "E"}
+                          </div>
+                          <div>
+                            <div style={styles.rowName}>{fullName(emp)}</div>
+                            <div style={styles.rowSub}>{emp.email}</div>
+                          </div>
                         </div>
-                        <div>
-                          <div style={styles.rowName}>{fullName(emp)}</div>
-                          <div style={styles.rowSub}>{emp.email}</div>
-                        </div>
-                      </div>
-                    </td>
+                      </td>
 
-                    <td style={styles.td}>{getDeptName(emp.department_id)}</td>
+                      <td style={styles.td}>{getDeptName(emp.department_id)}</td>
 
-                    <td style={styles.td}>
-                      <span
-                        style={{
-                          ...styles.statusSmall,
-                          ...(emp.status === "ACTIVE"
-                            ? { background: "#dcfce7" }
-                            : { background: "#fee2e2" }),
-                        }}
-                      >
-                        {emp.status}
-                      </span>
-                    </td>
-
-                    <td style={{ ...styles.td, textAlign: "right" }}>
-                      <button
-                        style={isSelected ? styles.selectBtnActive : styles.selectBtn}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedEmpId(emp.employee_id);
-                        }}
-                      >
-                        {isSelected ? "Selected" : "Select"}
-                      </button>
-
-                      <button
-                        style={styles.smallBtn}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openModal(emp, true);
-                        }}
-                      >
-                        Edit
-                      </button>
-
-                      {emp.status !== "INACTIVE" && (
-                        <button
-                          style={styles.smallBtnDanger}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openRemoveModal(emp);
+                      <td style={styles.td}>
+                        <span
+                          style={{
+                            ...styles.statusSmall,
+                            ...(emp.status === "ACTIVE"
+                              ? { background: "#dcfce7" }
+                              : { background: "#fee2e2" }),
                           }}
                         >
-                          Deactivate
-                        </button>
-                      )}
+                          {emp.status}
+                        </span>
+                      </td>
+
+                      <td style={{ ...styles.td, textAlign: "right" }}>
+                        <div style={styles.actionContainer}>
+                          <button
+                            style={isSelected ? styles.selectBtnActive : styles.selectBtn}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedEmpId(emp.employee_id);
+                            }}
+                          >
+                            {isSelected ? "Selected" : "Select"}
+                          </button>
+
+                          <div style={styles.dropdownWrapper}>
+                            <button
+                              className="action-dropdown-trigger"
+                              style={styles.dotsBtn}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setMenuOpenId(menuOpenId === emp.employee_id ? null : emp.employee_id);
+                              }}
+                            >
+                              ⋮
+                            </button>
+
+                            {menuOpenId === emp.employee_id && (
+                              <div className="action-dropdown-menu" style={styles.dropdownMenu}>
+                                <button
+                                  style={styles.dropdownItem}
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    openModal(emp, true);
+                                    setMenuOpenId(null);
+                                  }}
+                                >
+                                  Edit
+                                </button>
+
+                                {emp.status !== "INACTIVE" && (
+                                  <button
+                                    style={styles.dropdownItemDanger}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      openRemoveModal(emp);
+                                      setMenuOpenId(null);
+                                    }}
+                                  >
+                                    Deactivate
+                                  </button>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+
+                {filteredEmployees.length === 0 && (
+                  <tr>
+                    <td style={styles.empty} colSpan={5}>
+                      No employees found for “{search}”
                     </td>
                   </tr>
-                );
-              })}
-
-              {filteredEmployees.length === 0 && (
-                <tr>
-                  <td style={styles.empty} colSpan={5}>
-                    No employees found for “{search}”
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
 
         {/* VIEW/EDIT MODAL */}
@@ -799,22 +793,24 @@ function EmployeeManagement() {
                     )}
                   </div>
 
-                  {/* ✅ NEW: BASIC RATE */}
-                  <div>
-                    <label style={styles.label}>BASIC RATE</label>
-                    {isEditMode ? (
-                      <input
-                        name="basic_rate"
-                        value={formData.basic_rate ?? ""}
-                        onChange={handleChange}
-                        style={styles.input}
-                        placeholder="e.g., 75000 or 2500"
-                        inputMode="decimal"
-                      />
-                    ) : (
-                      <div style={styles.readValue}>{moneyText(formData.basic_rate)}</div>
-                    )}
-                  </div>
+                  {/* ✅ NEW: BASIC RATE (Only for Monthly) */}
+                  {formData.salary_type === "MONTHLY" && (
+                    <div>
+                      <label style={styles.label}>BASIC RATE</label>
+                      {isEditMode ? (
+                        <input
+                          name="basic_rate"
+                          value={formData.basic_rate ?? ""}
+                          onChange={handleChange}
+                          style={styles.input}
+                          placeholder="e.g., 75000"
+                          inputMode="decimal"
+                        />
+                      ) : (
+                        <div style={styles.readValue}>{moneyText(formData.basic_rate)}</div>
+                      )}
+                    </div>
+                  )}
 
                   {/* ✅ NEW: EPF/ETF ELIGIBLE (YES/NO) */}
                   <div>
@@ -969,7 +965,7 @@ function EmployeeManagement() {
           </div>
         )}
       </div>
-    </AppLayout>
+    </AppLayout >
   );
 }
 
@@ -1114,6 +1110,13 @@ const styles = {
     borderRadius: "18px",
     overflow: "hidden",
     boxShadow: "0 8px 24px rgba(74, 124, 78, 0.08)",
+    display: "flex",
+    flexDirection: "column",
+    maxHeight: "600px", // Fixed height for vertical space
+  },
+  tableWrapper: {
+    overflowY: "auto",
+    flex: 1,
   },
   listHeader: {
     padding: "14px 16px",
@@ -1142,8 +1145,11 @@ const styles = {
     fontWeight: 700,
     textTransform: "uppercase",
     letterSpacing: "0.8px",
-    background: "rgba(74, 124, 78, 0.04)",
+    background: "#f8fafc", // Solid background for sticky
     borderBottom: "1px solid rgba(74, 124, 78, 0.1)",
+    position: "sticky",
+    top: 0,
+    zIndex: 10,
   },
   tr: {
     cursor: "pointer",
@@ -1406,4 +1412,72 @@ const styles = {
     background: "#fff",
   },
   switchText: { fontWeight: 700, color: "#2c5530" },
+
+  // ✅ Dropdown Styles
+  actionContainer: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "flex-end",
+    gap: "8px",
+  },
+  dropdownWrapper: {
+    position: "relative",
+  },
+  dotsBtn: {
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    borderRadius: "10px",
+    width: "34px",
+    height: "34px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    fontWeight: 900,
+    color: "#0f172a",
+    fontSize: "18px",
+    transition: "all 0.2s",
+  },
+  dropdownMenu: {
+    position: "absolute",
+    top: "calc(100% + 5px)",
+    right: 0,
+    background: "#ffffff",
+    border: "1px solid rgba(74, 124, 78, 0.15)",
+    borderRadius: "12px",
+    padding: "6px",
+    boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
+    zIndex: 100,
+    minWidth: "130px",
+    display: "flex",
+    flexDirection: "column",
+    gap: "2px",
+    animation: "fadeIn 0.2s ease-out",
+  },
+  dropdownItem: {
+    background: "none",
+    border: "none",
+    padding: "10px 14px",
+    borderRadius: "8px",
+    textAlign: "left",
+    fontSize: "13px",
+    fontWeight: 700,
+    color: "#334155",
+    cursor: "pointer",
+    transition: "all 0.1s",
+    width: "100%",
+  },
+  dropdownItemDanger: {
+    background: "none",
+    border: "none",
+    padding: "10px 14px",
+    borderRadius: "8px",
+    textAlign: "left",
+    fontSize: "13px",
+    fontWeight: 700,
+    color: "#991b1b",
+    cursor: "pointer",
+    transition: "all 0.1s",
+    width: "100%",
+  },
 };

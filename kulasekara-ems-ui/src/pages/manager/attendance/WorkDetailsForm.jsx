@@ -1,5 +1,6 @@
 // src/pages/manager/attendance/WorkDetailsForm.jsx
 import React, { useEffect, useMemo, useState } from "react";
+import { getTasksApi, createWorkLogApi } from "../../../services/workLogService";
 
 /**
  * DB MATCH:
@@ -17,21 +18,33 @@ export default function WorkDetailsForm({
   defaultDate,
   onClose,
   onSave,
-  tasks = [
-    // ✅ fallback UI list (replace with API later)
-    { task_id: 1, task_name: "Coconut Peeling", rate_per_unit: 4.5, unit_measure: "Nut", description: "" },
-    { task_id: 2, task_name: "Coconut Cutting", rate_per_unit: 3.0, unit_measure: "Nut", description: "" },
-    { task_id: 3, task_name: "Copra Drying", rate_per_unit: 250.0, unit_measure: "Batch", description: "" },
-    { task_id: 4, task_name: "Oil Filtering", rate_per_unit: 15.0, unit_measure: "Liter", description: "" },
-  ],
 }) {
+  const [tasks, setTasks] = useState([]);
   const todayISO = new Date().toISOString().slice(0, 10);
 
   const [date, setDate] = useState(defaultDate || todayISO);
-  const [taskId, setTaskId] = useState(tasks?.[0]?.task_id ? String(tasks[0].task_id) : "");
+  const [taskId, setTaskId] = useState("");
   const [quantity, setQuantity] = useState("");
   const [appliedRate, setAppliedRate] = useState(""); // snapshot of rate at that time
   const [saving, setSaving] = useState(false);
+  const [loadingTasks, setLoadingTasks] = useState(true);
+
+  // Fetch tasks on mount
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await getTasksApi();
+        setTasks(res.tasks || []);
+        if (res.tasks?.length > 0) {
+          setTaskId(String(res.tasks[0].task_id));
+        }
+      } catch (err) {
+        console.error("Failed to load tasks", err);
+      } finally {
+        setLoadingTasks(false);
+      }
+    })();
+  }, []);
 
   // find selected task
   const selectedTask = useMemo(() => {
@@ -89,12 +102,21 @@ export default function WorkDetailsForm({
 
     try {
       setSaving(true);
+      const res = await createWorkLogApi({
+        employee_id: payload.employee_id,
+        task_id: payload.task_id,
+        date: payload.date,
+        quantity: payload.quantity,
+        applied_rate: payload.applied_rate
+      });
 
-      // TODO: replace with API call later
-      // await createWorkLogApi(payload);
-
-      onSave?.(payload); // ✅ update dashboard instantly
+      onSave?.({
+        ...payload,
+        log_id: res.log_id
+      });
       onClose?.();
+    } catch (err) {
+      alert(err.response?.data?.message || "Failed to save work log");
     } finally {
       setSaving(false);
     }
