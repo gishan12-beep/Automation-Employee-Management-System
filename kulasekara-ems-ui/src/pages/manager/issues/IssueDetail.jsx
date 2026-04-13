@@ -376,11 +376,12 @@ const styles = {
 
   card: {
     padding: 24,
-    background: "rgba(255, 255, 255, 0.95)",
-    backdropFilter: "blur(12px)",
-    border: "1px solid rgba(255, 255, 255, 0.5)",
+    background: "var(--glass-bg)",
+    backdropFilter: "var(--glass-blur)",
+    WebkitBackdropFilter: "var(--glass-blur)",
+    border: "var(--glass-border)",
     borderRadius: 18,
-    boxShadow: "0 10px 30px rgba(0,0,0,0.03)",
+    boxShadow: "var(--glass-shadow)",
   },
 
   sectionTitle: { fontWeight: 800, marginBottom: 16, color: "#111827", fontSize: 16, borderBottom: "1px solid rgba(0,0,0,0.06)", paddingBottom: 12 },

@@ -69,10 +69,13 @@ export default function Dashboard() {
           </div>
 
           <div style={styles.quickRow}>
+            <button style={styles.btnPrimary} onClick={() => navigate("/accountant/process-payroll")}>
+              Generate Payroll
+            </button>
             <button style={styles.btnSecondary} onClick={() => navigate("/accountant/payroll-summary")}>
               Payroll Management
             </button>
-            <button style={styles.btnPrimary} onClick={() => navigate("/accountant/epf-etf")}>
+            <button style={styles.btnSecondary} onClick={() => navigate("/accountant/epf-etf")}>
               EPF/ETF Reports
             </button>
           </div>
@@ -99,6 +102,11 @@ export default function Dashboard() {
             </div>
             <div style={styles.actionGrid}>
               <ActionCard
+                title="Process Payroll"
+                desc="Generate monthly payroll records for all employees."
+                onClick={() => navigate("/accountant/process-payroll")}
+              />
+              <ActionCard
                 title="Payroll Summary"
                 desc="View monthly payroll totals & breakdown."
                 onClick={() => navigate("/accountant/payroll-summary")}
@@ -107,11 +115,6 @@ export default function Dashboard() {
                 title="EPF / ETF"
                 desc="Manage contributions and generate reports."
                 onClick={() => navigate("/accountant/epf-etf")}
-              />
-              <ActionCard
-                title="Bank Withdrawals"
-                desc="Track and manage bank salary transfers."
-                onClick={() => navigate("/accountant/withdrawals")}
               />
             </div>
           </div>
@@ -172,12 +175,13 @@ const styles = {
     marginBottom: 14,
   },
   card: {
-    background: "rgba(255, 255, 255, 0.95)",
-    backdropFilter: "blur(8px)",
-    border: "1px solid rgba(74, 124, 78, 0.15)",
+    background: "var(--glass-bg)",
+    backdropFilter: "var(--glass-blur)",
+    WebkitBackdropFilter: "var(--glass-blur)",
+    border: "var(--glass-border)",
     borderRadius: 16,
     padding: 14,
-    boxShadow: "0 6px 18px rgba(74, 124, 78, 0.06)",
+    boxShadow: "var(--glass-shadow)",
   },
   cardLabel: { fontSize: 12, opacity: 0.7, marginBottom: 8 },
   cardValue: { fontSize: 18, fontWeight: 900 },
@@ -189,12 +193,13 @@ const styles = {
     gap: 12,
   },
   panel: {
-    background: "rgba(255, 255, 255, 0.95)",
-    backdropFilter: "blur(8px)",
-    border: "1px solid rgba(74, 124, 78, 0.15)",
+    background: "var(--glass-bg)",
+    backdropFilter: "var(--glass-blur)",
+    WebkitBackdropFilter: "var(--glass-blur)",
+    border: "var(--glass-border)",
     borderRadius: 16,
     overflow: "hidden",
-    boxShadow: "0 6px 18px rgba(74, 124, 78, 0.06)",
+    boxShadow: "var(--glass-shadow)",
   },
   panelHeader: { padding: 14, borderBottom: "1px solid rgba(74, 124, 78, 0.1)" },
   panelTitle: { margin: 0, fontSize: 16, fontWeight: 900 },

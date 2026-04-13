@@ -90,12 +90,13 @@ export default function ManagerSettings() {
     },
 
     card: {
-      background: "rgba(255, 255, 255, 0.9)",
-      backdropFilter: "blur(12px)",
+      background: "var(--glass-bg)",
+      backdropFilter: "var(--glass-blur)",
+      WebkitBackdropFilter: "var(--glass-blur)",
       borderRadius: 18,
       padding: 24,
-      boxShadow: "0 8px 25px rgba(0,0,0,0.03)",
-      border: "1px solid rgba(255, 255, 255, 0.5)",
+      boxShadow: "var(--glass-shadow)",
+      border: "var(--glass-border)",
       display: "flex",
       flexDirection: "column"
     },

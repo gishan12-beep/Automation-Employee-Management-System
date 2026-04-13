@@ -1,0 +1,329 @@
+﻿
+> kulasekara-ems-backend@1.0.0 dev
+> nodemon src/server.js
+
+[33m[nodemon] 3.1.11[39m
+[33m[nodemon] to restart at any time, enter `rs`[39m
+[33m[nodemon] watching path(s): *.*[39m
+[33m[nodemon] watching extensions: js,mjs,cjs,json[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒùé´©Å backup and recover secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+Server running on 5000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ÔÜÖ´©Å  load multiple .env files with { path: ['.env.local', '.env'] }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöä add secrets lifecycle management: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+Server running on 5000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ­ƒæÑ sync secrets across teammates & machines: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒùé´©Å backup and recover secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒæÑ sync secrets across teammates & machines: https://dotenvx.com/ops
+Server running on 5000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+Server running on 5000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ­ƒæÑ sync secrets across teammates & machines: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒôí add observability to secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöä add secrets lifecycle management: https://dotenvx.com/ops
+Server running on 5000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒùé´©Å backup and recover secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+Server running on 5000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ÔÜÖ´©Å  override existing env vars with { override: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöä add secrets lifecycle management: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  load multiple .env files with { path: ['.env.local', '.env'] }
+Server running on 5000
+[BACKEND] getEmployees: Fetched 21 rows
+[BACKEND] getEmployees: Fetched 21 rows
+[BACKEND] getEmployees: Fetched 21 rows
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+Server running on 5000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒùé´©Å backup and recover secrets: https://dotenvx.com/ops
+Server running on 5000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ­ƒøá´©Å  run anywhere with `dotenvx run -- yourcommand`
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöä add secrets lifecycle management: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöæ add access controls to secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: Ô£à audit secrets and track compliance: https://dotenvx.com/ops
+Server running on 5000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ­ƒæÑ sync secrets across teammates & machines: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöæ add access controls to secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+Server running on 5000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ­ƒôí add observability to secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒôí add observability to secrets: https://dotenvx.com/ops
+Server running on 5000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ­ƒöä add secrets lifecycle management: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöä add secrets lifecycle management: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöä add secrets lifecycle management: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöÉ prevent building .env in docker: https://dotenvx.com/prebuild
+Server running on 5000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  override existing env vars with { override: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒùé´©Å backup and recover secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöæ add access controls to secrets: https://dotenvx.com/ops
+Server running on 5000
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒæÑ sync secrets across teammates & machines: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöä add secrets lifecycle management: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: Ô£à audit secrets and track compliance: https://dotenvx.com/ops
+Server running on 5000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒôí add observability to secrets: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+Server running on 5000
+[BACKEND] getEmployees: Fetched 21 rows
+[PAYROLL] Processing employee: 1001
+[REPO] Fetching salary config for 1001 effective by 2026-04-29
+[REPO] Config retrieved for 1001: null
+[PAYROLL] Processing employee: 1002
+[REPO] Fetching salary config for 1002 effective by 2026-04-29
+[REPO] Config retrieved for 1002: {
+  config_id: 15,
+  employee_id: '1002',
+  salary_type: 'DAILY',
+  basic_rate: '500000.00',
+  is_epf_eligible: 0,
+  effective_date: 2026-02-09T18:30:00.000Z
+}
+[PAYROLL] Processing employee: 1006
+[REPO] Fetching salary config for 1006 effective by 2026-04-29
+[REPO] Config retrieved for 1006: null
+[PAYROLL] Processing employee: 1007
+[REPO] Fetching salary config for 1007 effective by 2026-04-29
+[REPO] Config retrieved for 1007: null
+[PAYROLL] Processing employee: 1008
+[REPO] Fetching salary config for 1008 effective by 2026-04-29
+[REPO] Config retrieved for 1008: {
+  config_id: 11,
+  employee_id: '1008',
+  salary_type: 'DAILY',
+  basic_rate: '75000.00',
+  is_epf_eligible: 0,
+  effective_date: 2026-02-12T18:30:00.000Z
+}
+[PAYROLL] Processing employee: 1010
+[REPO] Fetching salary config for 1010 effective by 2026-04-29
+[REPO] Config retrieved for 1010: null
+[PAYROLL] Processing employee: 1012
+[REPO] Fetching salary config for 1012 effective by 2026-04-29
+[REPO] Config retrieved for 1012: {
+  config_id: 1,
+  employee_id: '1012',
+  salary_type: 'MONTHLY',
+  basic_rate: '2500000.00',
+  is_epf_eligible: 1,
+  effective_date: 2026-01-25T18:30:00.000Z
+}
+[PAYROLL] Processing employee: 1013
+[REPO] Fetching salary config for 1013 effective by 2026-04-29
+[REPO] Config retrieved for 1013: {
+  config_id: 2,
+  employee_id: '1013',
+  salary_type: 'MONTHLY',
+  basic_rate: '10000000.00',
+  is_epf_eligible: 1,
+  effective_date: 2026-01-26T18:30:00.000Z
+}
+[PAYROLL] Processing employee: 1014
+[REPO] Fetching salary config for 1014 effective by 2026-04-29
+[REPO] Config retrieved for 1014: {
+  config_id: 3,
+  employee_id: '1014',
+  salary_type: 'MONTHLY',
+  basic_rate: '5000000.00',
+  is_epf_eligible: 1,
+  effective_date: 2026-01-26T18:30:00.000Z
+}
+[PAYROLL] Processing employee: 1015
+[REPO] Fetching salary config for 1015 effective by 2026-04-29
+[REPO] Config retrieved for 1015: {
+  config_id: 4,
+  employee_id: '1015',
+  salary_type: 'MONTHLY',
+  basic_rate: '800000.00',
+  is_epf_eligible: 1,
+  effective_date: 2026-01-26T18:30:00.000Z
+}
+[PAYROLL] Processing employee: 1016
+[REPO] Fetching salary config for 1016 effective by 2026-04-29
+[REPO] Config retrieved for 1016: {
+  config_id: 5,
+  employee_id: '1016',
+  salary_type: 'MONTHLY',
+  basic_rate: '100000.00',
+  is_epf_eligible: 1,
+  effective_date: 2026-02-19T18:30:00.000Z
+}
+[PAYROLL] Processing employee: 1019
+[REPO] Fetching salary config for 1019 effective by 2026-04-29
+[REPO] Config retrieved for 1019: {
+  config_id: 7,
+  employee_id: '1019',
+  salary_type: 'MONTHLY',
+  basic_rate: '750000.00',
+  is_epf_eligible: 1,
+  effective_date: 2026-01-26T18:30:00.000Z
+}
+[PAYROLL] Processing employee: 1020
+[REPO] Fetching salary config for 1020 effective by 2026-04-29
+[REPO] Config retrieved for 1020: {
+  config_id: 8,
+  employee_id: '1020',
+  salary_type: 'MONTHLY',
+  basic_rate: '80000.00',
+  is_epf_eligible: 1,
+  effective_date: 2026-02-18T18:30:00.000Z
+}
+[PAYROLL] Processing employee: 1021
+[REPO] Fetching salary config for 1021 effective by 2026-04-29
+[REPO] Config retrieved for 1021: {
+  config_id: 9,
+  employee_id: '1021',
+  salary_type: 'MONTHLY',
+  basic_rate: '100000.00',
+  is_epf_eligible: 1,
+  effective_date: 2026-01-26T18:30:00.000Z
+}
+[PAYROLL] Processing employee: 1022
+[REPO] Fetching salary config for 1022 effective by 2026-04-29
+[REPO] Config retrieved for 1022: {
+  config_id: 13,
+  employee_id: '1022',
+  salary_type: 'MONTHLY',
+  basic_rate: '56666.00',
+  is_epf_eligible: 1,
+  effective_date: 2026-02-09T18:30:00.000Z
+}
+[PAYROLL] Processing employee: 1024
+[REPO] Fetching salary config for 1024 effective by 2026-04-29
+[REPO] Config retrieved for 1024: {
+  config_id: 10,
+  employee_id: '1024',
+  salary_type: 'MONTHLY',
+  basic_rate: '100000.00',
+  is_epf_eligible: 1,
+  effective_date: 2026-01-27T18:30:00.000Z
+}
+[PAYROLL] Processing employee: 1025
+[REPO] Fetching salary config for 1025 effective by 2026-04-29
+[REPO] Config retrieved for 1025: {
+  config_id: 14,
+  employee_id: '1025',
+  salary_type: 'MONTHLY',
+  basic_rate: '5000.00',
+  is_epf_eligible: 1,
+  effective_date: 2026-02-09T18:30:00.000Z
+}
+[BACKEND] getEmployees: Fetched 21 rows
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ÔÜÖ´©Å  enable debug logging with { debug: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+Server running on 5000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ÔÜÖ´©Å  override existing env vars with { override: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+Server running on 5000
+[BACKEND] getEmployees: Fetched 21 rows
+[BACKEND] getEmployees: Fetched 21 rows
+[BACKEND] getEmployees: Fetched 21 rows
+[BACKEND] getEmployees: Fetched 21 rows
+[BACKEND] getEmployees: Fetched 21 rows
+[BACKEND] getEmployees: Fetched 21 rows
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  override existing env vars with { override: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: Ô£à audit secrets and track compliance: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+Server running on 5000
+[32m[nodemon] clean exit - waiting for changes before restart[39m
+[32m[nodemon] restarting due to changes...[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: ­ƒöÉ encrypt with Dotenvx: https://dotenvx.com
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ­ƒöÉ prevent committing .env to code: https://dotenvx.com/precommit
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  override existing env vars with { override: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  specify custom .env file path with { path: '/custom/path/.env' }
+Server running on 5000
+[BACKEND] getEmployees: Fetched 21 rows
+[BACKEND] getEmployees: Fetched 21 rows
+[BACKEND] getEmployees: Fetched 21 rows
+[BACKEND] getEmployees: Fetched 21 rows
+[31m[nodemon] app crashed - waiting for file changes before starting...[39m
+[32m[nodemon] restarting child process[39m
+[32m[nodemon] starting `node src/server.js`[39m
+[dotenv@17.2.3] injecting env (11) from .env -- tip: Ô£à audit secrets and track compliance: https://dotenvx.com/ops
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  override existing env vars with { override: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  suppress all logs with { quiet: true }
+[dotenv@17.2.3] injecting env (0) from .env -- tip: ÔÜÖ´©Å  write to custom object with { processEnv: myObject }
+Server running on 5000

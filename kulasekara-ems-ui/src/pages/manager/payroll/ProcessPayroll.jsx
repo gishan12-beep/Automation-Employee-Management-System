@@ -1,6 +1,22 @@
 import React, { useMemo, useState, useEffect, useRef } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
-import { MoreVertical, ListFilter } from "lucide-react";
+import { 
+  MoreVertical, 
+  ListFilter, 
+  Search, 
+  Calendar, 
+  Layers, 
+  DollarSign, 
+  TrendingUp, 
+  FileText, 
+  Printer, 
+  Eye, 
+  CheckCircle2, 
+  AlertCircle,
+  ChevronDown,
+  RefreshCcw,
+  Plus
+} from "lucide-react";
 import PayrollPreview from "./PayrollPreview";
 import SalarySlipGenerator from "./SalarySlipGenerator";
 import { processPayrollApi, getPayrollSummaryApi, processSingleEmployeeApi } from "../../../services/payrollService";
@@ -12,10 +28,6 @@ const LKR = (n) =>
     currency: "LKR",
     maximumFractionDigits: 0,
   }).format(Number(n || 0));
-
-function pad2(x) {
-  return String(x).padStart(2, "0");
-}
 
 export default function ProcessPayroll() {
   const [activeTab, setActiveTab] = useState("MONTHLY"); // "MONTHLY" | "OTHER"
@@ -30,6 +42,10 @@ export default function ProcessPayroll() {
   const [depts, setDepts] = useState([]);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [slipEmployee, setSlipEmployee] = useState(null);
+
+  // Role detection
+  const userRole = (localStorage.getItem("role") || "MANAGER").toUpperCase();
+  const isAccountant = userRole === "ACCOUNTANT" || userRole === "ADMIN";
 
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -138,7 +154,7 @@ export default function ProcessPayroll() {
     loadPayrollSummary();
   }, [monthPeriod]);
 
-  const departments = useMemo(() => {
+  const departmentsList = useMemo(() => {
     return ["All", ...depts];
   }, [depts]);
 
@@ -219,547 +235,302 @@ export default function ProcessPayroll() {
 
   return (
     <AppLayout>
-      {toast.message && (
-        <div style={{
-          ...styles.toast,
-          backgroundColor: toast.type === "error" ? "#fee2e2" : "#dcfce7",
-          color: toast.type === "error" ? "#991b1b" : "#166534"
-        }}>
-          {toast.message}
-        </div>
-      )}
+      <div style={styles.page}>
+        <style>{`
+          .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+          .table-row:hover { background: #f8fafc !important; }
+        `}</style>
 
-      <div style={styles.headerRow}>
-        <div>
-          <h2 style={styles.title}>Payroll Management</h2>
-          <p style={styles.subTitle}>
-            Generate monthly payrolls and view summaries. (Accountant must use Adjust tool)
-          </p>
-        </div>
+        {toast.message && (
+          <div style={{ ...styles.toast, background: toast.type === "error" ? "#dc2626" : "#166534" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              {toast.type === "error" ? <AlertCircle size={20} /> : <CheckCircle2 size={20} />}
+              {toast.message}
+            </div>
+          </div>
+        )}
 
-        <div style={styles.summaryBar}>
-          <Summary label="Total Gross" value={LKR(totals.gross)} />
-          <div style={styles.summaryDivider}></div>
-          <Summary label="Total EPF (Employee)" value={LKR(totals.epf)} />
-          <div style={styles.summaryDivider}></div>
-          <Summary label="Total Net" value={LKR(totals.net)} />
-        </div>
-      </div>
+        <div style={styles.container}>
+          {/* Header */}
+          <div style={styles.pageHeader}>
+            <div>
+              <div style={styles.breadcrumb}>Manager / Payroll Management</div>
+              <h1 style={styles.pageTitle}>Process Payroll</h1>
+              <p style={styles.pageSubtitle}>Calculate employee salaries and generate payroll summaries</p>
+            </div>
 
-      <div style={styles.filters}>
-        <Field label="Search" grow>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search name or employee ID..."
-            style={styles.input}
-          />
-        </Field>
-
-        <div style={{ position: "relative" }} ref={filterRef}>
-          <button
-            style={{
-              ...styles.secondaryBtn,
-              background: showFilterMenu ? "#e5e7eb" : "white"
-            }}
-            onClick={() => setShowFilterMenu(!showFilterMenu)}
-          >
-            <ListFilter size={18} style={{ marginRight: 8 }} />
-            Filters
-          </button>
-
-          {showFilterMenu && (
-            <div style={styles.filterPopup}>
-              <div style={styles.filterGroup}>
-                <Field label="Select Month">
-                  <input
-                    type="month"
-                    value={monthPeriod}
-                    onChange={(e) => setMonthPeriod(e.target.value)}
-                    style={styles.input}
-                  />
-                </Field>
+            <div style={styles.summaryBar}>
+              <div style={styles.summaryItem}>
+                <div style={styles.summaryLabel}>Total Gross</div>
+                <div style={styles.summaryValue}>{LKR(totals.gross)}</div>
               </div>
-
-              <div style={styles.filterGroup}>
-                <Field label="Department">
-                  <select
-                    value={department}
-                    onChange={(e) => setDepartment(e.target.value)}
-                    style={styles.input}
-                  >
-                    {departments.map((d) => (
-                      <option key={d} value={d}>
-                        {d}
-                      </option>
-                    ))}
-                  </select>
-                </Field>
+              <div style={styles.summaryDivider}></div>
+              <div style={styles.summaryItem}>
+                <div style={styles.summaryLabel}>EPF (Employee)</div>
+                <div style={styles.summaryValue}>{LKR(totals.epf)}</div>
+              </div>
+              <div style={styles.summaryDivider}></div>
+              <div style={styles.summaryItem}>
+                <div style={styles.summaryLabel}>Total Net</div>
+                <div style={{ ...styles.summaryValue, color: "#166534" }}>{LKR(totals.net)}</div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
 
-        <button style={{ ...styles.primaryBtn, opacity: processing ? 0.7 : 1 }} onClick={generateAll} disabled={processing}>
-          {processing ? "Processing..." : "Generate Entire Payroll"}
-        </button>
-      </div>
+          {/* Filters */}
+          <div style={styles.filters} className="fade-in">
+            <div style={{ ...styles.field, flex: 1 }}>
+              <label style={styles.label}>Search Employees</label>
+              <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                <Search size={18} style={{ position: "absolute", left: "14px", color: "#94a3b8" }} />
+                <input
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="ID or Name..."
+                  style={{ ...styles.input, paddingLeft: "42px", width: "100%" }}
+                />
+              </div>
+            </div>
 
-      <div style={styles.tabContainer}>
-        <button
-          style={{ ...styles.tabBtn, ...(activeTab === "MONTHLY" ? styles.activeTab : {}) }}
-          onClick={() => setActiveTab("MONTHLY")}
-        >
-          Monthly Employees
-        </button>
-        <button
-          style={{ ...styles.tabBtn, ...(activeTab === "OTHER" ? styles.activeTab : {}) }}
-          onClick={() => setActiveTab("OTHER")}
-        >
-          Daily / Other Employees
-        </button>
-      </div>
+            <div style={{ position: "relative" }} ref={filterRef}>
+              <button
+                style={{ ...styles.secondaryBtn, background: showFilterMenu ? "#f1f5f9" : "#fff" }}
+                onClick={() => setShowFilterMenu(!showFilterMenu)}
+              >
+                <ListFilter size={18} />
+                <span>Filters</span>
+                <ChevronDown size={14} style={{ marginLeft: "4px" }} />
+              </button>
 
-      <div style={styles.tableWrap}>
-        <table style={styles.table}>
-          <thead>
-            <tr>
-              <th style={styles.th}>Employee</th>
-              {activeTab === "MONTHLY" ? (
-                <>
-                  <th style={styles.th}>Basic (LKR)</th>
-                  <th style={styles.th}>OT Pay (LKR)</th>
-                  <th style={styles.th}>Incentives (LKR)</th>
-                  <th style={styles.th}>Deductions (LKR)</th>
-                  <th style={styles.th}>Gross (LKR)</th>
-                  <th style={styles.th}>EPF (Emp)</th>
-                </>
-              ) : (
-                <>
-                  <th style={styles.th}>Task/Work Pay (LKR)</th>
-                  <th style={styles.th}>Incentives (LKR)</th>
-                  <th style={styles.th}>Deductions (LKR)</th>
-                  <th style={styles.th}>Gross (LKR)</th>
-                </>
-              )}
-              <th style={styles.th}>Net (LKR)</th>
-              <th style={{ ...styles.th, textAlign: "right" }}>Actions</th>
-            </tr>
-          </thead>
-
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan={activeTab === "MONTHLY" ? 9 : 7} style={styles.empty}>
-                  Loading...
-                </td>
-              </tr>
-            ) : filtered.length === 0 ? (
-              <tr>
-                <td colSpan={activeTab === "MONTHLY" ? 9 : 7} style={styles.empty}>
-                  No active employees found in this category.
-                </td>
-              </tr>
-            ) : (
-              filtered.map((emp) => (
-                <tr key={emp.employeeID} style={styles.tr}>
-                  <td style={styles.td}>
-                    <div style={styles.empCell}>
-                      <div style={styles.empAvatar}>{emp.name?.[0] || "E"}</div>
-                      <div>
-                        <div style={styles.empName}>{emp.name}</div>
-                        <div style={styles.empMeta}>{emp.employeeID} | {emp.department}</div>
-                      </div>
-                    </div>
-                  </td>
-
-                  {activeTab === "MONTHLY" ? (
-                    <>
-                      <td style={styles.td}>{emp.basicSalary}</td>
-                      <td style={styles.td}>{emp.otPay}</td>
-                      <td style={styles.td}>{emp.incentives}</td>
-                      <td style={styles.td}>{emp.deductions}</td>
-                      <td style={styles.td}>{emp.gross}</td>
-                      <td style={styles.td}>{emp.epfEmployee}</td>
-                    </>
-                  ) : (
-                    <>
-                      <td style={styles.td}>{emp.basicSalary}</td>
-                      <td style={styles.td}>{emp.incentives}</td>
-                      <td style={styles.td}>{emp.deductions}</td>
-                      <td style={styles.td}>{emp.gross}</td>
-                    </>
-                  )}
-
-                  <td style={styles.tdStrong}>{emp.netPay}</td>
-
-                  <td style={{ ...styles.td, textAlign: "right", position: "relative" }}>
-                    <button
-                      style={styles.ghostBtn}
-                      onClick={(e) => toggleDropdown(emp.employeeID, e)}
+              {showFilterMenu && (
+                <div style={styles.filterPopup}>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Select Month</label>
+                    <input
+                      type="month"
+                      value={monthPeriod}
+                      onChange={(e) => setMonthPeriod(e.target.value)}
+                      style={styles.input}
+                    />
+                  </div>
+                  <div style={styles.field}>
+                    <label style={styles.label}>Department</label>
+                    <select
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      style={styles.input}
                     >
-                      <MoreVertical size={16} color="#374151" />
-                    </button>
+                      {departmentsList.map((d) => (
+                        <option key={d} value={d}>{d}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
 
-                    {activeDropdown === emp.employeeID && (
-                      <div style={styles.dropdownMenu} ref={dropdownRef}>
-                        {emp.isFinalized ? (
+            {isAccountant && (
+              <button style={{ ...styles.primaryBtn, opacity: processing ? 0.7 : 1 }} onClick={generateAll} disabled={processing}>
+                {processing ? <RefreshCcw size={18} className="spin" /> : <TrendingUp size={18} />}
+                <span>{processing ? "Processing..." : "Generate Entire Payroll"}</span>
+              </button>
+            )}
+          </div>
+
+          {/* Tabs */}
+          <div style={styles.tabContainer} className="fade-in">
+            <button
+              style={{ ...styles.tabBtn, ...(activeTab === "MONTHLY" ? styles.activeTab : {}) }}
+              onClick={() => setActiveTab("MONTHLY")}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Calendar size={16} /> Monthly Employees
+              </div>
+              {activeTab === "MONTHLY" && <div style={styles.activeTabIndicator}></div>}
+            </button>
+            <button
+              style={{ ...styles.tabBtn, ...(activeTab === "OTHER" ? styles.activeTab : {}) }}
+              onClick={() => setActiveTab("OTHER")}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <Layers size={16} /> Daily / Other Employees
+              </div>
+              {activeTab === "OTHER" && <div style={styles.activeTabIndicator}></div>}
+            </button>
+          </div>
+
+          {/* List */}
+          <div style={styles.listCard} className="fade-in">
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr>
+                    <th style={styles.th}>Employee</th>
+                    {activeTab === "MONTHLY" ? (
+                      <>
+                        <th style={styles.th}>Basic (LKR)</th>
+                        <th style={styles.th}>OT Pay</th>
+                        <th style={styles.th}>Incentives</th>
+                        <th style={styles.th}>Deductions</th>
+                        <th style={styles.th}>Gross</th>
+                        <th style={styles.th}>EPF (Emp)</th>
+                      </>
+                    ) : (
+                      <>
+                        <th style={styles.th}>Work Pay</th>
+                        <th style={styles.th}>Incentives</th>
+                        <th style={styles.th}>Deductions</th>
+                        <th style={styles.th}>Gross</th>
+                      </>
+                    )}
+                    <th style={styles.th}>Net Pay</th>
+                    <th style={{ ...styles.th, textAlign: "right" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loading ? (
+                    <tr>
+                      <td colSpan={activeTab === "MONTHLY" ? 9 : 7} style={{ textAlign: "center", padding: "60px", color: "#94a3b8", fontWeight: 600 }}>
+                        Fetching payroll data...
+                      </td>
+                    </tr>
+                  ) : filtered.length === 0 ? (
+                    <tr>
+                      <td colSpan={activeTab === "MONTHLY" ? 9 : 7} style={{ textAlign: "center", padding: "60px", color: "#94a3b8", fontWeight: 600 }}>
+                        No active employees found in this category.
+                      </td>
+                    </tr>
+                  ) : (
+                    filtered.map((emp) => (
+                      <tr key={emp.employeeID} style={styles.tr} className="table-row">
+                        <td style={styles.td}>
+                          <div style={styles.empCell}>
+                            <div style={styles.empAvatar}>{emp.name?.[0] || "E"}</div>
+                            <div>
+                              <div style={styles.empName}>{emp.name}</div>
+                              <div style={styles.empMeta}>{emp.employeeID} • {emp.department}</div>
+                            </div>
+                          </div>
+                        </td>
+
+                        {activeTab === "MONTHLY" ? (
                           <>
-                            <button
-                              style={styles.dropdownItem}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openPreview(emp);
-                                setActiveDropdown(null);
-                              }}
-                            >
-                              Preview Summary
-                            </button>
-                            <button
-                              style={styles.dropdownItem}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                openSlip(emp);
-                                setActiveDropdown(null);
-                              }}
-                            >
-                              View Slip
-                            </button>
+                            <td style={styles.td}>{emp.basicSalary === "-" ? "-" : LKR(emp.basicSalary)}</td>
+                            <td style={styles.td}>{emp.otPay === "-" ? "-" : LKR(emp.otPay)}</td>
+                            <td style={styles.td}>{emp.incentives === "-" ? "-" : LKR(emp.incentives)}</td>
+                            <td style={styles.td}>{emp.deductions === "-" ? "-" : LKR(emp.deductions)}</td>
+                            <td style={styles.td}>{emp.gross === "-" ? "-" : LKR(emp.gross)}</td>
+                            <td style={styles.td}>{emp.epfEmployee === "-" ? "-" : LKR(emp.epfEmployee)}</td>
                           </>
                         ) : (
-                          <button
-                            style={{ ...styles.dropdownItem, color: "#2c5530", fontWeight: 700 }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              generateSingle(emp.employeeID);
-                            }}
-                          >
-                            Generate
-                          </button>
+                          <>
+                            <td style={styles.td}>{emp.basicSalary === "-" ? "-" : LKR(emp.basicSalary)}</td>
+                            <td style={styles.td}>{emp.incentives === "-" ? "-" : LKR(emp.incentives)}</td>
+                            <td style={styles.td}>{emp.deductions === "-" ? "-" : LKR(emp.deductions)}</td>
+                            <td style={styles.td}>{emp.gross === "-" ? "-" : LKR(emp.gross)}</td>
+                          </>
                         )}
-                      </div>
-                    )}
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+
+                        <td style={styles.tdStrong}>{emp.netPay === "-" ? "-" : LKR(emp.netPay)}</td>
+
+                        <td style={{ ...styles.td, textAlign: "right", position: "relative" }}>
+                          <button
+                            style={styles.ghostBtn}
+                            onClick={(e) => toggleDropdown(emp.employeeID, e)}
+                          >
+                            <MoreVertical size={18} color="#94a3b8" />
+                          </button>
+
+                          {activeDropdown === emp.employeeID && (
+                            <div style={styles.dropdownMenu} ref={dropdownRef}>
+                              {emp.isFinalized ? (
+                                <>
+                                  <button style={styles.dropdownItem} onClick={(e) => { e.stopPropagation(); openPreview(emp); setActiveDropdown(null); }}>
+                                    <Eye size={14} /> Preview Summary
+                                  </button>
+                                  <button style={styles.dropdownItem} onClick={(e) => { e.stopPropagation(); openSlip(emp); setActiveDropdown(null); }}>
+                                    <Printer size={14} /> View Pay Slip
+                                  </button>
+                                </>
+                              ) : (
+                                isAccountant && (
+                                  <button style={{ ...styles.dropdownItem, color: "#166534" }} onClick={(e) => { e.stopPropagation(); generateSingle(emp.employeeID); }}>
+                                    <Plus size={14} /> Generate Payroll
+                                  </button>
+                                )
+                              )}
+                            </div>
+                          )}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {selectedEmployee && (
+          <PayrollPreview
+            employee={selectedEmployee}
+            input={{}}
+            payroll={selectedEmployee}
+            onClose={closePreview}
+          />
+        )}
+
+        {slipEmployee && (
+          <SalarySlipGenerator
+            employee={slipEmployee}
+            input={{}}
+            payroll={slipEmployee}
+            onClose={closeSlip}
+          />
+        )}
       </div>
-
-      {selectedEmployee && (
-        <PayrollPreview
-          employee={selectedEmployee}
-          input={{}}
-          payroll={selectedEmployee}
-          onClose={closePreview}
-        />
-      )}
-
-      {slipEmployee && (
-        <SalarySlipGenerator
-          employee={slipEmployee}
-          input={{}}
-          payroll={slipEmployee} // Now the data will be coming right off the summary, pass it directly
-          onClose={closeSlip}
-        />
-      )}
     </AppLayout>
   );
 }
 
-function Field({ label, children, grow }) {
-  return (
-    <div style={{ ...styles.field, ...(grow ? { flex: 1 } : {}) }}>
-      <label style={styles.label}>{label}</label>
-      {children}
-    </div>
-  );
-}
-
-function Summary({ label, value }) {
-  return (
-    <div style={styles.summaryItem}>
-      <div style={styles.summaryLabel}>{label}</div>
-      <div style={styles.summaryValue}>{value}</div>
-    </div>
-  );
-}
-
 const styles = {
-  toast: {
-    padding: "16px",
-    borderRadius: "12px",
-    marginBottom: "20px",
-    fontWeight: "600",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  headerRow: {
-    display: "flex",
-    gap: 16,
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-    marginBottom: 24,
-  },
-  title: {
-    margin: 0,
-    fontSize: 26,
-    fontWeight: 700,
-    color: "#2c5530",
-    letterSpacing: "-0.5px",
-  },
-  subTitle: {
-    margin: "6px 0 0",
-    opacity: 0.8,
-    color: "#4b5563",
-    fontSize: 14,
-  },
-
-  summaryBar: {
-    display: "flex",
-    gap: 0,
-    alignItems: "center",
-    background: "rgba(255, 255, 255, 0.8)",
-    backdropFilter: "blur(20px)",
-    WebkitBackdropFilter: "blur(20px)",
-    borderRadius: 16,
-    padding: "10px 16px",
-    boxShadow: "0 10px 30px rgba(74, 124, 78, 0.1), 0 0 0 1px rgba(74, 124, 78, 0.05)",
-    border: "2px solid rgba(255, 255, 255, 0.5)",
-  },
-  summaryItem: {
-    minWidth: 140,
-    padding: "6px 16px",
-    textAlign: "center",
-  },
-  summaryLabel: {
-    fontSize: 11,
-    color: "#4b5563",
-    fontWeight: 600,
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-    opacity: 0.8,
-  },
-  summaryValue: {
-    fontSize: 18,
-    fontWeight: 800,
-    marginTop: 2,
-    color: "#2c5530",
-  },
-  summaryDivider: {
-    width: 1,
-    height: 30,
-    background: "rgba(74, 124, 78, 0.15)",
-  },
-
-  filters: {
-    display: "flex",
-    gap: 12,
-    flexWrap: "wrap",
-    alignItems: "end",
-    background: "rgba(255, 255, 255, 0.9)",
-    backdropFilter: "blur(12px)",
-    border: "1px solid rgba(255, 255, 255, 0.6)",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 20,
-    zIndex: 20,
-    position: "relative",
-  },
-  field: { display: "flex", flexDirection: "column", gap: 8, minWidth: 180 },
-  label: { fontSize: 12, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.3px" },
-  input: {
-    height: 42,
-    borderRadius: 12,
-    border: "1px solid #e5e7eb",
-    padding: "0 14px",
-    fontSize: 15,
-    outline: "none",
-    fontWeight: 600,
-    color: "#111827",
-  },
-  primaryBtn: {
-    height: 42,
-    padding: "0 20px",
-    borderRadius: 12,
-    border: "none",
-    background: "linear-gradient(135deg, #2c5530 0%, #3a703f 100%)",
-    color: "white",
-    fontWeight: 700,
-    cursor: "pointer",
-    boxShadow: "0 4px 12px rgba(44, 85, 48, 0.3)",
-  },
-  secondaryBtn: {
-    height: 42,
-    padding: "0 16px",
-    borderRadius: 12,
-    border: "1px solid #d1d5db",
-    background: "white",
-    color: "#374151",
-    fontWeight: 600,
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-  },
-
-  filterPopup: {
-    position: "absolute",
-    top: 50,
-    right: 0,
-    background: "white",
-    border: "1px solid #e5e7eb",
-    boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-    borderRadius: 16,
-    padding: 20,
-    width: 260,
-    display: "flex",
-    flexDirection: "column",
-    gap: 16,
-    zIndex: 30,
-  },
-  filterGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: 8,
-  },
-
-  tableWrap: {
-    background: "white",
-    borderRadius: 16,
-    border: "1px solid #e5e7eb",
-    overflowX: "auto",
-    overflowY: "auto",
-    maxHeight: "500px",
-    boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    minWidth: 1000,
-  },
-  th: {
-    background: "#f9fafb",
-    padding: "16px",
-    textAlign: "left",
-    fontSize: 12,
-    fontWeight: 800,
-    color: "#4b5563",
-    textTransform: "uppercase",
-    letterSpacing: "0.05em",
-    borderBottom: "1px solid #e5e7eb",
-    position: "sticky",
-    top: 0,
-    zIndex: 10,
-  },
-  tr: {
-    borderBottom: "1px solid #f3f4f6",
-    transition: "background 0.2s",
-  },
-  td: {
-    padding: "16px",
-    fontSize: 14,
-    color: "#1f2937",
-    verticalAlign: "middle",
-  },
-  tdStrong: {
-    padding: "16px",
-    fontSize: 15,
-    fontWeight: 800,
-    color: "#2c5530",
-    verticalAlign: "middle",
-  },
-  empty: {
-    padding: 40,
-    textAlign: "center",
-    color: "#6b7280",
-    fontSize: 15,
-    fontStyle: "italic",
-  },
-
-  tabContainer: {
-    display: "flex",
-    gap: 10,
-    marginBottom: 16,
-    borderBottom: "2px solid #e5e7eb",
-    paddingBottom: 4,
-  },
-  tabBtn: {
-    background: "transparent",
-    border: "none",
-    padding: "8px 16px",
-    fontSize: 14,
-    fontWeight: 700,
-    color: "#6b7280",
-    cursor: "pointer",
-    position: "relative",
-    bottom: -6, // Overlap the border
-  },
-  activeTab: {
-    color: "#2c5530",
-    borderBottom: "3px solid #2c5530",
-  },
-
-  empCell: {
-    display: "flex",
-    alignItems: "center",
-    gap: 12,
-  },
-  empAvatar: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    background: "#eef2ff",
-    color: "#4f46e5",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: 800,
-    fontSize: 15,
-  },
-  empName: {
-    fontWeight: 700,
-    color: "#111827",
-  },
-  empMeta: {
-    fontSize: 12,
-    color: "#6b7280",
-    marginTop: 2,
-  },
-
-  ghostBtn: {
-    background: "transparent",
-    border: "none",
-    padding: 8,
-    cursor: "pointer",
-    borderRadius: 8,
-  },
-  dropdownMenu: {
-    position: "absolute",
-    right: 40,
-    top: 20,
-    background: "white",
-    border: "1px solid #e5e7eb",
-    boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
-    borderRadius: 12,
-    padding: 6,
-    zIndex: 10,
-    minWidth: 140,
-  },
-  dropdownItem: {
-    display: "block",
-    width: "100%",
-    textAlign: "left",
-    background: "transparent",
-    border: "none",
-    padding: "8px 12px",
-    fontSize: 13,
-    fontWeight: 600,
-    color: "#374151",
-    cursor: "pointer",
-    borderRadius: 6,
-  },
+  page: { minHeight: "100%", background: "#f8fafc" },
+  container: { padding: "32px", maxWidth: "1600px", margin: "0 auto" },
+  breadcrumb: { fontSize: "11px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" },
+  pageHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "32px", gap: "24px", flexWrap: "wrap" },
+  pageTitle: { margin: 0, fontSize: "32px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.02em" },
+  pageSubtitle: { margin: "4px 0 0 0", fontSize: "15px", color: "#64748b", fontWeight: 500 },
+  summaryBar: { display: "flex", background: "#fff", borderRadius: "20px", padding: "16px 24px", boxShadow: "0 4px 20px rgba(0,0,0,0.03)", border: "1px solid #f1f5f9", alignItems: "center" },
+  summaryItem: { padding: "0 24px", textAlign: "center", minWidth: "160px" },
+  summaryLabel: { fontSize: "10px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "4px" },
+  summaryValue: { fontSize: "20px", fontWeight: 900, color: "#1e293b" },
+  summaryDivider: { width: "1px", height: "32px", background: "#f1f5f9" },
+  filters: { display: "flex", gap: "12px", background: "#fff", borderRadius: "20px", padding: "20px", marginBottom: "24px", border: "1px solid #f1f5f9", boxShadow: "0 4px 20px rgba(0,0,0,0.02)", alignItems: "flex-end", position: "relative", zIndex: 10 },
+  filterPopup: { position: "absolute", top: "calc(100% + 8px)", right: "200px", background: "#fff", border: "1px solid #e2e8f0", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", borderRadius: "16px", padding: "20px", width: "280px", display: "flex", flexDirection: "column", gap: "16px", zIndex: 30 },
+  field: { display: "flex", flexDirection: "column", gap: "8px" },
+  label: { fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" },
+  input: { height: "42px", borderRadius: "12px", border: "1px solid #e2e8f0", padding: "0 14px", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#f8fafc", outline: "none" },
+  primaryBtn: { height: "42px", padding: "0 20px", display: "flex", alignItems: "center", gap: "8px", borderRadius: "12px", border: "none", background: "#2c5530", color: "#fff", fontWeight: 700, fontSize: "14px", cursor: "pointer", boxShadow: "0 4px 12px rgba(44, 85, 48, 0.2)" },
+  secondaryBtn: { height: "42px", padding: "0 16px", display: "flex", alignItems: "center", gap: "8px", borderRadius: "12px", border: "1px solid #e2e8f0", background: "#fff", color: "#475569", fontWeight: 700, fontSize: "14px", cursor: "pointer" },
+  tabContainer: { display: "flex", gap: "24px", marginBottom: "20px", borderBottom: "1px solid #e2e8f0", paddingLeft: "12px" },
+  tabBtn: { background: "none", border: "none", paddingBottom: "12px", fontSize: "14px", fontWeight: 700, color: "#94a3b8", cursor: "pointer", position: "relative" },
+  activeTab: { color: "#2c5530" },
+  activeTabIndicator: { position: "absolute", bottom: "-1px", left: 0, right: 0, height: "3px", background: "#2c5530", borderRadius: "3px 3px 0 0" },
+  listCard: { background: "#fff", borderRadius: "24px", overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.03)", border: "1px solid #f1f5f9" },
+  tableWrapper: { overflowX: "auto" },
+  table: { width: "100%", borderCollapse: "collapse" },
+  th: { padding: "16px 24px", textAlign: "left", fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", background: "#f8fafc" },
+  tr: { borderBottom: "1px solid #f1f5f9", transition: "all 0.2s" },
+  td: { padding: "16px 24px", fontSize: "14px", color: "#475569" },
+  tdStrong: { padding: "16px 24px", fontSize: "15px", fontWeight: 800, color: "#2c5530" },
+  empCell: { display: "flex", alignItems: "center", gap: "12px" },
+  empAvatar: { width: "36px", height: "36px", borderRadius: "10px", background: "#ecfdf5", color: "#059669", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "14px" },
+  empName: { fontWeight: 700, color: "#1e293b" },
+  empMeta: { fontSize: "12px", color: "#94a3b8", marginTop: "2px" },
+  ghostBtn: { background: "transparent", border: "none", padding: "8px", cursor: "pointer", borderRadius: "8px" },
+  dropdownMenu: { position: "absolute", right: "40px", top: "20px", background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", padding: "6px", minWidth: "180px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", zIndex: 100 },
+  dropdownItem: { display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "8px", border: "none", background: "none", width: "100%", textAlign: "left", fontSize: "13px", fontWeight: 600, color: "#475569", cursor: "pointer" },
+  toast: { position: "fixed", bottom: "32px", right: "32px", padding: "16px 24px", borderRadius: "16px", fontWeight: 700, color: "#fff", zIndex: 2000, boxShadow: "0 10px 30px rgba(0,0,0,0.1)", animation: "slideUp 0.4s ease-out" },
 };

@@ -95,6 +95,19 @@ export const getSummary = async (req, res) => {
     }
 };
 
+// ✅ GET /api/payroll/details/:month/:year/:employeeId (Accountant)
+export const getPayrollDetails = async (req, res) => {
+    try {
+        const { month, year, employeeId } = req.params;
+        const data = await payrollService.getPayrollRunDetails(employeeId, parseInt(month), parseInt(year));
+        if (!data) return res.status(404).json({ message: "Payroll run not found" });
+        return res.json(data);
+    } catch (err) {
+        console.error("GET DETAILS ERROR:", err);
+        return res.status(500).json({ message: "Failed to fetch details" });
+    }
+};
+
 // ✅ PATCH /api/payroll/:payrollId (Accountant)
 export const updatePayrollRun = async (req, res) => {
     try {

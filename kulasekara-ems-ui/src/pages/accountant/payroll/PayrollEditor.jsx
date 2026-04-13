@@ -46,6 +46,11 @@ export default function PayrollEditor() {
   const [toast, setToast] = useState({ message: "", type: "" });
   const [validationErrors, setValidationErrors] = useState({});
 
+  // Add Item States
+  const [showAddIncentive, setShowAddIncentive] = useState(false);
+  const [showAddDeduction, setShowAddDeduction] = useState(false);
+  const [newItem, setNewItem] = useState({ amount: "", reason: "" });
+
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast({ message: "", type: "" }), 5000);
@@ -86,6 +91,33 @@ export default function PayrollEditor() {
   const liveGross = Number(draft?.basic_earnings || 0) + Number(fields.total_ot_pay) + Number(fields.total_incentives);
   const liveNet = liveGross - Number(fields.total_deductions) - Number(fields.epf_employee);
 
+  const handleAddItem = async (type) => {
+    if (!newItem.amount || Number(newItem.amount) <= 0 || !newItem.reason) {
+      alert("Please provide valid amount and reason.");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await adjustPayrollApi(draft.payrollId, {
+        adjustment_type: type,
+        amount: Number(newItem.amount),
+        reason: newItem.reason.trim()
+      });
+
+      showToast(`${type === 'BONUS' ? 'Incentive' : 'Deduction'} added successfully!`);
+      setNewItem({ amount: "", reason: "" });
+      setShowAddIncentive(false);
+      setShowAddDeduction(false);
+      loadDraft(); // Refresh to get new items and totals
+    } catch (e) {
+      console.error(e);
+      showToast(e.response?.data?.message || "Failed to add item.", "error");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSave = async () => {
     setValidationErrors({});
 
@@ -106,9 +138,10 @@ export default function PayrollEditor() {
         reason: reason.trim()
       });
 
-      showToast("Payroll updated successfully!");
+      showToast("Payroll totals updated successfully!");
       setDraft(res.payroll);
       setReason(""); // Clear reason after success
+      loadDraft(); // Refresh itemized view too
     } catch (e) {
       console.error(e);
       showToast(e.response?.data?.message || "Failed to save changes.", "error");
@@ -183,7 +216,7 @@ export default function PayrollEditor() {
                   <div className="divider" />
                   <div className="section-title">Edit Payslip Components</div>
                   <small className="hint" style={{ display: 'block', marginBottom: '16px' }}>
-                    Modify overtime, incentives, or deductions. Basic salary remains locked.
+                    Modify overtime, EPF/ETF. Basic salary remains locked. Add incentives and deductions as individual items.
                   </small>
 
                   <div className="form-row">
@@ -197,34 +230,13 @@ export default function PayrollEditor() {
                       />
                     </div>
                     <div className="form-field">
-                      <label>Incentives / Bonuses (LKR)</label>
-                      <input
-                        type="number"
-                        value={fields.total_incentives}
-                        onChange={(e) => setFields({ ...fields, total_incentives: Number(e.target.value) })}
-                        min="0"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="form-row">
-                    <div className="form-field">
-                      <label>Deductions (LKR)</label>
-                      <input
-                        type="number"
-                        value={fields.total_deductions}
-                        onChange={(e) => setFields({ ...fields, total_deductions: Number(e.target.value) })}
-                        min="0"
-                      />
-                    </div>
-                    <div className="form-field">
-                      <label>EPF Employee (8%) (LKR)</label>
-                      <input
-                        type="number"
-                        value={fields.epf_employee}
-                        onChange={(e) => setFields({ ...fields, epf_employee: Number(e.target.value) })}
-                        min="0"
-                      />
+                        <label>EPF Employee (8%) (LKR)</label>
+                        <input
+                            type="number"
+                            value={fields.epf_employee}
+                            onChange={(e) => setFields({ ...fields, epf_employee: Number(e.target.value) })}
+                            min="0"
+                        />
                     </div>
                   </div>
 
@@ -249,9 +261,57 @@ export default function PayrollEditor() {
                     </div>
                   </div>
 
+                  {/* Itemized Incentives */}
+                  <div className="divider" style={{ margin: '16px 0' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <div className="section-title">Incentives / Bonuses</div>
+                    <button className="btn btn-sm" onClick={() => setShowAddIncentive(true)} style={{ padding: '4px 12px', fontSize: 12, background: '#dcfce7', color: '#166534' }}>+ Add Bonus</button>
+                  </div>
+                  
+                  <div className="items-list">
+                    {(draft.incentives || []).map((item, idx) => (
+                      <div key={idx} className="item-row">
+                        <span className="item-desc">{item.description}</span>
+                        <span className="item-amt">{LKR(item.amount)}</span>
+                      </div>
+                    ))}
+                    {(draft.incentives || []).length > 0 && (
+                      <div className="item-row" style={{ background: '#f0fdf4', border: '1px dashed #10b981' }}>
+                        <span className="item-desc" style={{ fontWeight: 800 }}>Total Incentives</span>
+                        <span className="item-amt" style={{ color: '#10b981' }}>{LKR(fields.total_incentives)}</span>
+                      </div>
+                    )}
+                    {(draft.incentives || []).length === 0 && <div className="muted" style={{ padding: '8px', fontSize: 13 }}>No manual incentives added.</div>}
+                  </div>
+
+                  {/* Itemized Deductions */}
+                  <div className="divider" style={{ margin: '16px 0' }} />
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                    <div className="section-title">Deductions (Fines/Loans)</div>
+                    <button className="btn btn-sm" onClick={() => setShowAddDeduction(true)} style={{ padding: '4px 12px', fontSize: 12, background: '#fee2e2', color: '#991b1b' }}>+ Add Deduction</button>
+                  </div>
+
+                  <div className="items-list">
+                    {(draft.deductions || []).map((item, idx) => (
+                      <div key={idx} className="item-row">
+                        <span className="item-desc">{item.reason}</span>
+                        <span className="item-amt" style={{ color: '#ef4444' }}>- {LKR(item.amount)}</span>
+                      </div>
+                    ))}
+                    {(draft.deductions || []).length > 0 && (
+                      <div className="item-row" style={{ background: '#fef2f2', border: '1px dashed #ef4444' }}>
+                        <span className="item-desc" style={{ fontWeight: 800 }}>Total Deductions</span>
+                        <span className="item-amt" style={{ color: '#ef4444' }}>{LKR(fields.total_deductions)}</span>
+                      </div>
+                    )}
+                    {(draft.deductions || []).length === 0 && <div className="muted" style={{ padding: '8px', fontSize: 13 }}>No manual deductions added.</div>}
+                  </div>
+
+                  <div className="divider" />
+
                   <div className="form-row" style={{ gridTemplateColumns: '1fr' }}>
                     <div className="form-field">
-                      <label>Reason for changes</label>
+                      <label>Reason for changes (Notes)</label>
                       <input
                         type="text"
                         value={reason}
@@ -265,7 +325,7 @@ export default function PayrollEditor() {
 
                   <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end' }}>
                     <button className="btn btn-primary" onClick={handleSave} disabled={saving}>
-                      {saving ? "Saving Changes..." : "Save Payslip Changes"}
+                      {saving ? "Saving Changes..." : "Update Payslip Totals"}
                     </button>
                   </div>
 
@@ -326,6 +386,34 @@ export default function PayrollEditor() {
             </div>
           </div>
         </div>
+
+        {/* Add Item Modal (Generic) */}
+        {(showAddIncentive || showAddDeduction) && (
+            <div style={{
+                position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.5)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, backdropFilter: 'blur(4px)'
+            }}>
+                <div className="card" style={{ width: '400px', padding: '32px' }}>
+                    <h3 className="section-title" style={{ marginBottom: 20 }}>
+                        {showAddIncentive ? 'Add Incentive / Bonus' : 'Add Deduction'}
+                    </h3>
+                    <div className="form-field" style={{ marginBottom: 16 }}>
+                        <label>Amount (LKR)</label>
+                        <input type="number" value={newItem.amount} onChange={(e) => setNewItem({ ...newItem, amount: e.target.value })} autoFocus />
+                    </div>
+                    <div className="form-field" style={{ marginBottom: 24 }}>
+                        <label>Reason / Description</label>
+                        <input type="text" value={newItem.reason} onChange={(e) => setNewItem({ ...newItem, reason: e.target.value })} placeholder="e.g. Monthly Commission" />
+                    </div>
+                    <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end' }}>
+                        <button className="btn" onClick={() => { setShowAddIncentive(false); setShowAddDeduction(false); setNewItem({ amount: "", reason: "" }); }}>Cancel</button>
+                        <button className="btn btn-primary" onClick={() => handleAddItem(showAddIncentive ? 'BONUS' : 'DEDUCTION')} disabled={saving}>
+                            {saving ? 'Processing...' : 'Confirm Addition'}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
       </div>
 
       <style>{`
@@ -381,6 +469,23 @@ export default function PayrollEditor() {
         }
         .form-field input:focus, .form-field textarea:focus{border-color:#4a7c4e;box-shadow:0 0 0 3px rgba(74, 124, 78, 0.1)}
         
+        .items-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .item-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 12px;
+            background: #f8fafc;
+            border-radius: 8px;
+            border: 1px solid #f1f5f9;
+        }
+        .item-desc { font-size: 13px; font-weight: 600; color: #334155; }
+        .item-amt { font-size: 13px; font-weight: 800; color: #1e293b; }
+
         .hint{display:block;color:#9ca3af;margin-top:6px;font-size:12px;font-style:italic}
         .muted{color:#9ca3af;font-style:italic;padding:20px;text-align:center}
         

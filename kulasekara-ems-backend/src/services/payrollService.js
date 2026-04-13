@@ -304,6 +304,25 @@ export const getPayrollSummary = async (month, year) => {
     return { summary: totals, details: runs };
 };
 
+// ✅ Get Full Details for a Payroll Run (including itemized incentives/deductions)
+export const getPayrollRunDetails = async (employeeId, month, year) => {
+    const run = await payrollRepo.checkExistingPayroll(employeeId, month, year);
+    if (!run) return null;
+
+    const payrollRun = await payrollRepo.getPayrollRunById(run);
+    const [empRows] = await pool.query(`SELECT first_name, last_name, employee_id FROM employee WHERE employee_id = ?`, [employeeId]);
+    
+    const incentives = await payrollRepo.getIncentivesByEmployee(employeeId, month, year);
+    const deductions = await payrollRepo.getDeductionsByEmployee(employeeId, month, year);
+
+    return {
+        payroll: payrollRun,
+        employee: empRows[0],
+        incentives,
+        deductions
+    };
+};
+
 // ✅ Edit Payroll Run (Accountant via Full Edit or Adjustments)
 export const editPayrollRun = async (payrollId, patch, editedByUser) => {
     const conn = await pool.getConnection();
@@ -321,15 +340,6 @@ export const editPayrollRun = async (payrollId, patch, editedByUser) => {
         // If it's a legacy simple adjustment (BONUS/DEDUCTION)
         if (patch.adjustment_type === 'BONUS' || patch.adjustment_type === 'DEDUCTION') {
             const adjustmentAmount = Number(patch.amount);
-            let newNetPay = Number(existingRun.net_pay);
-
-            if (patch.adjustment_type === 'BONUS') {
-                newNetPay += adjustmentAmount;
-            } else if (patch.adjustment_type === 'DEDUCTION') {
-                newNetPay -= adjustmentAmount;
-                if (newNetPay < 0) newNetPay = 0;
-            }
-            newRecord.net_pay = newNetPay;
 
             // Audit Record
             await payrollRepo.insertPayrollAdjustment({
@@ -340,7 +350,33 @@ export const editPayrollRun = async (payrollId, patch, editedByUser) => {
                 reason: patch.reason
             }, conn);
 
-            await payrollRepo.updatePayrollRunNetPay(payrollId, newNetPay, conn);
+            // Sync with Incentives/Deductions tables
+            const adjustmentDate = new Date(existingRun.year, existingRun.month - 1, 1); // Use 1st of the payroll month
+
+            if (patch.adjustment_type === 'BONUS') {
+                await payrollRepo.insertIncentive({
+                    employee_id: existingRun.employee_id,
+                    date: adjustmentDate,
+                    amount: adjustmentAmount,
+                    description: patch.reason || "Accountant Adjustment"
+                }, conn);
+                newRecord.total_incentives = (Number(newRecord.total_incentives) || 0) + adjustmentAmount;
+            } else if (patch.adjustment_type === 'DEDUCTION') {
+                await payrollRepo.insertDeduction({
+                    employee_id: existingRun.employee_id,
+                    date: adjustmentDate,
+                    amount: adjustmentAmount,
+                    reason: patch.reason || "Accountant Adjustment"
+                }, conn);
+                newRecord.total_deductions = (Number(newRecord.total_deductions) || 0) + adjustmentAmount;
+            }
+
+            // Recalculate Totals
+            newRecord.gross_pay = (Number(newRecord.basic_earnings) || 0) + (Number(newRecord.total_ot_pay) || 0) + (Number(newRecord.total_incentives) || 0);
+            newRecord.net_pay = Number(newRecord.gross_pay) - Number(newRecord.total_deductions) - Number(newRecord.epf_employee);
+            if (newRecord.net_pay < 0) newRecord.net_pay = 0;
+
+            await payrollRepo.updatePayrollRunFull(newRecord, conn);
         }
         // Else it's a full payslip edit
         else {

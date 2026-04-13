@@ -4,19 +4,19 @@ import * as payrollController from "../controllers/payrollController.js";
 
 const router = express.Router();
 
-// Process Payroll (Manager)
+// Process Payroll (Accountant/Admin)
 router.post(
     "/process/:month/:year",
     requireAuth,
-    requireRole("MANAGER"),
+    requireRole("ACCOUNTANT", "ADMIN"),
     payrollController.processPayroll
 );
 
-// Process Single Employee Payroll (Manager)
+// Process Single Employee Payroll (Accountant/Admin)
 router.post(
     "/process/:month/:year/:employeeId",
     requireAuth,
-    requireRole("MANAGER"),
+    requireRole("ACCOUNTANT", "ADMIN"),
     payrollController.processSingleEmployee
 );
 
@@ -33,6 +33,14 @@ router.get(
     requireAuth,
     requireRole("ACCOUNTANT", "MANAGER", "ADMIN"),
     payrollController.getSummary
+);
+
+// Get Detailed Payroll Run (Accountant)
+router.get(
+    "/details/:month/:year/:employeeId",
+    requireAuth,
+    requireRole("ACCOUNTANT", "MANAGER", "ADMIN"),
+    payrollController.getPayrollDetails
 );
 
 // Update Payroll (Accountant)

@@ -46,18 +46,15 @@ export async function getPayrollDraftApi({ employeeId, periodStart }) {
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const y = date.getFullYear();
 
-  const res = await api.get(`/payroll/summary/${m}/${y}`);
-  const runs = res.data?.details || [];
-  const run = runs.find((r) => r.employee_id === employeeId);
-
-  if (!run) throw new Error("Payroll run not found for this period");
+  const res = await api.get(`/payroll/details/${m}/${y}/${employeeId}`);
+  const { payroll: run, employee, incentives, deductions } = res.data;
 
   return {
     employee: {
-      employee_id: run.employee_id,
-      first_name: run.first_name,
-      last_name: run.last_name,
-      department: run.department,
+      employee_id: employee.employee_id,
+      first_name: employee.first_name,
+      last_name: employee.last_name,
+      department: employee.department || "N/A",
       salaryType: run.salary_type || "MONTHLY",
     },
     draft: {
@@ -71,6 +68,8 @@ export async function getPayrollDraftApi({ employeeId, periodStart }) {
       etf_employer: run.etf_employer,
       gross_pay: run.gross_pay,
       net_pay: run.net_pay,
+      incentives: incentives || [],
+      deductions: deductions || [],
     },
   };
 }
@@ -114,4 +113,16 @@ export async function getEpfEtfReportApi({ month }) {
       { employeeId: "EMP003", name: "Sahan Fernando", department: "Stores", epfBase: 0, isEligible: false },
     ],
   };
+}
+
+export async function processPayrollApi({ month }) {
+  const [y, m] = month.split("-");
+  const res = await api.post(`/payroll/process/${m}/${y}`);
+  return res.data;
+}
+
+export async function processSinglePayrollApi({ month, employeeId }) {
+  const [y, m] = month.split("-");
+  const res = await api.post(`/payroll/process/${m}/${y}/${employeeId}`);
+  return res.data;
 }

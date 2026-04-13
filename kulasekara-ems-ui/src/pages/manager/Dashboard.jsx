@@ -3,6 +3,23 @@ import { useNavigate } from "react-router-dom";
 import AppLayout from "../../components/layout/AppLayout";
 import { getEmployeesApi, getDashboardStatsApi } from "../../services/managerEmployeeService";
 import { markAttendanceApi } from "../../services/managerAttendanceService";
+import { 
+  Users, 
+  Clock, 
+  ClipboardList, 
+  AlertCircle, 
+  Calendar, 
+  TrendingUp, 
+  BarChart3, 
+  Zap, 
+  UserPlus, 
+  BadgeCheck, 
+  Wallet, 
+  FileText,
+  X,
+  Info,
+  ChevronRight
+} from "lucide-react";
 
 function Dashboard() {
   const navigate = useNavigate();
@@ -77,6 +94,23 @@ function Dashboard() {
     <>
       <AppLayout>
         <div style={styles.page}>
+          <style>{`
+            @keyframes float {
+              0%, 100% { transform: translateY(0px) translateX(0px); }
+              50% { transform: translateY(-20px) translateX(10px); }
+            }
+            @keyframes floatReverse {
+              0%, 100% { transform: translateY(0px) translateX(0px); }
+              50% { transform: translateY(20px) translateX(-10px); }
+            }
+            .floating-circle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
+            .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
+            .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(56, 142, 60, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
+            .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(67, 160, 71, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
+            .fade-in { animation: fadeIn 0.5s ease-out forwards; }
+            @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+          `}</style>
+
           <div className="floating-circle fc-1"></div>
           <div className="floating-circle fc-2"></div>
           <div className="floating-circle fc-3"></div>
@@ -86,17 +120,12 @@ function Dashboard() {
             <div style={styles.pageHeader}>
               <div>
                 <h1 style={styles.pageTitle}>Manager Dashboard</h1>
-                <p style={styles.pageSubtitle}>Overview of your team and operations</p>
+                <p style={styles.pageSubtitle}>Real-time overview of team operations & performance</p>
               </div>
 
               <div style={styles.headerActions}>
                 <div style={styles.dateBadge}>
-                  <svg style={styles.dateIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                    <line x1="16" y1="2" x2="16" y2="6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                    <line x1="8" y1="2" x2="8" y2="6" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                    <line x1="3" y1="10" x2="21" y2="10" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
+                  <Calendar size={16} />
                   <span>{new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
                 </div>
               </div>
@@ -104,121 +133,85 @@ function Dashboard() {
 
             {/* Summary Cards */}
             <div style={styles.cardGrid}>
-              <div
-                className="card-1"
-                style={{
-                  ...styles.summaryCard,
-                  ...(hoveredCard === 1 ? styles.summaryCardHover : {}),
-                }}
-                onMouseEnter={() => setHoveredCard(1)}
-                onMouseLeave={() => setHoveredCard(null)}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40, fontSize: 28 }}>
-                  👥
-                </div>
-                <div style={styles.cardText}>
-                  <p style={styles.cardLabel}>Total Employees</p>
-                  <p style={styles.cardValue}>{stats?.activeCount || 0}</p>
-                  <p style={styles.cardHint}>Active members</p>
-                </div>
-              </div>
-
-              <div
-                className="card-2"
-                style={{
-                  ...styles.summaryCard,
-                  ...(hoveredCard === 2 ? styles.summaryCardHover : {}),
-                }}
-                onMouseEnter={() => setHoveredCard(2)}
-                onMouseLeave={() => setHoveredCard(null)}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40, fontSize: 28 }}>
-                  🕒
-                </div>
-                <div style={styles.cardText}>
-                  <p style={styles.cardLabel}>Attendance Today</p>
-                  <p style={styles.cardValue}>40</p>
-                  <p style={styles.cardHint}>72% present</p>
-                </div>
-              </div>
-
-              <div
-                className="card-3"
-                style={{
-                  ...styles.summaryCard,
-                  ...(hoveredCard === 3 ? styles.summaryCardHover : {}),
-                }}
-                onMouseEnter={() => setHoveredCard(3)}
-                onMouseLeave={() => setHoveredCard(null)}
+              <SummaryCard
+                title="Total Employees"
+                value={stats?.activeCount || 0}
+                hint="Active members"
+                icon={<Users size={24} />}
+                color="#059669"
+                bg="#ecfdf5"
+                onClick={() => navigate("/manager/employees")}
+              />
+              <SummaryCard
+                title="Attendance Today"
+                value="40"
+                hint="72% present"
+                icon={<Clock size={24} />}
+                color="#2563eb"
+                bg="#eff6ff"
+                onClick={() => navigate("/manager/attendance")}
+              />
+              <SummaryCard
+                title="Leave Requests"
+                value={stats?.pendingLeaveCount || 0}
+                hint="Pending approval"
+                icon={<ClipboardList size={24} />}
+                color="#d97706"
+                bg="#fffbeb"
                 onClick={() => navigate("/manager/leave")}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40, fontSize: 28 }}>
-                  📝
-                </div>
-                <div style={styles.cardText}>
-                  <p style={styles.cardLabel}>Leave Requests</p>
-                  <p style={styles.cardValue}>{stats?.pendingLeaveCount || 0}</p>
-                  <p style={styles.cardHint}>Pending approval</p>
-                </div>
-              </div>
-
-              <div
-                className="card-4"
-                style={{
-                  ...styles.summaryCard,
-                  ...(hoveredCard === 4 ? styles.summaryCardHover : {}),
-                }}
-                onMouseEnter={() => setHoveredCard(4)}
-                onMouseLeave={() => setHoveredCard(null)}
-              >
-                <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 40, height: 40, fontSize: 28 }}>
-                  ⚠️
-                </div>
-                <div style={styles.cardText}>
-                  <p style={styles.cardLabel}>Issues Reported</p>
-                  <p style={styles.cardValue}>3</p>
-                  <p style={styles.cardHint}>Needs attention</p>
-                </div>
-              </div>
+              />
+              <SummaryCard
+                title="Issues Reported"
+                value="3"
+                hint="Needs attention"
+                icon={<AlertCircle size={24} />}
+                color="#dc2626"
+                bg="#fef2f2"
+                onClick={() => navigate("/manager/issues")}
+              />
             </div>
 
-            {/* Charts Section */}
+            {/* Main Content Grid */}
             <div style={styles.sectionGrid}>
+              {/* Payroll Summary Panel */}
               <div className="fade-in" style={styles.panel}>
                 <div style={styles.panelHeader}>
                   <div style={styles.panelTitleSection}>
-                    <svg style={styles.panelIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                    </svg>
+                    <div style={{ ...styles.sectionIcon, background: "#f3f4f6", color: "#4b5563" }}>
+                      <TrendingUp size={18} />
+                    </div>
                     <h3 style={styles.panelTitle}>Payroll Summary</h3>
                   </div>
                   <span style={styles.pill}>This Month</span>
                 </div>
 
                 <div style={styles.chartArea}>
-                  <div style={{ ...styles.chartPlaceholder, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.02)", borderRadius: 12 }}>
-                    <span style={{ color: "#9ca3af", fontWeight: 600, fontSize: 14 }}>[ Payroll Summary Chart ]</span>
+                  <div style={{ ...styles.chartPlaceholder, background: "linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%)", border: "1px dashed #d1d5db" }}>
+                    <BarChart3 size={40} color="#9ca3af" strokeWidth={1.5} />
+                    <span style={{ color: "#9ca3af", fontWeight: 600, fontSize: 13, marginTop: 12 }}>Detailed Payroll Analytics</span>
                   </div>
-                  <p style={styles.chartLabel}>Monthly payroll distribution</p>
+                  <p style={styles.chartLabel}>Distribution across departments</p>
                 </div>
               </div>
 
+              {/* Attendance Trends Panel */}
               <div className="fade-in" style={styles.panel}>
                 <div style={styles.panelHeader}>
                   <div style={styles.panelTitleSection}>
-                    <svg style={styles.panelIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-                    </svg>
+                    <div style={{ ...styles.sectionIcon, background: "#eff6ff", color: "#2563eb" }}>
+                      <Zap size={18} />
+                    </div>
                     <h3 style={styles.panelTitle}>Attendance Trends</h3>
                   </div>
                   <span style={styles.pillBlue}>Last 30 Days</span>
                 </div>
 
                 <div style={styles.chartArea}>
-                  <div style={{ ...styles.chartPlaceholder, display: "flex", alignItems: "center", justifyContent: "center", background: "rgba(0,0,0,0.02)", borderRadius: 12 }}>
-                    <span style={{ color: "#9ca3af", fontWeight: 600, fontSize: 14 }}>[ Attendance Trends Chart ]</span>
+                  <div style={{ ...styles.chartPlaceholder, background: "linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)", border: "1px dashed #bae6fd" }}>
+                    <BarChart3 size={40} color="#3b82f6" strokeWidth={1.5} />
+                    <span style={{ color: "#3b82f6", fontWeight: 600, fontSize: 13, marginTop: 12 }}>Daily Attendance Trends</span>
                   </div>
-                  <p style={styles.chartLabel}>Daily attendance percentage</p>
+                  <p style={styles.chartLabel}>Peak activity and gap analysis</p>
                 </div>
               </div>
             </div>
@@ -227,45 +220,34 @@ function Dashboard() {
             <div className="fade-in" style={styles.quickActionsPanel}>
               <div style={styles.panelHeader}>
                 <div style={styles.panelTitleSection}>
-                  <svg style={styles.panelIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
+                  <div style={{ ...styles.sectionIcon, background: "#ecfdf5", color: "#059669" }}>
+                    <BadgeCheck size={18} />
+                  </div>
                   <h3 style={styles.panelTitle}>Quick Actions</h3>
                 </div>
               </div>
 
               <div style={styles.quickActionsGrid}>
-                {/* 1) Add Employee */}
-                <button style={styles.actionButton} onClick={() => navigate("/manager/employees")}>
-                  <svg style={styles.actionIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                  </svg>
-                  <span style={styles.actionText}>Add Employee</span>
-                </button>
-
-                {/* 2) Mark Attendance */}
-                <button style={styles.actionButton} onClick={() => setIsAttModalOpen(true)}>
-                  <svg style={styles.actionIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
-                  </svg>
-                  <span style={styles.actionText}>Mark Attendance</span>
-                </button>
-
-                {/* 3) Process Payroll */}
-                <button style={styles.actionButton} onClick={() => navigate("/manager/payroll")}>
-                  <svg style={styles.actionIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <span style={styles.actionText}>Process Payroll</span>
-                </button>
-
-                {/* 4) Generate Report */}
-                <button style={styles.actionButton} onClick={() => navigate("/manager/reports")}>
-                  <svg style={styles.actionIcon} viewBox="0 0 24 24" fill="none" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <span style={styles.actionText}>Generate Report</span>
-                </button>
+                <ActionButton
+                  label="Add Employee"
+                  icon={<UserPlus size={20} />}
+                  onClick={() => navigate("/manager/employees")}
+                />
+                <ActionButton
+                  label="Mark Attendance"
+                  icon={<Clock size={20} />}
+                  onClick={() => setIsAttModalOpen(true)}
+                />
+                <ActionButton
+                  label="View Payroll Summary"
+                  icon={<Wallet size={20} />}
+                  onClick={() => navigate("/manager/payroll")}
+                />
+                <ActionButton
+                  label="Generate Report"
+                  icon={<FileText size={20} />}
+                  onClick={() => navigate("/manager/reports")}
+                />
               </div>
             </div>
           </div>
@@ -275,74 +257,108 @@ function Dashboard() {
             <div style={styles.modalOverlay} onClick={() => setIsAttModalOpen(false)}>
               <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
                 <div style={styles.modalHeader}>
-                  <h3 style={styles.modalTitle}>Mark Attendance</h3>
-                  <button style={styles.iconBtn} onClick={() => setIsAttModalOpen(false)}>✕</button>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                    <div style={{ ...styles.sectionIcon, background: "#ecfdf5", color: "#059669", width: 32, height: 32 }}>
+                      <Clock size={16} />
+                    </div>
+                    <h3 style={styles.modalTitle}>Mark Attendance</h3>
+                  </div>
+                  <button style={styles.iconBtn} onClick={() => setIsAttModalOpen(false)}>
+                    <X size={20} />
+                  </button>
                 </div>
+                
                 <div style={styles.modalBody}>
-                  <div style={styles.formGroup}>
-                    <label style={styles.label}>Employee</label>
-                    <select
-                      name="employee_id"
-                      value={attForm.employee_id}
-                      onChange={handleAttChange}
-                      style={styles.select}
-                    >
-                      <option value="">-- Select Employee --</option>
-                      {employees.map((emp) => (
-                        <option key={emp.employee_id} value={emp.employee_id}>
-                          {emp.first_name} {emp.last_name} ({emp.employee_id})
-                        </option>
-                      ))}
-                    </select>
+                  <div style={styles.inputWrapper}>
+                    <label style={styles.inputLabel}>Employee</label>
+                    <div style={styles.inputFieldContainer}>
+                      <Users size={16} style={styles.inputIcon} />
+                      <select
+                        name="employee_id"
+                        value={attForm.employee_id}
+                        onChange={handleAttChange}
+                        style={styles.styledSelect}
+                      >
+                        <option value="">-- Select Employee --</option>
+                        {employees.map((emp) => (
+                          <option key={emp.employee_id} value={emp.employee_id}>
+                            {emp.first_name} {emp.last_name} ({emp.employee_id})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
                   </div>
-                  <div style={styles.formGroup}>
-                    <label style={styles.label}>Date</label>
-                    <input
-                      type="date"
-                      name="date"
-                      value={attForm.date}
-                      onChange={handleAttChange}
-                      style={styles.input}
-                    />
+
+                  <div style={styles.inputWrapper}>
+                    <label style={styles.inputLabel}>Date</label>
+                    <div style={styles.inputFieldContainer}>
+                      <Calendar size={16} style={styles.inputIcon} />
+                      <input
+                        type="date"
+                        name="date"
+                        value={attForm.date}
+                        onChange={handleAttChange}
+                        style={styles.styledInput}
+                      />
+                    </div>
                   </div>
-                  <div style={styles.formGroup}>
-                    <label style={styles.label}>Status</label>
-                    <select
-                      name="status"
-                      value={attForm.status}
-                      onChange={handleAttChange}
-                      style={styles.select}
-                    >
-                      <option value="PRESENT">PRESENT</option>
-                      <option value="ABSENT">ABSENT</option>
-                      <option value="LATE">LATE</option>
-                      <option value="HALF_DAY">HALF_DAY</option>
-                      <option value="LEAVE">LEAVE</option>
-                    </select>
+
+                  <div style={styles.inputWrapper}>
+                    <label style={styles.inputLabel}>Attendance Status</label>
+                    <div style={styles.inputFieldContainer}>
+                      <BadgeCheck size={16} style={styles.inputIcon} />
+                      <select
+                        name="status"
+                        value={attForm.status}
+                        onChange={handleAttChange}
+                        style={styles.styledSelect}
+                      >
+                        <option value="PRESENT">PRESENT</option>
+                        <option value="ABSENT">ABSENT</option>
+                        <option value="LATE">LATE</option>
+                        <option value="HALF_DAY">HALF_DAY</option>
+                        <option value="LEAVE">LEAVE</option>
+                      </select>
+                    </div>
                   </div>
+
                   <div style={styles.row}>
-                    <div style={styles.formGroup}>
-                      <label style={styles.label}>Check In</label>
-                      <input
-                        type="time"
-                        name="check_in"
-                        value={attForm.check_in}
-                        onChange={handleAttChange}
-                        style={styles.input}
-                      />
+                    <div style={styles.inputWrapper}>
+                      <label style={styles.inputLabel}>Check In Time</label>
+                      <div style={styles.inputFieldContainer}>
+                        <Clock size={16} style={styles.inputIcon} />
+                        <input
+                          type="time"
+                          name="check_in"
+                          value={attForm.check_in}
+                          onChange={handleAttChange}
+                          style={styles.styledInput}
+                        />
+                      </div>
                     </div>
-                    <div style={styles.formGroup}>
-                      <label style={styles.label}>Check Out</label>
-                      <input
-                        type="time"
-                        name="check_out"
-                        value={attForm.check_out}
-                        onChange={handleAttChange}
-                        style={styles.input}
-                      />
+                    <div style={styles.inputWrapper}>
+                      <label style={styles.inputLabel}>Check Out Time</label>
+                      <div style={styles.inputFieldContainer}>
+                        <Clock size={16} style={styles.inputIcon} />
+                        <input
+                          type="time"
+                          name="check_out"
+                          value={attForm.check_out}
+                          onChange={handleAttChange}
+                          style={styles.styledInput}
+                        />
+                      </div>
                     </div>
+                  </div>
+                  
+                  <div style={{ background: "#fef2f2", padding: "12px 16px", borderRadius: 12, border: "1px solid #fee2e2", display: "flex", gap: 10, marginTop: 8 }}>
+                    <Info size={18} color="#dc2626" style={{ flexShrink: 0 }} />
+                    <p style={{ margin: 0, fontSize: 12, color: "#991b1b", lineHeight: 1.5 }}>
+                      Ensure the check-out time is recorded for accurate payroll calculation.
+                    </p>
                   </div>
                 </div>
+
                 <div style={styles.modalFooter}>
                   <button style={styles.btnSecondary} onClick={() => setIsAttModalOpen(false)}>Cancel</button>
                   <button style={styles.btnPrimary} onClick={submitAttendance}>Save Attendance</button>
@@ -350,7 +366,6 @@ function Dashboard() {
               </div>
             </div>
           )}
-
         </div>
       </AppLayout>
 
@@ -365,28 +380,30 @@ function Dashboard() {
 export default Dashboard;
 
 const styles = {
-  // ... Keep existing styles ...
   page: { position: "relative", minHeight: "100%", overflow: "hidden" },
-  container: { padding: 24, position: "relative", zIndex: 1 },
+  container: { padding: 32, position: "relative", zIndex: 1 },
 
   pageHeader: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
+    alignItems: "flex-start",
     gap: 16,
-    marginBottom: 24,
+    marginBottom: 32,
+    maxWidth: 1200,
+    margin: "0 auto 32px auto"
   },
   pageTitle: {
     margin: 0,
-    fontSize: 28,
-    fontWeight: 800,
+    fontSize: 32,
+    fontWeight: 900,
     color: "#2c5530",
+    letterSpacing: "-0.02em"
   },
   pageSubtitle: {
-    margin: "4px 0 0 0",
-    fontSize: 14,
-    color: "#4b5563",
-    opacity: 0.8
+    margin: "8px 0 0 0",
+    fontSize: 15,
+    color: "#6b7280",
+    fontWeight: 500
   },
   headerActions: {
     display: "flex",
@@ -397,155 +414,146 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: 8,
-    padding: "8px 16px",
-    background: "rgba(255, 255, 255, 0.6)",
-    backdropFilter: "blur(4px)",
-    border: "1px solid rgba(74, 124, 78, 0.2)",
-    borderRadius: 20,
-    color: "#2c5530",
+    padding: "10px 20px",
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: 999,
+    color: "#4b5563",
     fontSize: 13,
     fontWeight: 700,
-  },
-  dateIcon: {
-    width: 16,
-    height: 16,
-    color: "#4a7c4e"
+    boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
   },
 
   cardGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-    gap: 20,
-    marginTop: 20,
+    gap: 24,
+    maxWidth: 1200,
+    margin: "0 auto",
   },
   summaryCard: {
     background: "rgba(255, 255, 255, 0.9)",
     backdropFilter: "blur(12px)",
     border: "1px solid rgba(255, 255, 255, 0.5)",
-    borderRadius: 18,
-    padding: 24,
-    boxShadow: "0 8px 25px rgba(0,0,0,0.03)",
+    borderRadius: 24,
+    padding: "24px",
     display: "flex",
     alignItems: "center",
-    gap: 18,
-    transition: "transform 0.2s, box-shadow 0.2s",
+    gap: 20,
+    boxShadow: "0 8px 30px rgba(0,0,0,0.02)",
+    transition: "all 0.3s ease",
     cursor: "pointer",
-  },
-  summaryCardHover: {
-    transform: "translateY(-4px)",
-    boxShadow: "0 12px 32px rgba(0,0,0,0.08)",
+    position: "relative",
+    overflow: "hidden"
   },
   iconBox: {
-    width: 56,
-    height: 56,
-    borderRadius: 16,
+    width: 64,
+    height: 64,
+    borderRadius: 20,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    flexShrink: 0,
-    boxShadow: "0 8px 16px rgba(0, 0, 0, 0.1)",
-    color: "#fff"
-  },
-  cardIcon: {
-    width: 28,
-    height: 28,
-    color: "inherit"
+    transition: "transform 0.3s ease",
   },
   cardText: {
     display: "flex",
     flexDirection: "column",
+    gap: 2
   },
   cardLabel: {
     margin: 0,
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: 700,
     color: "#6b7280",
     textTransform: "uppercase",
+    letterSpacing: "0.05em"
   },
   cardValue: {
-    margin: "6px 0 4px",
-    fontSize: 28,
-    fontWeight: 800,
+    margin: 0,
+    fontSize: 32,
+    fontWeight: 900,
     color: "#111827",
   },
   cardHint: {
     margin: 0,
-    fontSize: 13,
-    fontWeight: 500,
-    color: "#6b7280",
+    fontSize: 12,
+    fontWeight: 600,
+    color: "#9ca3af",
   },
 
   sectionGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(380px, 1fr))",
-    gap: 20,
-    marginTop: 24,
+    gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))",
+    gap: 24,
+    maxWidth: 1200,
+    margin: "24px auto 0 auto",
   },
   panel: {
-    background: "rgba(255, 255, 255, 0.95)",
+    background: "rgba(255, 255, 255, 0.9)",
     backdropFilter: "blur(12px)",
     border: "1px solid rgba(255, 255, 255, 0.5)",
-    borderRadius: 18,
-    padding: 24,
-    boxShadow: "0 10px 30px rgba(0,0,0,0.03)",
+    borderRadius: 24,
+    padding: 28,
+    boxShadow: "0 8px 30px rgba(0,0,0,0.02)",
   },
   panelHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingBottom: 16,
-    borderBottom: "1px solid rgba(0,0,0,0.05)",
-    marginBottom: 20,
+    marginBottom: 24,
   },
   panelTitleSection: {
     display: "flex",
     alignItems: "center",
-    gap: 10,
+    gap: 12,
   },
-  panelIcon: {
-    width: 20,
-    height: 20,
-    color: "#4a7c4e",
-    opacity: 0.8
+  sectionIcon: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: 38,
+    height: 38,
+    borderRadius: 10,
   },
   panelTitle: {
     margin: 0,
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 800,
     color: "#111827",
   },
   pill: {
-    padding: "6px 12px",
+    padding: "6px 14px",
     borderRadius: 20,
-    background: "rgba(74, 124, 78, 0.1)",
-    color: "#2c5530",
+    background: "#f3f4f6",
+    color: "#4b5563",
     fontSize: 11,
-    fontWeight: 700,
-    textTransform: "uppercase"
+    fontWeight: 800,
+    textTransform: "uppercase",
+    letterSpacing: "0.05em"
   },
   pillBlue: {
-    padding: "6px 12px",
+    padding: "6px 14px",
     borderRadius: 20,
-    background: "rgba(37, 99, 235, 0.1)",
-    color: "#1d4ed8",
+    background: "#eff6ff",
+    color: "#2563eb",
     fontSize: 11,
-    fontWeight: 700,
-    textTransform: "uppercase"
+    fontWeight: 800,
+    textTransform: "uppercase",
+    letterSpacing: "0.05em"
   },
   chartArea: {
-    minHeight: 200,
+    display: "flex",
+    flexDirection: "column",
+    gap: 16
+  },
+  chartPlaceholder: {
+    width: "100%",
+    height: 180,
+    borderRadius: 18,
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    padding: 10,
-  },
-  chartPlaceholder: {
-    width: "100%",
-    maxWidth: "280px",
-    height: "auto",
-    marginBottom: 16,
-    opacity: 0.9
   },
   chartLabel: {
     margin: 0,
@@ -556,40 +564,34 @@ const styles = {
   },
 
   quickActionsPanel: {
-    marginTop: 24,
+    maxWidth: 1200,
+    margin: "24px auto 0 auto",
     background: "rgba(255, 255, 255, 0.9)",
     backdropFilter: "blur(12px)",
     border: "1px solid rgba(255, 255, 255, 0.5)",
-    borderRadius: 18,
-    padding: 24,
-    boxShadow: "0 10px 30px rgba(0,0,0,0.03)",
+    borderRadius: 24,
+    padding: 28,
+    boxShadow: "0 8px 30px rgba(0,0,0,0.02)",
   },
   quickActionsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-    gap: 16,
+    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    gap: 20,
   },
   actionButton: {
     display: "flex",
-    flexDirection: "column",
     alignItems: "center",
-    gap: 12,
-    padding: "20px",
+    gap: 16,
+    padding: "20px 24px",
     background: "#fff",
-    border: "1px solid rgba(0,0,0,0.08)",
-    borderRadius: 16,
+    border: "1px solid #f3f4f6",
+    borderRadius: 20,
     cursor: "pointer",
     transition: "all 0.2s ease",
-    boxShadow: "0 4px 6px rgba(0,0,0,0.01)",
-  },
-  actionIcon: {
-    width: 28,
-    height: 28,
-    color: "#4a7c4e",
-    marginBottom: 4
+    boxShadow: "0 4px 12px rgba(0,0,0,0.02)",
   },
   actionText: {
-    fontSize: 13,
+    fontSize: 15,
     fontWeight: 700,
     color: "#374151",
   },
@@ -598,37 +600,180 @@ const styles = {
   modalOverlay: {
     position: "fixed",
     top: 0, left: 0, right: 0, bottom: 0,
-    background: "rgba(0,0,0,0.4)",
-    backdropFilter: "blur(4px)",
+    background: "rgba(15, 23, 42, 0.3)",
+    backdropFilter: "blur(8px)",
     zIndex: 1000,
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    padding: 20
   },
   modal: {
     background: "#fff",
-    borderRadius: 20,
-    width: "90%",
-    maxWidth: 500,
-    boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
-    animation: "fadeIn 0.2s ease-out",
+    borderRadius: 28,
+    width: "100%",
+    maxWidth: 520,
+    boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
+    overflow: "hidden",
   },
   modalHeader: {
-    padding: "20px 24px",
+    padding: "24px 32px",
     borderBottom: "1px solid #f3f4f6",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    background: "#fff"
   },
-  modalTitle: { margin: 0, fontSize: 18, fontWeight: 700, color: "#111827" },
-  iconBtn: { background: "none", border: "none", fontSize: 20, cursor: "pointer", color: "#6b7280" },
-  modalBody: { padding: 24, display: "flex", flexDirection: "column", gap: 16 },
-  formGroup: { display: "flex", flexDirection: "column", gap: 6 },
-  label: { fontSize: 12, fontWeight: 700, color: "#374151", textTransform: "uppercase", letterSpacing: "0.05em" },
-  select: { padding: "10px", borderRadius: 8, border: "1px solid #d1d5db", fontSize: 14, outline: "none" },
-  input: { padding: "10px", borderRadius: 8, border: "1px solid #d1d5db", fontSize: 14, outline: "none" },
-  row: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 },
-  modalFooter: { padding: "20px 24px", borderTop: "1px solid #f3f4f6", display: "flex", justifyContent: "flex-end", gap: 12 },
-  btnSecondary: { padding: "10px 20px", borderRadius: 10, border: "1px solid #d1d5db", background: "#fff", cursor: "pointer", fontWeight: 600, color: "#374151" },
-  btnPrimary: { padding: "10px 20px", borderRadius: 10, border: "none", background: "#4a7c4e", color: "#fff", cursor: "pointer", fontWeight: 600 },
+  modalTitle: { margin: 0, fontSize: 20, fontWeight: 800, color: "#111827" },
+  iconBtn: { 
+    background: "#f3f4f6", 
+    border: "none", 
+    width: 32, 
+    height: 32, 
+    borderRadius: 10, 
+    display: "flex", 
+    alignItems: "center", 
+    justifyContent: "center", 
+    cursor: "pointer", 
+    color: "#6b7280",
+    transition: "all 0.2s"
+  },
+  modalBody: { 
+    padding: "32px", 
+    display: "flex", 
+    flexDirection: "column", 
+    gap: 20,
+    maxHeight: "70vh",
+    overflowY: "auto"
+  },
+  inputWrapper: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 8
+  },
+  inputLabel: {
+    fontSize: 13,
+    fontWeight: 700,
+    color: "#4b5563",
+    marginLeft: 4
+  },
+  inputFieldContainer: {
+    display: "flex",
+    alignItems: "center",
+    background: "#f9fafb",
+    border: "1px solid #e5e7eb",
+    borderRadius: 14,
+    padding: "4px 16px",
+    transition: "all 0.2s",
+  },
+  inputIcon: {
+    color: "#9ca3af",
+    marginRight: 12
+  },
+  styledInput: {
+    flex: 1,
+    border: "none",
+    padding: "12px 0",
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#111827",
+    outline: "none",
+    background: "transparent"
+  },
+  styledSelect: {
+    flex: 1,
+    border: "none",
+    padding: "12px 0",
+    fontSize: 14,
+    fontWeight: 600,
+    color: "#111827",
+    outline: "none",
+    background: "transparent",
+    cursor: "pointer"
+  },
+  row: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: 20 },
+  modalFooter: { 
+    padding: "24px 32px", 
+    borderTop: "1px solid #f3f4f6", 
+    display: "flex", 
+    justifyContent: "flex-end", 
+    gap: 12,
+    background: "#f9fafb"
+  },
+  btnSecondary: { 
+    padding: "12px 24px", 
+    borderRadius: 12, 
+    border: "1px solid #e5e7eb", 
+    background: "#fff", 
+    cursor: "pointer", 
+    fontWeight: 700, 
+    color: "#4b5563",
+    fontSize: 14
+  },
+  btnPrimary: { 
+    padding: "12px 24px", 
+    borderRadius: 12, 
+    border: "none", 
+    background: "#2c5530", 
+    color: "#fff", 
+    cursor: "pointer", 
+    fontWeight: 700,
+    fontSize: 14,
+    boxShadow: "0 4px 12px rgba(44, 85, 48, 0.2)"
+  },
 };
+
+// --- Helper Components ---
+
+function SummaryCard({ title, value, hint, icon, color, bg, onClick }) {
+  const [hovered, setHovered] = useState(false);
+  
+  return (
+    <div 
+      style={{
+        ...styles.summaryCard,
+        transform: hovered ? "translateY(-6px)" : "none",
+        boxShadow: hovered ? "0 20px 40px rgba(0,0,0,0.06)" : styles.summaryCard.boxShadow,
+        borderColor: hovered ? "rgba(44, 85, 48, 0.2)" : styles.summaryCard.border
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={onClick}
+    >
+      <div style={{ ...styles.iconBox, background: bg, color: color, transform: hovered ? "scale(1.1)" : "none" }}>
+        {icon}
+      </div>
+      <div style={styles.cardText}>
+        <p style={styles.cardLabel}>{title}</p>
+        <p style={styles.cardValue}>{value}</p>
+        <div style={{ display: "flex", alignItems: "center", gap: 4 }}>
+          <p style={styles.cardHint}>{hint}</p>
+          {hovered && <ChevronRight size={14} color="#9ca3af" />}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ActionButton({ label, icon, onClick }) {
+  const [hovered, setHovered] = useState(false);
+  
+  return (
+    <button 
+      style={{
+        ...styles.actionButton,
+        transform: hovered ? "translateY(-4px)" : "none",
+        border: hovered ? "1px solid rgba(44, 85, 48, 0.2)" : styles.actionButton.border,
+        boxShadow: hovered ? "0 10px 20px rgba(0,0,0,0.04)" : styles.actionButton.boxShadow,
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={onClick}
+    >
+      <div style={{ color: "#2c5530", opacity: hovered ? 1 : 0.7, transition: "all 0.2s" }}>
+        {icon}
+      </div>
+      <span style={styles.actionText}>{label}</span>
+    </button>
+  );
+}

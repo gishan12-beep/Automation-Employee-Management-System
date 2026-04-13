@@ -153,10 +153,12 @@ const styles = {
 
   // Sidebar Styling
   sidebar: {
-    background: "#FFFFFF",
+    background: "var(--glass-bg)",
+    backdropFilter: "var(--glass-blur)",
+    WebkitBackdropFilter: "var(--glass-blur)",
     transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.2s ease",
-    borderRight: "1px solid rgba(74, 124, 78, 0.1)",
-    boxShadow: "4px 0 24px rgba(74, 124, 78, 0.05)",
+    borderRight: "var(--glass-border)",
+    boxShadow: "var(--glass-shadow)",
     overflow: "hidden",
     whiteSpace: "nowrap",
     position: "relative",
@@ -312,7 +314,12 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    background: "transparent", // Clean look
+    background: "var(--glass-bg)",
+    backdropFilter: "var(--glass-blur)",
+    WebkitBackdropFilter: "var(--glass-blur)",
+    borderBottom: "var(--glass-border)",
+    boxShadow: "var(--glass-shadow)",
+    zIndex: 40,
   },
   toggleButton: {
     background: "#fff",

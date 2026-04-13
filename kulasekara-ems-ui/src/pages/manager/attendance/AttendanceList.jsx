@@ -3,29 +3,42 @@ import React, { useEffect, useMemo, useState } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
 import { Modal } from "../../../components/common/Modal";
 import WorkDetailsForm from "./WorkDetailsForm";
-import { getEmployeesApi, getDepartmentsApi, getEmployeeAttendanceStatsApi } from "../../../services/managerEmployeeService";
+import { 
+  getEmployeesApi, 
+  getDepartmentsApi, 
+  getEmployeeAttendanceStatsApi 
+} from "../../../services/managerEmployeeService";
 import { getEmployeeWorkLogsApi } from "../../../services/workLogService";
+import { 
+  Search, 
+  User, 
+  Calendar, 
+  Briefcase, 
+  Clock, 
+  Plus, 
+  ChevronRight, 
+  Info, 
+  LayoutDashboard,
+  CheckCircle2,
+  AlertCircle,
+  Mail,
+  Fingerprint,
+  TrendingUp,
+  FileText,
+  Trash2,
+  Edit3
+} from "lucide-react";
 
 export default function AttendanceList() {
   const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState("");
-
-  // selected employee (for work dashboard)
   const [selectedEmployee, setSelectedEmployee] = useState(null);
-
-  // formatted attendance for selected employee
   const [attendanceStats, setAttendanceStats] = useState({ checkIn: "-", checkOut: "-" });
-
-  // date filter for work details dashboard
   const [workDate, setWorkDate] = useState(() => new Date().toISOString().slice(0, 10));
-
-  // work details data
   const [workDetails, setWorkDetails] = useState([]);
-
-  // modal for add work
   const [showModal, setShowModal] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Fetch attendance stats when selectedEmployee changes
   useEffect(() => {
     if (!selectedEmployee) {
       setAttendanceStats({ checkIn: "-", checkOut: "-" });
@@ -51,7 +64,6 @@ export default function AttendanceList() {
     })();
   }, [selectedEmployee]);
 
-  // Fetch work logs when selectedEmployee or workDate changes
   useEffect(() => {
     if (!selectedEmployee) {
       setWorkDetails([]);
@@ -69,11 +81,10 @@ export default function AttendanceList() {
     })();
   }, [selectedEmployee, workDate]);
 
-  // Load employees on mount
   useEffect(() => {
     (async () => {
+      setLoading(true);
       try {
-        // Fetch departments for mapping
         let depts = [];
         try {
           const dRes = await getDepartmentsApi();
@@ -82,36 +93,30 @@ export default function AttendanceList() {
           console.error("Failed departments", e);
         }
         const deptMap = {};
-        depts.forEach((d) => {
-          deptMap[d.id] = d.name;
-        });
+        depts.forEach((d) => { deptMap[d.id] = d.name; });
 
-        // Fetch employees
         const res = await getEmployeesApi();
         const rawEmps = Array.isArray(res) ? res : res.employees || [];
 
-        // Map to UI
         const mapped = rawEmps.map((e) => ({
-          id: e.employee_id, // use employee_id as unique key
+          id: e.employee_id,
           employeeID: e.employee_id,
-          name: `${e.first_name} ${e.last_name}`,
-          role: "Employee", // default role
+          name: `${e.first_name || ""} ${e.last_name || ""}`.trim(),
+          role: "Employee",
           department: deptMap[e.department_id] || "Unknown",
           email: e.email,
           status: e.status === "ACTIVE" ? "Active" : "Inactive",
-          salaryType: e.salary_type || "Monthly", // from join
-          lastCheckIn: "-", // Not yet fetched/linked
+          salaryType: e.salary_type || "Monthly",
+          lastCheckIn: "-",
           lastCheckOut: "-",
-          image: "https://via.placeholder.com/64",
         }));
 
         setEmployees(mapped);
-
-        // Auto-select first if available
         if (mapped.length > 0) setSelectedEmployee(mapped[0]);
-
       } catch (err) {
         console.error("Failed to load employees", err);
+      } finally {
+        setLoading(false);
       }
     })();
   }, []);
@@ -122,33 +127,24 @@ export default function AttendanceList() {
     const q = search.trim().toLowerCase();
     if (!q) return employees;
     return employees.filter((e) => {
-      const hay = `${e.employeeID} ${e.name} ${e.role} ${e.department} ${e.status} ${e.email} ${e.salaryType}`.toLowerCase();
+      const hay = `${e.employeeID} ${e.name} ${e.department} ${e.status} ${e.salaryType}`.toLowerCase();
       return hay.includes(q);
     });
   }, [employees, search]);
 
-  const selectedWorkDetails = useMemo(() => {
-    return workDetails;
-  }, [workDetails]);
-
-  // summary cards
   const workSummary = useMemo(() => {
-    const totalQty = selectedWorkDetails.reduce((sum, r) => sum + Number(r.quantity || 0), 0);
-    const totalValue = selectedWorkDetails.reduce((sum, r) => sum + Number(r.total_amount || 0), 0);
-    const tasks = selectedWorkDetails.length;
-
+    const totalQty = workDetails.reduce((sum, r) => sum + Number(r.quantity || 0), 0);
+    const totalValue = workDetails.reduce((sum, r) => sum + Number(r.total_amount || 0), 0);
+    const tasks = workDetails.length;
     return { totalQty, totalValue, tasks };
-  }, [selectedWorkDetails]);
+  }, [workDetails]);
 
   const openAddWork = () => {
     if (!selectedEmployee || !isDayWorker(selectedEmployee)) return;
     setShowModal(true);
   };
 
-  const closeModal = () => setShowModal(false);
-
-  // Refresh work logs after save
-  const handleSaveWorkDetail = async (payload) => {
+  const handleSaveWorkDetail = async () => {
     try {
       const res = await getEmployeeWorkLogsApi(selectedEmployee.employeeID, workDate);
       setWorkDetails(res.logs || []);
@@ -159,572 +155,277 @@ export default function AttendanceList() {
 
   return (
     <AppLayout>
-      <style>{animations}</style>
+      <div style={styles.page}>
+        <style>{`
+          .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+          .table-row:hover { background: #f8fafc !important; }
+          .scroll-custom::-webkit-scrollbar { width: 6px; }
+          .scroll-custom::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+        `}</style>
 
-      {/* Header */}
-      <div style={ui.pageHeader}>
-        <div>
-          <h1 style={ui.pageTitle}>Attendance Management</h1>
-          <p style={ui.pageSubTitle}>
-            Select a daily wage worker to view and manage daily work details.
-          </p>
-        </div>
-
-        <div style={ui.topActions}>
-          <div style={ui.searchWrap}>
-            <span style={ui.searchIcon}>⌕</span>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by ID, name, department..."
-              style={ui.searchInput}
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Selected Employee Card + Work Details Dashboard */}
-      <div style={ui.grid2}>
-        {/* Selected Employee */}
-        <div style={ui.card}>
-          <div style={ui.cardHeaderRow}>
-            <h2 style={ui.cardTitle}>Selected Employee</h2>
-            {selectedEmployee ? (
-              <span style={selectedEmployee.status === "Active" ? ui.badgeActive : ui.badgeInactive}>
-                {selectedEmployee.status}
-              </span>
-            ) : null}
-          </div>
-
-          {!selectedEmployee ? (
-            <div style={ui.emptyBox}>Select an employee from the list below.</div>
-          ) : (
-            <div style={ui.profileWrap}>
-              <img src={selectedEmployee.image} alt="" style={ui.profileAvatar} />
-              <div style={{ flex: 1 }}>
-                <div style={ui.profileName}>{selectedEmployee.name}</div>
-                <div style={ui.profileMeta}>
-                  {selectedEmployee.role} • {selectedEmployee.department}
-                </div>
-
-                <div style={ui.profileGrid}>
-                  <InfoBox label="EMPLOYEE ID" value={selectedEmployee.employeeID} />
-                  <InfoBox label="SALARY TYPE" value={selectedEmployee.salaryType} />
-                  <InfoBox label="EMAIL" value={selectedEmployee.email} />
-                  <InfoBox label="LAST CHECK-IN" value={attendanceStats.checkIn} />
-                  <InfoBox label="LAST CHECK-OUT" value={attendanceStats.checkOut} />
-                </div>
-              </div>
+        <div style={styles.container}>
+          {/* Header */}
+          <div style={styles.pageHeader}>
+            <div>
+              <div style={styles.breadcrumb}>Manager / Attendance & Work Management</div>
+              <h1 style={styles.pageTitle}>Log & Monitor Output</h1>
+              <p style={styles.pageSubtitle}>Manage daily work logs for workers and track attendance stats</p>
             </div>
-          )}
-        </div>
-
-        {/* Work Details Dashboard (only daily workers) */}
-        <div style={ui.card}>
-          <div style={ui.cardHeaderRow}>
-            <h2 style={ui.cardTitle}>Work Details</h2>
-
-            <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <div style={styles.searchWrap}>
+              <Search size={18} style={styles.searchIcon} />
               <input
-                type="date"
-                value={workDate}
-                onChange={(e) => setWorkDate(e.target.value)}
-                style={ui.dateInput}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search employees..."
+                style={styles.searchInput}
               />
-
-              <button
-                style={
-                  selectedEmployee && isDayWorker(selectedEmployee)
-                    ? ui.primaryBtnSmall
-                    : ui.disabledBtnSmall
-                }
-                disabled={!selectedEmployee || !isDayWorker(selectedEmployee)}
-                onClick={openAddWork}
-                title={!selectedEmployee ? "Select an employee" : "Only for Daily Wage workers"}
-              >
-                + Add Work
-              </button>
             </div>
           </div>
 
-          {!selectedEmployee ? (
-            <div style={ui.emptyBox}>Select an employee to view work details.</div>
-          ) : !isDayWorker(selectedEmployee) ? (
-            <div style={ui.infoBoxBlue}>
-              Work Details are available only for <b>Daily Wage</b> employees.
-            </div>
-          ) : (
-            <>
-              {/* Summary cards */}
-              <div style={ui.summaryRow}>
-                <SummaryCard label="Total Amount" value={`Rs ${workSummary.totalValue.toFixed(2)}`} />
-                <SummaryCard label="Total Quantity" value={workSummary.totalQty} />
-                <SummaryCard label="Tasks" value={workSummary.tasks} />
+          <div style={styles.grid2}>
+            {/* LEFT: Selected Employee Details */}
+            <div style={styles.card} className="fade-in">
+              <div style={styles.cardHeader}>
+                <h3 style={styles.cardTitle}>Personnel Profile</h3>
+                {selectedEmployee && (
+                  <span style={selectedEmployee.status === "Active" ? styles.badgeActive : styles.badgeInactive}>
+                    {selectedEmployee.status}
+                  </span>
+                )}
               </div>
 
-              {/* Work details table */}
-              <div style={ui.tableWrap}>
-                <table style={ui.table}>
-                  <thead>
-                    <tr>
-                      <th style={ui.th}>DATE</th>
-                      <th style={ui.th}>TASK</th>
-                      <th style={ui.th}>QUANTITY</th>
-                      <th style={ui.th}>RATE</th>
-                      <th style={ui.th}>TOTAL</th>
-                      <th style={{ ...ui.th, textAlign: "right" }}>ACTIONS</th>
-                    </tr>
-                  </thead>
-
-                  <tbody>
-                    {selectedWorkDetails.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} style={ui.emptyCell}>
-                          No work details found for this date.
-                        </td>
-                      </tr>
-                    ) : (
-                      selectedWorkDetails.map((w) => (
-                        <tr key={w.log_id} style={ui.tr}>
-                          <td style={ui.td}>{new Date(w.date).toLocaleDateString()}</td>
-                          <td style={ui.td}>
-                            <div style={{ fontWeight: 800, color: "#1e293b" }}>{w.task_name}</div>
-                            <div style={ui.subTextSmall}>Log #{w.log_id}</div>
-                          </td>
-                          <td style={ui.td}>{w.quantity} {w.unit_measure}</td>
-                          <td style={ui.td}>Rs {Number(w.applied_rate).toFixed(2)}</td>
-                          <td style={ui.td}><b>Rs {Number(w.total_amount).toFixed(2)}</b></td>
-                          <td style={{ ...ui.td, textAlign: "right" }}>
-                            <div style={ui.actionRow}>
-                              <button
-                                style={ui.lightBtn}
-                                onClick={() => alert("Edit (later)")}
-                              >
-                                Edit
-                              </button>
-                              <button
-                                style={ui.dangerOutlineBtn}
-                                onClick={() => alert("Delete (later)")}
-                              >
-                                Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Employee List */}
-      <div style={{ ...ui.card, marginTop: 24 }}>
-        <div style={ui.cardHeaderRow}>
-          <h2 style={ui.cardTitle}>Employee List</h2>
-          <div style={ui.countPill}>{filteredEmployees.length} employees</div>
-        </div>
-
-        <div style={ui.tableWrap}>
-          <table style={ui.table}>
-            <thead>
-              <tr>
-                <th style={ui.th}>ID</th>
-                <th style={ui.th}>NAME</th>
-                <th style={ui.th}>ROLE</th>
-                <th style={ui.th}>DEPARTMENT</th>
-                <th style={ui.th}>STATUS</th>
-                <th style={ui.th}>SALARY TYPE</th>
-                <th style={{ ...ui.th, textAlign: "right" }}>ACTIONS</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {filteredEmployees.length === 0 ? (
-                <tr>
-                  <td colSpan={7} style={ui.emptyCell}>
-                    No employees found.
-                  </td>
-                </tr>
+              {!selectedEmployee ? (
+                <div style={styles.emptyState}>
+                  <User size={48} style={{ color: "#e2e8f0", marginBottom: "12px" }} />
+                  <p>Select an employee to view details</p>
+                </div>
               ) : (
-                filteredEmployees.map((emp) => {
-                  const selected = selectedEmployee?.id === emp.id;
-                  return (
-                    <tr
-                      key={emp.id}
-                      style={selected ? ui.selectedRow : ui.tr}
-                      onClick={() => setSelectedEmployee(emp)}
-                    >
-                      <td style={ui.td}>{emp.id}</td>
-                      <td style={ui.td}>
-                        <div style={ui.nameCell}>
-                          <img src={emp.image} alt="" style={ui.avatar} />
-                          <div>
-                            <div style={ui.nameText}>{emp.name}</div>
-                            <div style={ui.subText}>{emp.email}</div>
-                            <div style={ui.miniMeta}>
-                              <span style={ui.miniTag}>{emp.employeeID}</span>
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td style={ui.td}>{emp.role}</td>
-                      <td style={ui.td}>{emp.department}</td>
-                      <td style={ui.td}>
-                        <span style={emp.status === "Active" ? ui.badgeActive : ui.badgeInactive}>
-                          {emp.status}
-                        </span>
-                      </td>
-                      <td style={ui.td}>{emp.salaryType}</td>
-                      <td style={{ ...ui.td, textAlign: "right" }}>
-                        <div style={ui.actionRow}>
-                          <button
-                            style={selected ? ui.primaryBtnSmall : ui.lightBtn}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedEmployee(emp);
-                            }}
-                          >
-                            {selected ? "Selected" : "Select"}
-                          </button>
+                <>
+                  <div style={styles.profileSection}>
+                    <div style={styles.profileAvatar}>
+                      {selectedEmployee.name?.[0] || <User size={32} />}
+                    </div>
+                    <div style={styles.profileInfo}>
+                      <h2 style={styles.profileName}>{selectedEmployee.name}</h2>
+                      <p style={styles.profileMeta}>{selectedEmployee.department} • {selectedEmployee.role}</p>
+                    </div>
+                  </div>
 
-                          {isDayWorker(emp) ? (
-                            <button
-                              style={ui.darkBtn}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setSelectedEmployee(emp);
-                              }}
-                            >
-                              Work
-                            </button>
-                          ) : (
-                            <button style={ui.disabledBtn} disabled>
-                              Work
-                            </button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
+                  <div style={{ padding: "0 24px 24px" }}>
+                    <div style={styles.infoGrid}>
+                      <InfoItem icon={<Fingerprint size={14} />} label="EMP ID" value={selectedEmployee.employeeID} />
+                      <InfoItem icon={<Briefcase size={14} />} label="CONTRACT" value={selectedEmployee.salaryType} />
+                      <InfoItem icon={<Clock size={14} />} label="CHECK-IN" value={attendanceStats.checkIn} />
+                      <InfoItem icon={<Clock size={14} />} label="CHECK-OUT" value={attendanceStats.checkOut} />
+                      <div style={{ gridColumn: "span 2" }}>
+                        <InfoItem icon={<Mail size={14} />} label="EMAIL ADDRESS" value={selectedEmployee.email} />
+                      </div>
+                    </div>
+                  </div>
+                </>
               )}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
-      {/* Add Work Modal */}
-      {showModal && selectedEmployee && (
-        <Modal onClose={closeModal}>
-          <WorkDetailsForm
-            employeeID={selectedEmployee.employeeID}
-            employeeName={selectedEmployee.name}
-            defaultDate={workDate}
-            onClose={closeModal}
-            onSave={handleSaveWorkDetail}
-          />
-        </Modal>
-      )}
+              {/* LIST BELOW PROFILE (INTERNAL) */}
+              <div style={{ borderTop: "1px solid #f1f5f9", flex: 1, display: "flex", flexDirection: "column" }}>
+                <div style={{ padding: "16px 24px", background: "#f8fafc", fontSize: "12px", fontWeight: 800, color: "#94a3b8", display: "flex", justifyContent: "space-between" }}>
+                  MATCHING EMPLOYEES <span>{filteredEmployees.length}</span>
+                </div>
+                <div style={{ flex: 1, overflowY: "auto", maxHeight: "400px" }} className="scroll-custom">
+                  {loading ? (
+                    <div style={{ padding: "20px", textAlign: "center", color: "#94a3b8" }}>Loading...</div>
+                  ) : filteredEmployees.map(emp => (
+                    <div 
+                      key={emp.id} 
+                      onClick={() => setSelectedEmployee(emp)}
+                      style={{
+                        padding: "12px 24px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "12px",
+                        cursor: "pointer",
+                        borderBottom: "1px solid #f1f5f9",
+                        background: selectedEmployee?.id === emp.id ? "#ecfdf5" : "transparent",
+                        transition: "all 0.2s"
+                      }}
+                      className="table-row"
+                    >
+                      <div style={{ width: "32px", height: "32px", borderRadius: "8px", background: "#f1f5f9", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "12px", fontWeight: 800, color: "#475569" }}>
+                        {emp.name[0]}
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: "13px", fontWeight: 700, color: "#1e293b" }}>{emp.name}</div>
+                        <div style={{ fontSize: "11px", color: "#94a3b8" }}>{emp.employeeID} • {emp.salaryType}</div>
+                      </div>
+                      <ChevronRight size={16} color={selectedEmployee?.id === emp.id ? "#059669" : "#e2e8f0"} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* RIGHT: Work Dashboard */}
+            <div style={styles.card} className="fade-in">
+              <div style={styles.cardHeader}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <LayoutDashboard size={20} color="#2c5530" />
+                  <h3 style={styles.cardTitle}>Daily Work Dashboard</h3>
+                </div>
+                <div style={{ display: "flex", gap: "10px" }}>
+                   <input
+                    type="date"
+                    value={workDate}
+                    onChange={(e) => setWorkDate(e.target.value)}
+                    style={styles.dateInput}
+                  />
+                  <button
+                    onClick={openAddWork}
+                    style={selectedEmployee && isDayWorker(selectedEmployee) ? styles.btnPrimary : styles.btnDisabled}
+                    disabled={!selectedEmployee || !isDayWorker(selectedEmployee)}
+                  >
+                    <Plus size={16} /> Log Work
+                  </button>
+                </div>
+              </div>
+
+              {!selectedEmployee ? (
+                <div style={styles.emptyState}>
+                  <LayoutDashboard size={48} style={{ color: "#e2e8f0", marginBottom: "12px" }} />
+                  <p>Select an employee to see work logs</p>
+                </div>
+              ) : !isDayWorker(selectedEmployee) ? (
+                <div style={{ padding: "40px", textAlign: "center" }}>
+                   <Info size={40} style={{ color: "#3b82f6", marginBottom: "16px" }} />
+                   <h3 style={{ fontSize: "18px", fontWeight: 800, color: "#1e293b", marginBottom: "8px" }}>Monthly Staff Member</h3>
+                   <p style={{ color: "#64748b", fontSize: "14px", maxWidth: "300px", margin: "0 auto" }}>
+                     Work logging is only available for Daily Wage workers. For monthly staff, track via regular attendance.
+                   </p>
+                </div>
+              ) : (
+                <>
+                  <div style={styles.summaryRow}>
+                    <div style={styles.summaryCard}>
+                      <div style={styles.summaryValue}>Rs {workSummary.totalValue.toFixed(0)}</div>
+                      <div style={styles.summaryLabel}>Total Output</div>
+                    </div>
+                    <div style={styles.summaryCard}>
+                      <div style={styles.summaryValue}>{workSummary.totalQty}</div>
+                      <div style={styles.summaryLabel}>Total Items</div>
+                    </div>
+                    <div style={styles.summaryCard}>
+                      <div style={styles.summaryValue}>{workSummary.tasks}</div>
+                      <div style={styles.summaryLabel}>Total Tasks</div>
+                    </div>
+                  </div>
+
+                  <div style={styles.tableWrapper}>
+                    <table style={styles.table}>
+                      <thead>
+                        <tr>
+                          <th style={styles.th}>Task Detail</th>
+                          <th style={styles.th}>Quantity</th>
+                          <th style={styles.th}>Rate (LKR)</th>
+                          <th style={styles.th}>Total</th>
+                          <th style={{ ...styles.th, textAlign: "right" }}>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {workDetails.length === 0 ? (
+                          <tr><td colSpan={5} style={{ textAlign: "center", padding: "60px", color: "#94a3b8", fontSize: "14px", fontWeight: 600 }}>No work logged for this date</td></tr>
+                        ) : (
+                          workDetails.map(w => (
+                            <tr key={w.log_id} className="table-row">
+                              <td style={styles.td}>
+                                <div style={{ fontSize: "14px", fontWeight: 700, color: "#1e293b" }}>{w.task_name}</div>
+                                <div style={{ fontSize: "11px", color: "#94a3b8" }}>Log ID: #{w.log_id}</div>
+                              </td>
+                              <td style={styles.td}>
+                                <div style={{ fontWeight: 600 }}>{w.quantity} {w.unit_measure}</div>
+                              </td>
+                              <td style={styles.td}>{Number(w.applied_rate).toFixed(2)}</td>
+                              <td style={{ ...styles.td, fontWeight: 800, color: "#2c5530" }}>Rs {Number(w.total_amount).toFixed(2)}</td>
+                              <td style={{ ...styles.td, textAlign: "right" }}>
+                               <div style={{ display: "flex", justifyContent: "flex-end", gap: "8px" }}>
+                                  <button style={styles.iconBtnSmall} onClick={() => alert("Edit under construction")}><Edit3 size={14} /></button>
+                                  <button style={{ ...styles.iconBtnSmall, color: "#dc2626" }} onClick={() => alert("Delete under construction")}><Trash2 size={14} /></button>
+                               </div>
+                              </td>
+                            </tr>
+                          ))
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {showModal && selectedEmployee && (
+          <Modal onClose={() => setShowModal(false)}>
+            <WorkDetailsForm
+              employeeID={selectedEmployee.employeeID}
+              employeeName={selectedEmployee.name}
+              defaultDate={workDate}
+              onClose={() => setShowModal(false)}
+              onSave={handleSaveWorkDetail}
+            />
+          </Modal>
+        )}
+      </div>
     </AppLayout>
   );
 }
 
-function InfoBox({ label, value }) {
+function InfoItem({ icon, label, value }) {
   return (
-    <div style={ui.infoBox}>
-      <div style={ui.infoLabel}>{label}</div>
-      <div style={ui.infoValue}>{value}</div>
+    <div style={styles.infoItem}>
+      <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "4px" }}>
+        <span style={{ color: "#94a3b8" }}>{icon}</span>
+        <div style={styles.infoLabel}>{label}</div>
+      </div>
+      <div style={styles.infoValue}>{value || "-"}</div>
     </div>
   );
 }
 
-function SummaryCard({ label, value }) {
-  return (
-    <div style={ui.summaryCard}>
-      <div style={ui.summaryValue}>{value}</div>
-      <div style={ui.summaryLabel}>{label}</div>
-    </div>
-  );
-}
-
-// -- STYLES --
-const animations = `
-  @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-`;
-
-const ui = {
-  // Page Header with Green Gradient
-  pageHeader: {
-    background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%)",
-    padding: "24px 32px",
-    borderRadius: "20px",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "24px",
-    border: "1px solid rgba(74, 124, 78, 0.1)",
-    boxShadow: "0 8px 24px rgba(74, 124, 78, 0.08)",
-    backdropFilter: "blur(10px)",
-    animation: "fadeIn 0.4s ease-out",
-    flexWrap: "wrap",
-    gap: "16px",
-  },
-  pageTitle: { margin: 0, fontSize: "28px", fontWeight: 700, color: "#2c5530", letterSpacing: "-0.5px" },
-  pageSubTitle: { margin: "4px 0 0", color: "#6b7280", fontSize: "14px", fontWeight: 500 },
-
-  topActions: { display: "flex", alignItems: "center", gap: 12 },
-  searchWrap: {
-    display: "flex",
-    alignItems: "center",
-    gap: 10,
-    background: "#f9fafb",
-    border: "2px solid rgba(229, 231, 235, 0.5)",
-    borderRadius: "12px",
-    padding: "10px 16px",
-    minWidth: "280px",
-    transition: "all 0.2s ease",
-  },
-  searchIcon: { fontSize: 16, color: "#6b7280" },
-  searchInput: {
-    border: "none",
-    outline: "none",
-    background: "transparent",
-    width: "100%",
-    fontSize: "14px",
-    color: "#1f2937",
-    fontWeight: "500",
-  },
-
-  // Layout Grid
-  grid2: { display: "grid", gridTemplateColumns: "1fr 1.3fr", gap: 24 },
-
-  // Cards (Glass/White style)
-  card: {
-    background: "rgba(255, 255, 255, 0.9)",
-    backdropFilter: "blur(10px)",
-    borderRadius: "18px",
-    border: "1px solid rgba(74, 124, 78, 0.1)",
-    boxShadow: "0 8px 24px rgba(74, 124, 78, 0.08)",
-    overflow: "hidden",
-    animation: "fadeIn 0.5s ease-out",
-  },
-  cardHeaderRow: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "18px 24px",
-    borderBottom: "1px solid rgba(74, 124, 78, 0.1)",
-    background: "rgba(74, 124, 78, 0.04)",
-    gap: 12,
-  },
-  cardTitle: { margin: 0, fontSize: "16px", fontWeight: 700, color: "#2c5530" },
-  countPill: {
-    background: "#f1f5f9",
-    color: "#64748b",
-    padding: "6px 14px",
-    borderRadius: 999,
-    fontSize: "12px",
-    fontWeight: 800,
-  },
-
-  // Badges
-  badgeActive: {
-    display: "inline-flex",
-    alignItems: "center",
-    padding: "4px 10px",
-    borderRadius: 999,
-    fontSize: "11px",
-    fontWeight: 800,
-    background: "rgba(74, 124, 78, 0.15)",
-    color: "#166534",
-    border: "1px solid rgba(74, 124, 78, 0.2)",
-  },
-  badgeInactive: {
-    display: "inline-flex",
-    alignItems: "center",
-    padding: "4px 10px",
-    borderRadius: 999,
-    fontSize: "11px",
-    fontWeight: 800,
-    background: "#fee2e2",
-    color: "#991b1b",
-    border: "1px solid #fecaca",
-  },
-
-  // Profile Section
-  profileWrap: { display: "flex", gap: 20, padding: "24px" },
-  profileAvatar: {
-    width: 80,
-    height: 80,
-    borderRadius: "20px",
-    border: "1px solid rgba(74, 124, 78, 0.1)",
-    objectFit: "cover",
-    background: "rgba(74, 124, 78, 0.05)",
-  },
-  profileName: { fontSize: "20px", fontWeight: 900, color: "#1e293b" },
-  profileMeta: { marginTop: 4, fontSize: "13px", color: "#64748b", fontWeight: 600 },
-  profileGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 10,
-    marginTop: 16,
-  },
-
-  // Info Box
-  infoBox: {
-    background: "rgba(74, 124, 78, 0.04)",
-    border: "1px solid rgba(74, 124, 78, 0.1)",
-    borderRadius: "12px",
-    padding: "10px 14px",
-  },
-  infoLabel: { fontSize: "10px", color: "#94a3b8", fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase" },
-  infoValue: { marginTop: 4, fontSize: "13px", color: "#334155", fontWeight: 700 },
-
-  // Inputs & Buttons
-  dateInput: {
-    padding: "8px 12px",
-    borderRadius: "10px",
-    border: "1px solid rgba(74, 124, 78, 0.2)",
-    outline: "none",
-    background: "#fff",
-    fontWeight: 600,
-    fontSize: "13px",
-    color: "#2c5530",
-  },
-  primaryBtnSmall: {
-    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)",
-    color: "#fff",
-    border: "none",
-    padding: "8px 16px",
-    borderRadius: "10px",
-    cursor: "pointer",
-    fontWeight: 700,
-    fontSize: "13px",
-    boxShadow: "0 4px 12px rgba(74, 124, 78, 0.2)",
-    transition: "all 0.2s",
-  },
-  disabledBtnSmall: {
-    background: "#e2e8f0",
-    color: "#94a3b8",
-    border: "none",
-    padding: "8px 16px",
-    borderRadius: "10px",
-    cursor: "not-allowed",
-    fontWeight: 700,
-    fontSize: "13px",
-  },
-
-  // Summary Cards
-  summaryRow: { display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12, padding: "24px" },
-  summaryCard: {
-    background: "rgba(74, 124, 78, 0.05)",
-    border: "1px solid rgba(74, 124, 78, 0.15)",
-    borderRadius: "16px",
-    padding: "16px",
-    textAlign: "center",
-  },
-  summaryLabel: { fontSize: "11px", color: "#4a7c4e", fontWeight: 700, marginTop: 4, textTransform: "uppercase" },
-  summaryValue: { fontSize: "22px", fontWeight: 900, color: "#166534" },
-
-  infoBoxBlue: {
-    margin: 24,
-    background: "rgba(74, 124, 78, 0.05)",
-    border: "1px dashed rgba(74, 124, 78, 0.2)",
-    borderRadius: "12px",
-    padding: "16px",
-    color: "#2c5530",
-    fontWeight: 500,
-    fontSize: "13px",
-    textAlign: "center",
-  },
-
-  // Table
-  tableWrap: { width: "100%", overflowY: "auto", maxHeight: "500px" },
+const styles = {
+  page: { minHeight: "100%", background: "#f8fafc" },
+  container: { padding: "32px", maxWidth: "1600px", margin: "0 auto" },
+  breadcrumb: { fontSize: "11px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" },
+  pageHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "32px", gap: "24px", flexWrap: "wrap" },
+  pageTitle: { margin: 0, fontSize: "32px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.02em" },
+  pageSubtitle: { margin: "4px 0 0 0", fontSize: "15px", color: "#64748b", fontWeight: 500 },
+  searchWrap: { position: "relative", display: "flex", alignItems: "center", width: "320px" },
+  searchIcon: { position: "absolute", left: "14px", color: "#94a3b8" },
+  searchInput: { height: "42px", width: "100%", borderRadius: "12px", border: "1px solid #e2e8f0", padding: "0 14px 0 42px", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#fff", outline: "none" },
+  grid2: { display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "24px", marginBottom: "32px" },
+  card: { background: "#fff", borderRadius: "24px", overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.03)", border: "1px solid #f1f5f9", display: "flex", flexDirection: "column", height: "calc(100vh - 200px)", minHeight: "600px" },
+  cardHeader: { padding: "20px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff" },
+  cardTitle: { margin: 0, fontSize: "16px", fontWeight: 800, color: "#1e293b" },
+  badgeActive: { padding: "4px 10px", borderRadius: "8px", fontSize: "11px", fontWeight: 800, background: "#ecfdf5", color: "#047857", textTransform: "uppercase" },
+  badgeInactive: { padding: "4px 10px", borderRadius: "8px", fontSize: "11px", fontWeight: 800, background: "#fef2f2", color: "#b91c1c", textTransform: "uppercase" },
+  profileSection: { padding: "24px", display: "flex", gap: "20px", alignItems: "center" },
+  profileAvatar: { width: "70px", height: "70px", borderRadius: "18px", background: "linear-gradient(135deg, #2c5530 0%, #3a703f 100%)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", fontWeight: 900 },
+  profileInfo: { flex: 1 },
+  profileName: { fontSize: "20px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.01em", margin: 0 },
+  profileMeta: { fontSize: "13px", color: "#64748b", fontWeight: 500, marginTop: "2px" },
+  infoGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "4px" },
+  infoItem: { background: "#f8fafc", borderRadius: "12px", padding: "12px 14px", border: "1px solid #f1f5f9" },
+  infoLabel: { fontSize: "9px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" },
+  infoValue: { fontSize: "13px", fontWeight: 700, color: "#1e293b", marginTop: "2px" },
+  emptyState: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px", color: "#94a3b8", textAlign: "center" },
+  dateInput: { padding: "8px 12px", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "13px", fontWeight: 600, color: "#1e293b", background: "#f8fafc", outline: "none" },
+  btnPrimary: { display: "flex", alignItems: "center", gap: "8px", padding: "8px 16px", borderRadius: "10px", background: "#2c5530", color: "#fff", border: "none", fontWeight: 700, fontSize: "13px", cursor: "pointer", boxShadow: "0 4px 12px rgba(44, 85, 48, 0.2)" },
+  btnDisabled: { display: "flex", alignItems: "center", gap: "8px", padding: "8px 16px", borderRadius: "10px", background: "#f1f5f9", color: "#94a3b8", border: "none", fontWeight: 700, fontSize: "13px", cursor: "not-allowed" },
+  summaryRow: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", padding: "24px" },
+  summaryCard: { background: "#fff", borderRadius: "16px", padding: "16px", textAlign: "center", border: "1px solid #f1f5f9", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" },
+  summaryValue: { fontSize: "18px", fontWeight: 900, color: "#1e293b" },
+  summaryLabel: { fontSize: "10px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", marginTop: "4px" },
+  tableWrapper: { overflowX: "auto" },
   table: { width: "100%", borderCollapse: "collapse" },
-  th: {
-    textAlign: "left",
-    padding: "14px 24px",
-    fontSize: "11px",
-    fontWeight: 700,
-    color: "#4a7c4e",
-    background: "#f8fafc", // Solid background for sticky
-    textTransform: "uppercase",
-    borderBottom: "1px solid rgba(74, 124, 78, 0.1)",
-    letterSpacing: "0.5px",
-    position: "sticky",
-    top: 0,
-    zIndex: 10,
-  },
-  td: {
-    padding: "16px 24px",
-    borderBottom: "1px solid rgba(74, 124, 78, 0.1)",
-    verticalAlign: "middle",
-    color: "#1f2937",
-    fontSize: "14px",
-    fontWeight: 500,
-  },
-  tr: { transition: "background 0.2s", cursor: "pointer" },
-  selectedRow: {
-    background: "rgba(74, 124, 78, 0.08)",
-  },
-  emptyCell: { padding: 40, textAlign: "center", color: "#94a3b8", fontSize: "13px" },
-
-  // Actions
-  actionRow: { display: "flex", justifyContent: "flex-end", gap: 8, flexWrap: "wrap" },
-  darkBtn: {
-    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)",
-    color: "#fff",
-    border: "none",
-    padding: "6px 14px",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontWeight: 600,
-    fontSize: "12px",
-    boxShadow: "0 2px 8px rgba(74, 124, 78, 0.2)",
-  },
-  lightBtn: {
-    background: "#fff",
-    color: "#2c5530",
-    border: "1px solid rgba(74, 124, 78, 0.2)",
-    padding: "6px 14px",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontWeight: 600,
-    fontSize: "12px",
-  },
-  disabledBtn: {
-    background: "#f1f5f9",
-    color: "#cbd5e1",
-    border: "1px solid #f1f5f9",
-    padding: "6px 12px",
-    borderRadius: "8px",
-    cursor: "not-allowed",
-    fontWeight: 700,
-    fontSize: "12px",
-  },
-  dangerOutlineBtn: {
-    background: "#fff",
-    color: "#b91c1c",
-    border: "1px solid #fecaca",
-    padding: "6px 12px",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontWeight: 700,
-    fontSize: "12px",
-  },
-
-  // Inner Components
-  nameCell: { display: "flex", alignItems: "center", gap: 14, minWidth: 240 },
-  avatar: { width: 40, height: 40, borderRadius: "10px", objectFit: "cover", background: "#e2e8f0" },
-  nameText: { fontWeight: 800, fontSize: "14px", color: "#1e293b" },
-  subText: { fontSize: "12px", color: "#64748b", marginTop: 2 },
-  subTextSmall: { fontSize: "11px", color: "#94a3b8", marginTop: 2 },
-  miniMeta: { display: "flex", gap: 6, flexWrap: "wrap", marginTop: 4 },
-  miniTag: { fontSize: "10px", padding: "2px 6px", borderRadius: 4, background: "#f1f5f9", color: "#64748b", fontWeight: 700 },
-
-  emptyBox: { padding: 40, textAlign: "center", color: "#94a3b8", fontWeight: 600, fontSize: "14px" },
+  th: { padding: "14px 24px", textAlign: "left", fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", background: "#f8fafc" },
+  td: { padding: "16px 24px", fontSize: "14px", color: "#475569", borderBottom: "1px solid #f1f5f9" },
+  iconBtnSmall: { width: "30px", height: "30px", borderRadius: "8px", border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" },
 };

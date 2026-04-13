@@ -3,6 +3,7 @@ import {
   createEmployee,
   deactivateEmployee,
   getEmployees,
+  getSettlementReadyEmployees,
   getDepartments,
   updateEmployee,
   getDashboardStats,
@@ -19,6 +20,9 @@ router.put("/employees/:employee_id", requireAuth, requireRole("MANAGER"), updat
 
 // Manager gets employees
 router.get("/employees", requireAuth, requireRole("MANAGER", "ACCOUNTANT"), getEmployees);
+
+// Manager gets settlement-ready employees (RESIGNED/TERMINATED)
+router.get("/employees/settlement-ready", requireAuth, requireRole("MANAGER", "ACCOUNTANT"), getSettlementReadyEmployees);
 
 // Manager gets departments
 router.get("/departments", requireAuth, requireRole("MANAGER", "ACCOUNTANT"), getDepartments);

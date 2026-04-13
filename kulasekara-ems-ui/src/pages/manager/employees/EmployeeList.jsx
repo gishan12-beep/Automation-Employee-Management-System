@@ -8,6 +8,26 @@ import {
   getEmployeesApi,
   updateEmployeeApi,
 } from "../../../services/managerEmployeeService";
+import { 
+  Users, 
+  Search, 
+  Plus, 
+  Mail, 
+  Phone, 
+  MapPin, 
+  Calendar, 
+  Edit3, 
+  Eye, 
+  Trash2, 
+  MoreVertical,
+  Briefcase,
+  User,
+  ShieldCheck,
+  ChevronRight,
+  Filter,
+  X,
+  Info
+} from "lucide-react";
 
 /**
  * ✅ Employee table:
@@ -17,20 +37,13 @@ import {
  * salary_configurations(config_id, employee_id, salary_type, basic_rate, is_epf_eligible, effective_date)
  */
 
-
-
-
-
 function EmployeeManagement() {
   const [employees, setEmployees] = useState([]);
 
   // eslint-disable-next-line no-unused-vars
   const [departments, setDepartments] = useState([]);
 
-  const [selectedEmpId, setSelectedEmpId] = useState(
-    null
-  );
-
+  const [selectedEmpId, setSelectedEmpId] = useState(null);
   const [search, setSearch] = useState("");
 
   // View/Edit/Add modal
@@ -52,7 +65,6 @@ function EmployeeManagement() {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
-      // If click is not on a dropdown or a dots button, close all menus
       if (!event.target.closest(".action-dropdown-trigger") && !event.target.closest(".action-dropdown-menu")) {
         setMenuOpenId(null);
       }
@@ -144,11 +156,9 @@ function EmployeeManagement() {
       phone: "",
       status: "ACTIVE",
       created_at: new Date().toISOString().slice(0, 19).replace("T", " "),
-
-      // ✅ Salary config defaults
-      salary_type: "MONTHLY", // MONTHLY | DAILY
+      salary_type: "MONTHLY",
       basic_rate: "",
-      is_epf_eligible: 1, // 1/0
+      is_epf_eligible: 1,
       effective_date: todayISO,
     };
 
@@ -165,13 +175,10 @@ function EmployeeManagement() {
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
-
-    // ✅ checkbox support
     if (type === "checkbox") {
       setFormData((p) => ({ ...p, [name]: checked ? 1 : 0 }));
       return;
     }
-
     setFormData((p) => ({ ...p, [name]: value }));
   };
 
@@ -187,48 +194,26 @@ function EmployeeManagement() {
     return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
-  // ✅ Save (create or UI-edit)
   const handleSave = async () => {
-    const isExisting = employees.some(
-      (emp) => String(emp.employee_id) === String(formData.employee_id)
-    );
+    const isExisting = employees.some((emp) => String(emp.employee_id) === String(formData.employee_id));
 
-    // ---- basic validation (employee) ----
-    // ---- basic validation (employee) ----
     if (!String(formData.employee_id || "").trim()) return alert("Please fill Employee ID.");
     if (!String(formData.department_id || "").trim()) return alert("Please select Department.");
     if (!formData.first_name?.trim()) return alert("Please fill First Name.");
-    if (!formData.last_name?.trim()) return alert("Please fill Last Name (use '-' if not available).");
+    if (!formData.last_name?.trim()) return alert("Please fill Last Name.");
 
-    // Validations
     const nicRegex = /^([0-9]{9}[x|X|v|V]|[0-9]{12})$/;
     const phoneRegex = /^0[0-9]{9}$/;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!formData.nic?.trim()) return alert("Please fill NIC.");
-    if (!nicRegex.test(formData.nic.trim())) return alert("Invalid NIC format (Format: 9 digits + V/X or 12 digits).");
+    if (!formData.nic?.trim() || !nicRegex.test(formData.nic.trim())) return alert("Invalid NIC format.");
+    if (!formData.email?.trim() || !emailRegex.test(formData.email.trim())) return alert("Invalid Email address.");
+    if (!formData.phone?.trim() || !phoneRegex.test(formData.phone.trim())) return alert("Invalid Phone number.");
 
-    if (!formData.email?.trim()) return alert("Please fill Email.");
-    if (!emailRegex.test(formData.email.trim())) return alert("Invalid Email address.");
-
-    if (!formData.phone?.trim()) return alert("Please fill Phone.");
-    if (!phoneRegex.test(formData.phone.trim())) return alert("Invalid Phone number (Must be 10 digits starting with 0).");
-
-    // ---- validation (salary configuration) ----
     if (!String(formData.salary_type || "").trim()) return alert("Please select Salary Type.");
+    if (formData.salary_type === "MONTHLY" && (Number(formData.basic_rate) <= 0 || !formData.basic_rate)) return alert("Invalid Basic Rate.");
+    if (!String(formData.effective_date || "").trim()) return alert("Please select Effective Date.");
 
-    // Only validate Basic Rate for MONTHLY employees
-    if (formData.salary_type === "MONTHLY") {
-      if (formData.basic_rate === "" || formData.basic_rate === null || formData.basic_rate === undefined)
-        return alert("Please fill Basic Rate.");
-      if (Number.isNaN(Number(formData.basic_rate)) || Number(formData.basic_rate) <= 0)
-        return alert("Basic Rate must be a valid number greater than 0.");
-    }
-
-    if (!String(formData.effective_date || "").trim())
-      return alert("Please select Effective Date.");
-
-    // ✅ If you don’t have update API yet, keep edit as UI-only
     if (isExisting) {
       try {
         const payload = {
@@ -250,35 +235,13 @@ function EmployeeManagement() {
         const updatedData = await updateEmployeeApi(formData.employee_id, payload);
         const updatedEmp = updatedData.employee;
 
-        // Merge helper for updating list
-        setEmployees((prev) =>
-          prev.map((emp) =>
-            String(emp.employee_id) === String(formData.employee_id)
-              ? {
-                ...emp,
-                ...updatedEmp,
-                salary_type: payload.salary_configuration.salary_type,
-                basic_rate: payload.salary_configuration.basic_rate,
-                is_epf_eligible: payload.salary_configuration.is_epf_eligible,
-                effective_date: payload.salary_configuration.effective_date,
-              }
-              : emp
-          )
-        );
+        setEmployees((prev) => prev.map((emp) => String(emp.employee_id) === String(formData.employee_id) ? { ...emp, ...updatedEmp, ...payload.salary_configuration } : emp));
         setSelectedEmpId(formData.employee_id);
         closeModal();
-      } catch (err) {
-        const msg =
-          err?.response?.data?.message ||
-          err?.response?.data?.error ||
-          err.message ||
-          "Failed to update employee";
-        alert(msg);
-      }
+      } catch (err) { alert(err.message || "Update failed"); }
       return;
     }
 
-    // ✅ CREATE via backend (employee + salary configuration)
     const payload = {
       employee_id: String(formData.employee_id).trim(),
       department_id: Number(formData.department_id),
@@ -288,45 +251,27 @@ function EmployeeManagement() {
       email: String(formData.email).trim(),
       phone: String(formData.phone).trim(),
       status: String(formData.status || "ACTIVE").trim(),
-
-      // ✅ salary_configurations table fields (nested)
       salary_configuration: {
-        salary_type: String(formData.salary_type).trim(), // MONTHLY | DAILY
+        salary_type: String(formData.salary_type).trim(),
         basic_rate: formData.salary_type === "DAILY" ? 0 : Number(formData.basic_rate),
         is_epf_eligible: Number(formData.is_epf_eligible) ? 1 : 0,
-        effective_date: String(formData.effective_date).trim(), // YYYY-MM-DD
+        effective_date: String(formData.effective_date).trim(),
       },
     };
 
     try {
       const data = await createEmployeeApi(payload);
-
-      // ✅ Accept either {employee: {...}, salary_configuration: {...}, credentials: {...}} OR direct employee
       const createdEmp = data?.employee || data;
-      const createdSal = data?.salary_configuration || data?.salary_configuration || null;
+      const createdSal = data?.salary_configuration || null;
 
       const newEmp = {
-        employee_id: createdEmp.employee_id ?? payload.employee_id,
-        department_id: createdEmp.department_id ?? payload.department_id,
-        first_name: createdEmp.first_name ?? payload.first_name,
-        last_name: createdEmp.last_name ?? payload.last_name,
-        nic: createdEmp.nic ?? payload.nic,
-        email: createdEmp.email ?? payload.email,
-        phone: createdEmp.phone ?? payload.phone,
-        status: createdEmp.status ?? payload.status,
-        created_at: createdEmp.created_at ?? formData.created_at,
-
-        // ✅ store salary config on UI object too
-        salary_type: createdSal?.salary_type ?? payload.salary_configuration.salary_type,
-        basic_rate: createdSal?.basic_rate ?? payload.salary_configuration.basic_rate,
-        is_epf_eligible: createdSal?.is_epf_eligible ?? payload.salary_configuration.is_epf_eligible,
-        effective_date: createdSal?.effective_date ?? payload.salary_configuration.effective_date,
+        ...createdEmp,
+        ...createdSal,
       };
 
       setEmployees((prev) => [...prev, newEmp]);
       setSelectedEmpId(newEmp.employee_id);
 
-      // ✅ show credentials if backend returns them
       if (data?.credentials?.username && data?.credentials?.tempPassword) {
         setNewCreds({
           employee_id: newEmp.employee_id,
@@ -335,16 +280,8 @@ function EmployeeManagement() {
         });
         setCredsOpen(true);
       }
-
       closeModal();
-    } catch (err) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        err.message ||
-        "Failed to create employee";
-      alert(msg);
-    }
+    } catch (err) { alert(err.message || "Create failed"); }
   };
 
   const openRemoveModal = (emp) => {
@@ -356,1128 +293,338 @@ function EmployeeManagement() {
   const closeRemoveModal = () => {
     setIsRemoveOpen(false);
     setRemoveTarget(null);
-    setRemoveReason("");
   };
 
   const confirmRemove = async () => {
-    if (!removeTarget) return;
-
-    const reason = removeReason.trim();
-    if (!reason) return alert("Please enter the reason.");
-
+    if (!removeTarget || !removeReason.trim()) return alert("Please enter the reason.");
     try {
       await deactivateEmployeeApi(removeTarget.employee_id);
-
-      setEmployees((prev) =>
-        prev.map((e) =>
-          String(e.employee_id) === String(removeTarget.employee_id)
-            ? { ...e, status: "INACTIVE" }
-            : e
-        )
-      );
-
+      setEmployees((prev) => prev.map((e) => String(e.employee_id) === String(removeTarget.employee_id) ? { ...e, status: "INACTIVE" } : e));
       closeRemoveModal();
-      if (
-        isModalOpen &&
-        String(formData?.employee_id) === String(removeTarget.employee_id)
-      ) {
-        closeModal();
-      }
-    } catch (err) {
-      const msg =
-        err?.response?.data?.message ||
-        err?.response?.data?.error ||
-        err.message ||
-        "Failed to deactivate employee";
-      alert(msg);
-    }
+      if (isModalOpen && String(formData?.employee_id) === String(removeTarget.employee_id)) closeModal();
+    } catch (err) { alert(err.message || "Deactivation failed"); }
   };
 
   return (
     <AppLayout>
       <div style={styles.page}>
-        <div style={styles.pageHeader}>
-          <div>
-            <h2 style={styles.heading}>Employee Management</h2>
-            <p style={styles.subheading}>Employee management add or remove</p>
-          </div>
+        <style>{`
+          .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+          .table-row:hover { background: rgba(44, 85, 48, 0.03) !important; transform: scale(1.002); }
+        `}</style>
 
-          <div style={styles.headerActions}>
-            <input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search by ID, name, department, status..."
-              style={styles.search}
-            />
-            <button style={styles.btnPrimary} onClick={openAddModal}>
-              + Add Employee
-            </button>
-          </div>
-        </div>
+        <div style={styles.container}>
+          <div style={styles.pageHeader}>
+            <div>
+              <div style={styles.breadcrumb}>Manager / Employees</div>
+              <h1 style={styles.pageTitle}>Employee Management</h1>
+              <p style={styles.pageSubtitle}>Manage your team members and their employment details</p>
+            </div>
 
-        {/* TOP PROFILE CARD */}
-        {selectedEmployee ? (
-          <div style={styles.profileCard}>
-            <div style={styles.profileLeft}>
-              <div style={styles.avatarBlock}>
-                {String(selectedEmployee.first_name || "")
-                  .trim()
-                  .slice(0, 1)
-                  .toUpperCase() || "E"}
+            <div style={styles.headerActions}>
+              <div style={styles.searchWrapper}>
+                <Search size={18} style={styles.searchIcon} />
+                <input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search members..."
+                  style={styles.searchInput}
+                />
               </div>
+              <button style={styles.btnPrimary} onClick={openAddModal}>
+                <Plus size={18} />
+                <span>Add Employee</span>
+              </button>
+            </div>
+          </div>
 
-              <div style={{ flex: 1 }}>
-                <div style={styles.profileTopRow}>
-                  <div>
-                    <div style={styles.profileName}>{fullName(selectedEmployee)}</div>
-                    <div style={styles.profileMeta}>
-                      Department: <strong>{getDeptName(selectedEmployee.department_id)}</strong>
+          {selectedEmployee ? (
+            <div className="fade-in" style={styles.profileCard}>
+              <div style={styles.profileContent}>
+                <div style={styles.avatarContainer}>
+                  <div style={styles.avatarMain}>
+                    {String(selectedEmployee.first_name || "").trim().slice(0, 1).toUpperCase() || "E"}
+                  </div>
+                  <div style={{ ...styles.statusIndicator, background: selectedEmployee.status === "ACTIVE" ? "#10b981" : "#ef4444" }}></div>
+                </div>
+
+                <div style={styles.profileInfo}>
+                  <div style={styles.profileHeaderRow}>
+                    <div>
+                      <h2 style={styles.profileName}>{fullName(selectedEmployee)}</h2>
+                      <div style={styles.profileMetaGroup}>
+                        <div style={styles.metaBadge}>
+                          <Briefcase size={14} />
+                          <span>{getDeptName(selectedEmployee.department_id)}</span>
+                        </div>
+                        <div style={styles.metaBadge}>
+                          <ShieldCheck size={14} />
+                          <span>ID: {selectedEmployee.employee_id}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={styles.profileActions}>
+                      <button style={styles.iconActionBtn} onClick={() => openModal(selectedEmployee, false)} title="View Details">
+                        <Eye size={18} />
+                      </button>
+                      <button style={styles.iconActionBtn} onClick={() => openModal(selectedEmployee, true)} title="Edit Employee">
+                        <Edit3 size={18} />
+                      </button>
+                      {selectedEmployee.status !== "INACTIVE" && (
+                        <button style={{ ...styles.iconActionBtn, color: "#dc2626" }} onClick={() => openRemoveModal(selectedEmployee)} title="Deactivate">
+                          <Trash2 size={18} />
+                        </button>
+                      )}
                     </div>
                   </div>
 
-                  <span
-                    style={{
-                      ...styles.statusPill,
-                      ...(selectedEmployee.status === "ACTIVE"
-                        ? styles.statusActive
-                        : styles.statusInactive),
-                    }}
-                  >
-                    {selectedEmployee.status}
-                  </span>
-                </div>
-
-                <div style={styles.profileGrid}>
-                  <div style={styles.infoItem}>
-                    <div style={styles.infoLabel}>Phone</div>
-                    <div style={styles.infoValue}>{selectedEmployee.phone || "-"}</div>
+                  <div style={styles.contactGrid}>
+                    <div style={styles.contactItem}><Mail size={16} color="#6b7280" /><span>{selectedEmployee.email || "No email"}</span></div>
+                    <div style={styles.contactItem}><Phone size={16} color="#6b7280" /><span>{selectedEmployee.phone || "No phone"}</span></div>
+                    <div style={styles.contactItem}><Calendar size={16} color="#6b7280" /><span>Joined {new Date(selectedEmployee.created_at).toLocaleDateString()}</span></div>
                   </div>
                 </div>
               </div>
             </div>
-
-            <div style={styles.profileActions}>
-              <button
-                style={styles.btnSecondary}
-                onClick={() => openModal(selectedEmployee, false)}
-              >
-                View
-              </button>
-              <button
-                style={styles.btnPrimary}
-                onClick={() => openModal(selectedEmployee, true)}
-              >
-                Edit
-              </button>
-
-              {selectedEmployee.status !== "INACTIVE" && (
-                <button
-                  style={styles.btnDanger}
-                  onClick={() => openRemoveModal(selectedEmployee)}
-                  title="Set employee status to INACTIVE"
-                >
-                  Deactivate
-                </button>
-              )}
+          ) : (
+            <div style={styles.emptyState}>
+              <div style={styles.emptyIcon}><Users size={40} /></div>
+              <p>No employee selected. Select from the list below or add a new team member.</p>
             </div>
-          </div>
-        ) : (
-          <div style={styles.emptyTop}>
-            No employee selected. Click “Add Employee” to create one.
-          </div>
-        )}
+          )}
 
-        {/* LIST CARD */}
-        <div style={styles.listCard}>
-          <div style={styles.listHeader}>
-            <h3 style={styles.listTitle}>Employee List</h3>
-            <div style={styles.countPill}>{filteredEmployees.length} employees</div>
-          </div>
+          <div className="fade-in" style={styles.listCard}>
+            <div style={styles.listHeader}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                <div style={styles.listIconBox}><Users size={18} /></div>
+                <h3 style={styles.listTitle}>All Employees</h3>
+              </div>
+              <div style={styles.countBadge}>{filteredEmployees.length} Total</div>
+            </div>
 
-          <div style={styles.tableWrapper}>
-            <table style={styles.table}>
-              <thead>
-                <tr>
-                  <th style={styles.th}>ID</th>
-                  <th style={styles.th}>Name</th>
-                  <th style={styles.th}>Department</th>
-                  <th style={styles.th}>Status</th>
-                  <th style={{ ...styles.th, textAlign: "right" }}>Actions</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {filteredEmployees.map((emp) => {
-                  const isSelected = String(emp.employee_id) === String(selectedEmpId);
-
-                  return (
-                    <tr
-                      key={emp.employee_id}
-                      style={{ ...styles.tr, ...(isSelected ? styles.trSelected : {}) }}
-                      onClick={() => setSelectedEmpId(emp.employee_id)}
-                      title="Click to show this profile on top"
-                    >
-                      <td style={styles.td}>{emp.employee_id}</td>
-
-                      <td style={styles.tdName}>
-                        <div style={styles.nameCell}>
-                          <div style={styles.rowAvatar}>
-                            {String(emp.first_name || "")
-                              .trim()
-                              .slice(0, 1)
-                              .toUpperCase() || "E"}
-                          </div>
-                          <div>
-                            <div style={styles.rowName}>{fullName(emp)}</div>
-                            <div style={styles.rowSub}>{emp.email}</div>
-                          </div>
-                        </div>
-                      </td>
-
-                      <td style={styles.td}>{getDeptName(emp.department_id)}</td>
-
-                      <td style={styles.td}>
-                        <span
-                          style={{
-                            ...styles.statusSmall,
-                            ...(emp.status === "ACTIVE"
-                              ? { background: "#dcfce7" }
-                              : { background: "#fee2e2" }),
-                          }}
-                        >
-                          {emp.status}
-                        </span>
-                      </td>
-
-                      <td style={{ ...styles.td, textAlign: "right" }}>
-                        <div style={styles.actionContainer}>
-                          <button
-                            style={isSelected ? styles.selectBtnActive : styles.selectBtn}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setSelectedEmpId(emp.employee_id);
-                            }}
-                          >
-                            {isSelected ? "Selected" : "Select"}
-                          </button>
-
-                          <div style={styles.dropdownWrapper}>
-                            <button
-                              className="action-dropdown-trigger"
-                              style={styles.dotsBtn}
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setMenuOpenId(menuOpenId === emp.employee_id ? null : emp.employee_id);
-                              }}
-                            >
-                              ⋮
-                            </button>
-
-                            {menuOpenId === emp.employee_id && (
-                              <div className="action-dropdown-menu" style={styles.dropdownMenu}>
-                                <button
-                                  style={styles.dropdownItem}
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    openModal(emp, true);
-                                    setMenuOpenId(null);
-                                  }}
-                                >
-                                  Edit
-                                </button>
-
-                                {emp.status !== "INACTIVE" && (
-                                  <button
-                                    style={styles.dropdownItemDanger}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      openRemoveModal(emp);
-                                      setMenuOpenId(null);
-                                    }}
-                                  >
-                                    Deactivate
-                                  </button>
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-
-                {filteredEmployees.length === 0 && (
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
                   <tr>
-                    <td style={styles.empty} colSpan={5}>
-                      No employees found for “{search}”
-                    </td>
+                    <th style={styles.th}>EMPLOYEE</th>
+                    <th style={styles.th}>DEPARTMENT</th>
+                    <th style={styles.th}>STATUS</th>
+                    <th style={{ ...styles.th, textAlign: "right" }}>ACTIONS</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredEmployees.map((emp) => {
+                    const isSelected = String(emp.employee_id) === String(selectedEmpId);
+                    return (
+                      <tr key={emp.employee_id} className="table-row" style={{ ...styles.tr, ...(isSelected ? styles.trSelected : {}) }} onClick={() => setSelectedEmpId(emp.employee_id)}>
+                        <td style={styles.td}>
+                          <div style={styles.userCell}>
+                            <div style={{ ...styles.rowAvatar, background: isSelected ? "#2c5530" : "#f1f5f9", color: isSelected ? "#fff" : "#475569" }}>
+                              {String(emp.first_name || "").slice(0,1).toUpperCase()}
+                            </div>
+                            <div>
+                              <div style={styles.userName}>{fullName(emp)}</div>
+                              <div style={styles.userSub}>{emp.employee_id} • {emp.email}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={styles.td}><span style={styles.deptText}>{getDeptName(emp.department_id)}</span></td>
+                        <td style={styles.td}>
+                          <div style={{ ...styles.statusTag, background: emp.status === "ACTIVE" ? "#ecfdf5" : "#fef2f2", color: emp.status === "ACTIVE" ? "#059669" : "#dc2626" }}>
+                            {emp.status}
+                          </div>
+                        </td>
+                        <td style={{ ...styles.td, textAlign: "right" }}>
+                          <div style={styles.actionRow}>
+                            <button style={{ ...styles.selectBtn, background: isSelected ? "#2c5530" : "transparent", color: isSelected ? "#fff" : "#2c5530" }} onClick={(e) => { e.stopPropagation(); setSelectedEmpId(emp.employee_id); }}>
+                              {isSelected ? "Current" : "Select"}
+                            </button>
+                            <div style={styles.dropdownWrapper}>
+                              <button className="action-dropdown-trigger" style={styles.dotsBtn} onClick={(e) => { e.stopPropagation(); setMenuOpenId(menuOpenId === emp.employee_id ? null : emp.employee_id); }}>
+                                <MoreVertical size={16} />
+                              </button>
+                              {menuOpenId === emp.employee_id && (
+                                <div className="action-dropdown-menu" style={styles.dropdownMenu}>
+                                  <button style={styles.dropdownItem} onClick={(e) => { e.stopPropagation(); openModal(emp, true); setMenuOpenId(null); }}>
+                                    <Edit3 size={14} /> Edit
+                                  </button>
+                                  {emp.status !== "INACTIVE" && (
+                                    <button style={styles.dropdownItemDanger} onClick={(e) => { e.stopPropagation(); openRemoveModal(emp); setMenuOpenId(null); }}>
+                                      <Trash2 size={14} /> Deactivate
+                                    </button>
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                  {filteredEmployees.length === 0 && (
+                    <tr><td colSpan={4} style={styles.emptyTable}><div style={styles.emptyTableContent}><Search size={32} color="#cbd5e1" /><p>No employees found matching "{search}"</p></div></td></tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
 
-        {/* VIEW/EDIT MODAL */}
         {isModalOpen && (
           <div style={styles.modalOverlay} onClick={closeModal}>
             <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
               <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>
-                  {isEditMode ? "Employee Form" : "Employee Details"}
-                </h3>
-                <button style={styles.iconBtn} onClick={closeModal}>
-                  ✕
-                </button>
+                <h3 style={styles.modalTitle}>{isEditMode ? "Employee Form" : "Employee Details"}</h3>
+                <button style={styles.iconBtn} onClick={closeModal}>✕</button>
               </div>
-
               <div style={styles.modalBody}>
                 <div style={styles.modalProfile}>
-                  <div style={styles.bigAvatar}>
-                    {String(formData.first_name || "")
-                      .trim()
-                      .slice(0, 1)
-                      .toUpperCase() || "E"}
-                  </div>
-
+                  <div style={styles.bigAvatar}>{String(formData.first_name || "").slice(0, 1).toUpperCase() || "E"}</div>
                   <div style={{ flex: 1 }}>
-                    <div style={styles.modalName}>
-                      {fullName(formData)?.trim() !== "-" ? fullName(formData) : "New Employee"}
-                    </div>
-                    <div style={styles.modalSub}>
-                      Department: {getDeptName(formData.department_id)}
-                    </div>
+                    <div style={styles.modalName}>{fullName(formData)?.trim() !== "-" ? fullName(formData) : "New Employee"}</div>
+                    <div style={styles.modalSub}>Department: {getDeptName(formData.department_id)}</div>
                   </div>
                 </div>
 
                 <div style={styles.formGrid}>
-                  <div>
-                    <label style={styles.label}>EMPLOYEE ID</label>
-                    {isEditMode ? (
-                      <input
-                        name="employee_id"
-                        value={formData.employee_id || ""}
-                        onChange={handleChange}
-                        style={styles.input}
-                      />
-                    ) : (
-                      <div style={styles.readValue}>{formData.employee_id || "-"}</div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label style={styles.label}>DEPARTMENT</label>
-                    {isEditMode ? (
-                      <select
-                        name="department_id"
-                        value={formData.department_id ?? ""}
-                        onChange={handleChange}
-                        style={styles.select}
-                      >
-                        {(departments || []).map((d) => (
-                          <option key={d.id} value={d.id}>
-                            {d.name}
-                          </option>
-                        ))}
-                      </select>
-                    ) : (
-                      <div style={styles.readValue}>{getDeptName(formData.department_id)}</div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label style={styles.label}>FIRST NAME</label>
-                    {isEditMode ? (
-                      <input
-                        name="first_name"
-                        value={formData.first_name || ""}
-                        onChange={handleChange}
-                        style={styles.input}
-                      />
-                    ) : (
-                      <div style={styles.readValue}>{formData.first_name || "-"}</div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label style={styles.label}>LAST NAME</label>
-                    {isEditMode ? (
-                      <input
-                        name="last_name"
-                        value={formData.last_name || ""}
-                        onChange={handleChange}
-                        style={styles.input}
-                      />
-                    ) : (
-                      <div style={styles.readValue}>{formData.last_name || "-"}</div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label style={styles.label}>NIC</label>
-                    {isEditMode ? (
-                      <input
-                        name="nic"
-                        value={formData.nic || ""}
-                        onChange={handleChange}
-                        style={styles.input}
-                      />
-                    ) : (
-                      <div style={styles.readValue}>{formData.nic || "-"}</div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label style={styles.label}>EMAIL</label>
-                    {isEditMode ? (
-                      <input
-                        name="email"
-                        value={formData.email || ""}
-                        onChange={handleChange}
-                        style={styles.input}
-                      />
-                    ) : (
-                      <div style={styles.readValue}>{formData.email || "-"}</div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label style={styles.label}>PHONE</label>
-                    {isEditMode ? (
-                      <input
-                        name="phone"
-                        value={formData.phone || ""}
-                        onChange={handleChange}
-                        style={styles.input}
-                      />
-                    ) : (
-                      <div style={styles.readValue}>{formData.phone || "-"}</div>
-                    )}
-                  </div>
-
-                  <div>
-                    <label style={styles.label}>STATUS</label>
-                    {isEditMode ? (
-                      <select
-                        name="status"
-                        value={formData.status || "ACTIVE"}
-                        onChange={handleChange}
-                        style={styles.select}
-                      >
-                        <option value="ACTIVE">ACTIVE</option>
-                        <option value="INACTIVE">INACTIVE</option>
-                        <option value="RESIGNED">RESIGNED</option>
-                        <option value="TERMINATED">TERMINATED</option>
-                      </select>
-                    ) : (
-                      <div style={styles.readValue}>{formData.status || "-"}</div>
-                    )}
-                  </div>
-
-                  {/* ✅ NEW: SALARY TYPE */}
-                  <div>
-                    <label style={styles.label}>SALARY TYPE</label>
-                    {isEditMode ? (
-                      <select
-                        name="salary_type"
-                        value={formData.salary_type || "MONTHLY"}
-                        onChange={handleChange}
-                        style={styles.select}
-                      >
-                        <option value="MONTHLY">MONTHLY</option>
-                        <option value="DAILY">DAILY</option>
-                      </select>
-                    ) : (
-                      <div style={styles.readValue}>{formData.salary_type || "-"}</div>
-                    )}
-                  </div>
-
-                  {/* ✅ NEW: BASIC RATE (Only for Monthly) */}
-                  {formData.salary_type === "MONTHLY" && (
-                    <div>
-                      <label style={styles.label}>BASIC RATE</label>
-                      {isEditMode ? (
-                        <input
-                          name="basic_rate"
-                          value={formData.basic_rate ?? ""}
-                          onChange={handleChange}
-                          style={styles.input}
-                          placeholder="e.g., 75000"
-                          inputMode="decimal"
-                        />
-                      ) : (
-                        <div style={styles.readValue}>{moneyText(formData.basic_rate)}</div>
-                      )}
-                    </div>
-                  )}
-
-                  {/* ✅ NEW: EPF/ETF ELIGIBLE (YES/NO) */}
-                  <div>
-                    <label style={styles.label}>EPF/ETF ELIGIBLE</label>
-
-                    {isEditMode ? (
-                      <select
-                        name="is_epf_eligible"
-                        value={String(formData.is_epf_eligible ?? 1)}  // keep as "1" or "0"
-                        onChange={(e) =>
-                          setFormData((p) => ({ ...p, is_epf_eligible: Number(e.target.value) }))
-                        }
-                        style={styles.select}
-                      >
-                        <option value="1">YES</option>
-                        <option value="0">NO</option>
-                      </select>
-                    ) : (
-                      <div style={styles.readValue}>
-                        {Number(formData.is_epf_eligible) === 1 ? "YES" : "NO"}
-                      </div>
-                    )}
-                  </div>
-
-
-                  {/* ✅ NEW: EFFECTIVE DATE */}
-                  <div>
-                    <label style={styles.label}>EFFECTIVE DATE</label>
-                    {isEditMode ? (
-                      <input
-                        type="date"
-                        name="effective_date"
-                        value={formData.effective_date || ""}
-                        onChange={handleChange}
-                        style={styles.input}
-                      />
-                    ) : (
-                      <div style={styles.readValue}>{formData.effective_date || "-"}</div>
-                    )}
-                  </div>
+                  <div><label style={styles.label}>EMPLOYEE ID</label>{isEditMode ? <input name="employee_id" value={formData.employee_id || ""} onChange={handleChange} style={styles.input} /> : <div style={styles.readValue}>{formData.employee_id || "-"}</div>}</div>
+                  <div><label style={styles.label}>DEPARTMENT</label>{isEditMode ? <select name="department_id" value={formData.department_id ?? ""} onChange={handleChange} style={styles.select}>{(departments || []).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select> : <div style={styles.readValue}>{getDeptName(formData.department_id)}</div>}</div>
+                  <div><label style={styles.label}>FIRST NAME</label>{isEditMode ? <input name="first_name" value={formData.first_name || ""} onChange={handleChange} style={styles.input} /> : <div style={styles.readValue}>{formData.first_name || "-"}</div>}</div>
+                  <div><label style={styles.label}>LAST NAME</label>{isEditMode ? <input name="last_name" value={formData.last_name || ""} onChange={handleChange} style={styles.input} /> : <div style={styles.readValue}>{formData.last_name || "-"}</div>}</div>
+                  <div><label style={styles.label}>NIC</label>{isEditMode ? <input name="nic" value={formData.nic || ""} onChange={handleChange} style={styles.input} /> : <div style={styles.readValue}>{formData.nic || "-"}</div>}</div>
+                  <div><label style={styles.label}>EMAIL</label>{isEditMode ? <input name="email" value={formData.email || ""} onChange={handleChange} style={styles.input} /> : <div style={styles.readValue}>{formData.email || "-"}</div>}</div>
+                  <div><label style={styles.label}>PHONE</label>{isEditMode ? <input name="phone" value={formData.phone || ""} onChange={handleChange} style={styles.input} /> : <div style={styles.readValue}>{formData.phone || "-"}</div>}</div>
+                  <div><label style={styles.label}>STATUS</label>{isEditMode ? <select name="status" value={formData.status || "ACTIVE"} onChange={handleChange} style={styles.select}><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option><option value="RESIGNED">RESIGNED</option><option value="TERMINATED">TERMINATED</option></select> : <div style={styles.readValue}>{formData.status || "-"}</div>}</div>
+                  <div><label style={styles.label}>SALARY TYPE</label>{isEditMode ? <select name="salary_type" value={formData.salary_type || "MONTHLY"} onChange={handleChange} style={styles.select}><option value="MONTHLY">MONTHLY</option><option value="DAILY">DAILY</option></select> : <div style={styles.readValue}>{formData.salary_type || "-"}</div>}</div>
+                  {formData.salary_type === "MONTHLY" && (<div><label style={styles.label}>BASIC RATE</label>{isEditMode ? <input name="basic_rate" value={formData.basic_rate ?? ""} onChange={handleChange} style={styles.input} placeholder="e.g., 75000" /> : <div style={styles.readValue}>{moneyText(formData.basic_rate)}</div>}</div>)}
+                  <div><label style={styles.label}>EPF/ETF ELIGIBLE</label>{isEditMode ? <select name="is_epf_eligible" value={String(formData.is_epf_eligible ?? 1)} onChange={(e) => setFormData((p) => ({ ...p, is_epf_eligible: Number(e.target.value) }))} style={styles.select}><option value="1">YES</option><option value="0">NO</option></select> : <div style={styles.readValue}>{Number(formData.is_epf_eligible) === 1 ? "YES" : "NO"}</div>}</div>
+                  <div><label style={styles.label}>EFFECTIVE DATE</label>{isEditMode ? <input type="date" name="effective_date" value={formData.effective_date || ""} onChange={handleChange} style={styles.input} /> : <div style={styles.readValue}>{formData.effective_date || "-"}</div>}</div>
                 </div>
               </div>
 
               <div style={styles.modalActions}>
-                <button style={styles.btnSecondary} onClick={closeModal}>
-                  Close
-                </button>
-                {isEditMode && (
-                  <button style={styles.btnPrimary} onClick={handleSave}>
-                    Save
-                  </button>
-                )}
+                <button style={styles.btnSecondary} onClick={closeModal}>Close</button>
+                {isEditMode && <button style={styles.btnPrimary} onClick={handleSave}>Save</button>}
               </div>
             </div>
           </div>
         )}
 
-        {/* ✅ Credentials Modal */}
         {credsOpen && newCreds && (
           <div style={styles.modalOverlay} onClick={closeCreds}>
             <div style={styles.removeModal} onClick={(e) => e.stopPropagation()}>
-              <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>New Employee Credentials</h3>
-                <button style={styles.iconBtn} onClick={closeCreds}>
-                  ✕
-                </button>
-              </div>
-
+              <div style={styles.modalHeader}><h3 style={styles.modalTitle}>Credentials</h3><button style={styles.iconBtn} onClick={closeCreds}>✕</button></div>
               <div style={styles.modalBody}>
-                <div style={styles.removeWarnBox}>
-                  Copy these credentials now. This password will not be shown again.
-                </div>
-
-                <div style={{ marginTop: "12px" }}>
-                  <label style={styles.label}>USERNAME</label>
-                  <div style={styles.readValue}>{newCreds.username}</div>
-                </div>
-
-                <div style={{ marginTop: "12px" }}>
-                  <label style={styles.label}>TEMP PASSWORD</label>
-                  <div style={styles.readValue}>{newCreds.tempPassword}</div>
-                </div>
-
-                <div style={{ display: "flex", gap: "10px", marginTop: "12px", flexWrap: "wrap" }}>
-                  <button
-                    style={{ ...styles.btnSecondary, flex: 1 }}
-                    onClick={() => {
-                      navigator.clipboard.writeText(newCreds.username);
-                      alert("Username copied!");
-                    }}
-                  >
-                    Copy Username
-                  </button>
-                  <button
-                    style={{ ...styles.btnPrimary, flex: 1 }}
-                    onClick={() => {
-                      navigator.clipboard.writeText(newCreds.tempPassword);
-                      alert("Password copied!");
-                    }}
-                  >
-                    Copy Password
-                  </button>
+                <div style={styles.removeWarnBox}>Copy these credentials now. Password will not be shown again.</div>
+                <div style={{ marginTop: "12px" }}><label style={styles.label}>USERNAME</label><div style={styles.readValue}>{newCreds.username}</div></div>
+                <div style={{ marginTop: "12px" }}><label style={styles.label}>TEMP PASSWORD</label><div style={styles.readValue}>{newCreds.tempPassword}</div></div>
+                <div style={{ display: "flex", gap: "10px", marginTop: "12px" }}>
+                  <button style={{ ...styles.btnSecondary, flex: 1 }} onClick={() => { navigator.clipboard.writeText(newCreds.username); alert("Copied!"); }}>Copy User</button>
+                  <button style={{ ...styles.btnPrimary, flex: 1 }} onClick={() => { navigator.clipboard.writeText(newCreds.tempPassword); alert("Copied!"); }}>Copy Pass</button>
                 </div>
               </div>
-
-              <div style={styles.modalActions}>
-                <button style={styles.btnPrimary} onClick={closeCreds}>
-                  Done
-                </button>
-              </div>
+              <div style={styles.modalActions}><button style={styles.btnPrimary} onClick={closeCreds}>Done</button></div>
             </div>
           </div>
         )}
 
-        {/* ✅ REMOVE CONFIRMATION MODAL */}
         {isRemoveOpen && removeTarget && (
           <div style={styles.modalOverlay} onClick={closeRemoveModal}>
             <div style={styles.removeModal} onClick={(e) => e.stopPropagation()}>
-              <div style={styles.modalHeader}>
-                <h3 style={styles.modalTitle}>Deactivate Employee</h3>
-                <button style={styles.iconBtn} onClick={closeRemoveModal}>
-                  ✕
-                </button>
-              </div>
-
+              <div style={styles.modalHeader}><h3 style={styles.modalTitle}>Deactivate</h3><button style={styles.iconBtn} onClick={closeRemoveModal}>✕</button></div>
               <div style={styles.modalBody}>
-                <div style={styles.removeWarnBox}>
-                  You are about to deactivate <strong>{fullName(removeTarget)}</strong> (ID:{" "}
-                  <strong>{removeTarget.employee_id}</strong>). The login will be disabled.
-                </div>
-
-                <div style={{ marginTop: "12px" }}>
-                  <label style={styles.label}>REASON (Required)</label>
-                  <textarea
-                    value={removeReason}
-                    onChange={(e) => setRemoveReason(e.target.value)}
-                    style={styles.textarea}
-                    placeholder="Example: Left company / Duplicate account / Wrong registration..."
-                  />
-                </div>
+                <div style={styles.removeWarnBox}>Deactivating <strong>{fullName(removeTarget)}</strong>.</div>
+                <div style={{ marginTop: "12px" }}><label style={styles.label}>REASON (Required)</label><textarea value={removeReason} onChange={(e) => setRemoveReason(e.target.value)} style={styles.textarea} /></div>
               </div>
-
               <div style={styles.modalActions}>
-                <button style={styles.btnSecondary} onClick={closeRemoveModal}>
-                  Cancel
-                </button>
-                <button style={styles.btnDanger} onClick={confirmRemove}>
-                  Confirm Deactivate
-                </button>
+                <button style={styles.btnSecondary} onClick={closeRemoveModal}>Cancel</button>
+                <button style={styles.btnDanger} onClick={confirmRemove}>Confirm</button>
               </div>
             </div>
           </div>
         )}
       </div>
-    </AppLayout >
+    </AppLayout>
   );
 }
 
-export default EmployeeManagement;
-
-/* ===========================
-   CLEAN WHITE/GRAY DESIGN
-   =========================== */
 const styles = {
-  page: { padding: "8px" },
-  pageHeader: {
-    padding: "24px 32px",
-    background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%)",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(74, 124, 78, 0.1)",
-    borderRadius: 20,
-    boxShadow: "0 8px 24px rgba(74, 124, 78, 0.08)",
-  },
-  heading: { margin: 0, color: "#2c5530", fontSize: "28px", fontWeight: 700, letterSpacing: "-0.5px" },
-  subheading: { margin: "6px 0 0 0", color: "#6b7280", fontSize: "14px", fontWeight: 500 },
-
-  headerActions: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    flexWrap: "wrap",
-    minWidth: "360px",
-    justifyContent: "flex-end",
-  },
-  search: {
-    width: "320px",
-    padding: "12px 16px",
-    borderRadius: "12px",
-    border: "2px solid rgba(229, 231, 235, 0.5)",
-    outline: "none",
-    background: "#f9fafb",
-    fontSize: "14px",
-    transition: "all 0.2s ease",
-  },
-
-  profileCard: {
-    background: "linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.98) 100%)",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(74, 124, 78, 0.1)",
-    borderRadius: "18px",
-    padding: "24px",
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: "20px",
-    boxShadow: "0 8px 24px rgba(74, 124, 78, 0.08)",
-    marginBottom: "20px",
-  },
-  profileLeft: { display: "flex", gap: "14px", flex: 1 },
-  avatarBlock: {
-    width: "100px",
-    height: "100px",
-    borderRadius: "20px",
-    border: "1px solid rgba(74, 124, 78, 0.1)",
-    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: 700,
-    fontSize: "32px",
-    color: "#ffffff",
-    boxShadow: "0 8px 24px rgba(74, 124, 78, 0.2)",
-  },
-
-  bigAvatar: {
-    width: "64px",
-    height: "64px",
-    borderRadius: "14px",
-    border: "1px solid #e2e8f0",
-    background: "#fff",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: 1000,
-    fontSize: "22px",
-    color: "#0f172a",
-  },
-
-  profileTopRow: {
-    display: "flex",
-    alignItems: "flex-start",
-    justifyContent: "space-between",
-    gap: "10px",
-  },
-  profileName: { fontSize: "16px", fontWeight: 900, color: "#0f172a" },
-  profileMeta: { marginTop: "3px", color: "#64748b", fontSize: "13px" },
-
-  statusPill: {
-    fontSize: "12px",
-    fontWeight: 800,
-    padding: "6px 10px",
-    borderRadius: "999px",
-    border: "1px solid #e2e8f0",
-    whiteSpace: "nowrap",
-  },
-  statusActive: { background: "#dcfce7", color: "#166534" },
-  statusInactive: { background: "#fee2e2", color: "#991b1b" },
-
-  profileGrid: {
-    marginTop: "12px",
-    display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-    gap: "10px",
-  },
-  infoItem: {
-    background: "#f8fafc",
-    border: "1px solid #e2e8f0",
-    borderRadius: "12px",
-    padding: "10px",
-  },
-  infoLabel: {
-    color: "#64748b",
-    fontSize: "11px",
-    fontWeight: 800,
-    letterSpacing: "0.5px",
-    textTransform: "uppercase",
-  },
-  infoValue: { marginTop: "4px", color: "#0f172a", fontWeight: 800, fontSize: "13px" },
-
-  profileActions: { display: "flex", gap: "10px", flexWrap: "wrap" },
-
-  emptyTop: {
-    background: "rgba(255, 255, 255, 0.8)",
-    border: "1px dashed rgba(74, 124, 78, 0.3)",
-    borderRadius: "14px",
-    padding: "16px 20px",
-    color: "#6b7280",
-    marginBottom: "14px",
-    textAlign: "center",
-    fontWeight: 500,
-  },
-
-  listCard: {
-    background: "rgba(255, 255, 255, 0.9)",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(74, 124, 78, 0.1)",
-    borderRadius: "18px",
-    overflow: "hidden",
-    boxShadow: "0 8px 24px rgba(74, 124, 78, 0.08)",
-    display: "flex",
-    flexDirection: "column",
-    maxHeight: "600px", // Fixed height for vertical space
-  },
-  tableWrapper: {
-    overflowY: "auto",
-    flex: 1,
-  },
-  listHeader: {
-    padding: "14px 16px",
-    borderBottom: "1px solid #e2e8f0",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-  },
-  listTitle: { margin: 0, color: "#0f172a", fontSize: "15px", fontWeight: 900 },
-  countPill: {
-    background: "#f1f5f9",
-    border: "1px solid #e2e8f0",
-    padding: "6px 10px",
-    borderRadius: "999px",
-    fontSize: "12px",
-    fontWeight: 800,
-    color: "#334155",
-  },
-
+  page: { minHeight: "100%", background: "#f8fafc" },
+  container: { padding: "32px", maxWidth: "1400px", margin: "0 auto" },
+  breadcrumb: { fontSize: "12px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" },
+  pageHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "32px", gap: "24px", flexWrap: "wrap" },
+  pageTitle: { margin: 0, fontSize: "32px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.02em" },
+  pageSubtitle: { margin: "4px 0 0 0", fontSize: "15px", color: "#64748b", fontWeight: 500 },
+  headerActions: { display: "flex", alignItems: "center", gap: "16px" },
+  searchWrapper: { position: "relative", display: "flex", alignItems: "center" },
+  searchIcon: { position: "absolute", left: "14px", color: "#94a3b8" },
+  searchInput: { padding: "12px 16px 12px 42px", borderRadius: "14px", border: "1px solid #e2e8f0", width: "280px", outline: "none", fontSize: "14px", fontWeight: 600 },
+  btnPrimary: { display: "flex", alignItems: "center", gap: "8px", background: "#2c5530", color: "#fff", border: "none", padding: "12px 20px", borderRadius: "14px", cursor: "pointer", fontWeight: 700, fontSize: "14px", boxShadow: "0 4px 12px rgba(44, 85, 48, 0.2)" },
+  btnSecondary: { background: "#fff", color: "#2c5530", border: "1px solid #e2e8f0", padding: "12px 20px", borderRadius: "14px", cursor: "pointer", fontWeight: 700 },
+  btnDanger: { background: "#dc2626", color: "#fff", border: "none", padding: "12px 20px", borderRadius: "14px", cursor: "pointer", fontWeight: 700 },
+  profileCard: { background: "#fff", borderRadius: "24px", padding: "32px", boxShadow: "0 4px 20px rgba(0,0,0,0.03)", border: "1px solid #f1f5f9", marginBottom: "32px" },
+  profileContent: { display: "flex", gap: "32px", alignItems: "flex-start" },
+  avatarContainer: { position: "relative" },
+  avatarMain: { width: "84px", height: "84px", borderRadius: "24px", background: "#2c5530", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", fontWeight: 900 },
+  statusIndicator: { position: "absolute", bottom: "-4px", right: "-4px", width: "20px", height: "20px", borderRadius: "50%", border: "4px solid #fff" },
+  profileInfo: { flex: 1 },
+  profileHeaderRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" },
+  profileName: { margin: 0, fontSize: "24px", fontWeight: 800, color: "#1e293b" },
+  profileMetaGroup: { display: "flex", gap: "12px", marginTop: "8px" },
+  metaBadge: { display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "#f1f5f9", borderRadius: "10px", fontSize: "12px", fontWeight: 700, color: "#475569" },
+  profileActions: { display: "flex", gap: "10px" },
+  iconActionBtn: { width: "40px", height: "40px", borderRadius: "12px", border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#475569" },
+  contactGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px" },
+  contactItem: { display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", fontWeight: 600, color: "#475569" },
+  emptyState: { padding: "48px", textAlign: "center", background: "#fff", borderRadius: "24px", border: "1px dashed #cbd5e1", marginBottom: "32px" },
+  emptyIcon: { color: "#cbd5e1", marginBottom: "16px", display: "inline-block" },
+  listCard: { background: "#fff", borderRadius: "24px", overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.03)", border: "1px solid #f1f5f9" },
+  listHeader: { padding: "24px 32px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" },
+  listIconBox: { width: "36px", height: "36px", borderRadius: "10px", background: "#ecfdf5", color: "#059669", display: "flex", alignItems: "center", justifyContent: "center" },
+  listTitle: { margin: 0, fontSize: "18px", fontWeight: 800, color: "#1e293b" },
+  countBadge: { padding: "6px 14px", borderRadius: "12px", background: "#f1f5f9", fontSize: "12px", fontWeight: 800, color: "#475569" },
+  tableWrapper: { overflowX: "auto" },
   table: { width: "100%", borderCollapse: "collapse" },
-  th: {
-    textAlign: "left",
-    padding: "16px 20px",
-    fontSize: "13px",
-    color: "#4a7c4e",
-    fontWeight: 700,
-    textTransform: "uppercase",
-    letterSpacing: "0.8px",
-    background: "#f8fafc", // Solid background for sticky
-    borderBottom: "1px solid rgba(74, 124, 78, 0.1)",
-    position: "sticky",
-    top: 0,
-    zIndex: 10,
-  },
-  tr: {
-    cursor: "pointer",
-    transition: "background 0.2s ease",
-  },
-  trSelected: { background: "rgba(74, 124, 78, 0.08)" },
-  td: {
-    padding: "16px 20px",
-    borderBottom: "1px solid rgba(74, 124, 78, 0.1)",
-    color: "#1f2937",
-    fontSize: "14px",
-    fontWeight: 500,
-  },
-  tdName: { padding: "16px 20px", borderBottom: "1px solid rgba(74, 124, 78, 0.1)" },
-  nameCell: { display: "flex", alignItems: "center", gap: "10px" },
-  rowAvatar: {
-    width: "34px",
-    height: "34px",
-    borderRadius: "12px",
-    border: "1px solid rgba(74, 124, 78, 0.1)",
-    background: "rgba(74, 124, 78, 0.05)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: 700,
-    color: "#2c5530",
-  },
-  rowName: { fontWeight: 700, color: "#1f2937", fontSize: "14px" },
-  rowSub: { color: "#6b7280", fontSize: "13px", marginTop: "2px" },
-
-  statusSmall: {
-    padding: "4px 10px",
-    borderRadius: "999px",
-    fontSize: "12px",
-    fontWeight: 800,
-    border: "1px solid rgba(74, 124, 78, 0.2)",
-  },
-
-  selectBtn: {
-    background: "#ffffff",
-    border: "1px solid rgba(74, 124, 78, 0.2)",
-    borderRadius: "10px",
-    padding: "8px 14px",
-    cursor: "pointer",
-    fontWeight: 600,
-    color: "#2c5530",
-    marginRight: "8px",
-    transition: "all 0.2s ease",
-  },
-  selectBtnActive: {
-    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)",
-    border: "none",
-    borderRadius: "10px",
-    padding: "8px 14px",
-    cursor: "pointer",
-    fontWeight: 600,
-    color: "#ffffff",
-    marginRight: "8px",
-    boxShadow: "0 4px 12px rgba(74, 124, 78, 0.2)",
-  },
-
-  smallBtn: {
-    background: "#f8fafc",
-    border: "1px solid #e2e8f0",
-    borderRadius: "10px",
-    padding: "8px 10px",
-    cursor: "pointer",
-    fontWeight: 900,
-    color: "#0f172a",
-    marginRight: "8px",
-  },
-  smallBtnDanger: {
-    background: "#fff",
-    border: "1px solid #fecaca",
-    borderRadius: "10px",
-    padding: "8px 10px",
-    cursor: "pointer",
-    fontWeight: 900,
-    color: "#991b1b",
-  },
-
-  empty: { padding: "16px", color: "#64748b", textAlign: "center" },
-
-  btnPrimary: {
-    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)",
-    color: "#fff",
-    border: "none",
-    padding: "10px 12px",
-    borderRadius: "10px",
-    cursor: "pointer",
-    fontWeight: 900,
-    boxShadow: "0 4px 12px rgba(74, 124, 78, 0.2)",
-  },
-  btnSecondary: {
-    background: "rgba(255, 255, 255, 0.8)",
-    color: "#2c5530",
-    border: "1px solid rgba(74, 124, 78, 0.2)",
-    padding: "10px 16px",
-    borderRadius: "12px",
-    cursor: "pointer",
-    fontWeight: 600,
-    backdropFilter: "blur(4px)",
-  },
-  btnDanger: {
-    background: "#fff",
-    color: "#991b1b",
-    border: "1px solid #fecaca",
-    padding: "10px 12px",
-    borderRadius: "10px",
-    cursor: "pointer",
-    fontWeight: 900,
-  },
-
-  modalOverlay: {
-    position: "fixed",
-    inset: 0,
-    background: "rgba(15, 23, 42, 0.40)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    padding: "16px",
-    zIndex: 1000,
-  },
-  modal: {
-    width: "min(820px, 100%)",
-    background: "#fff",
-    borderRadius: "16px",
-    border: "1px solid rgba(74, 124, 78, 0.2)",
-    overflow: "hidden",
-    boxShadow: "0 10px 30px rgba(74, 124, 78, 0.18)",
-  },
-
-  removeModal: {
-    width: "min(620px, 100%)",
-    background: "#fff",
-    borderRadius: "16px",
-    border: "1px solid #e2e8f0",
-    overflow: "hidden",
-    boxShadow: "0 10px 30px rgba(15, 23, 42, 0.18)",
-  },
-
-  modalHeader: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    padding: "18px 24px",
-    borderBottom: "1px solid rgba(74, 124, 78, 0.1)",
-    background: "rgba(74, 124, 78, 0.04)",
-  },
-  modalTitle: { margin: 0, fontSize: "15px", fontWeight: 900, color: "#0f172a" },
-  iconBtn: {
-    background: "#ffffff",
-    border: "1px solid #e2e8f0",
-    borderRadius: "10px",
-    padding: "8px 10px",
-    cursor: "pointer",
-    fontWeight: 900,
-  },
-  modalBody: { padding: "16px" },
-
-  modalProfile: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: "16px",
-    padding: "16px",
-    borderRadius: "14px",
-    background: "rgba(74, 124, 78, 0.05)",
-    border: "1px solid rgba(74, 124, 78, 0.1)",
-    marginBottom: "20px",
-  },
-  modalName: { fontWeight: 700, color: "#2c5530", fontSize: "16px" },
-  modalSub: { marginTop: "2px", color: "#6b7280", fontSize: "13px", fontWeight: 500 },
-
-  removeWarnBox: {
-    background: "#fffbeb",
-    border: "1px solid #fde68a",
-    borderRadius: "12px",
-    padding: "12px",
-    color: "#92400e",
-    fontWeight: 700,
-    lineHeight: 1.5,
-  },
-
-  formGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-    gap: "12px",
-  },
-
-  label: {
-    display: "block",
-    fontSize: "11px",
-    fontWeight: 900,
-    color: "#64748b",
-    letterSpacing: "0.6px",
-    textTransform: "uppercase",
-    marginBottom: "6px",
-  },
-  input: {
-    width: "100%",
-    padding: "12px 14px",
-    borderRadius: "12px",
-    border: "1px solid rgba(74, 124, 78, 0.2)",
-    outline: "none",
-    background: "#fff",
-    transition: "border 0.2s ease",
-    fontSize: "14px",
-    color: "#2c5530",
-  },
-  select: {
-    width: "100%",
-    padding: "12px 14px",
-    borderRadius: "12px",
-    border: "1px solid rgba(74, 124, 78, 0.2)",
-    outline: "none",
-    background: "#fff",
-    fontSize: "14px",
-    color: "#2c5530",
-  },
-  readValue: {
-    padding: "12px 14px",
-    borderRadius: "12px",
-    border: "1px solid rgba(74, 124, 78, 0.1)",
-    background: "rgba(74, 124, 78, 0.04)",
-    color: "#2c5530",
-    fontWeight: 600,
-    fontSize: "14px",
-  },
-
-  textarea: {
-    width: "100%",
-    minHeight: "110px",
-    padding: "10px 12px",
-    borderRadius: "12px",
-    border: "1px solid #e2e8f0",
-    outline: "none",
-    resize: "vertical",
-    fontFamily: "inherit",
-    background: "#fff",
-  },
-
-  modalActions: {
-    padding: "18px 24px",
-    borderTop: "1px solid rgba(74, 124, 78, 0.1)",
-    background: "#ffffff",
-    display: "flex",
-    justifyContent: "flex-end",
-    gap: "12px",
-    flexWrap: "wrap",
-  },
-
-  // ✅ EPF toggle row
-  switchRow: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    padding: "12px 14px",
-    borderRadius: "12px",
-    border: "1px solid rgba(74, 124, 78, 0.2)",
-    background: "#fff",
-  },
-  switchText: { fontWeight: 700, color: "#2c5530" },
-
-  // ✅ Dropdown Styles
-  actionContainer: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "flex-end",
-    gap: "8px",
-  },
-  dropdownWrapper: {
-    position: "relative",
-  },
-  dotsBtn: {
-    background: "#f8fafc",
-    border: "1px solid #e2e8f0",
-    borderRadius: "10px",
-    width: "34px",
-    height: "34px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    cursor: "pointer",
-    fontWeight: 900,
-    color: "#0f172a",
-    fontSize: "18px",
-    transition: "all 0.2s",
-  },
-  dropdownMenu: {
-    position: "absolute",
-    top: "calc(100% + 5px)",
-    right: 0,
-    background: "#ffffff",
-    border: "1px solid rgba(74, 124, 78, 0.15)",
-    borderRadius: "12px",
-    padding: "6px",
-    boxShadow: "0 10px 25px rgba(0,0,0,0.1)",
-    zIndex: 100,
-    minWidth: "130px",
-    display: "flex",
-    flexDirection: "column",
-    gap: "2px",
-    animation: "fadeIn 0.2s ease-out",
-  },
-  dropdownItem: {
-    background: "none",
-    border: "none",
-    padding: "10px 14px",
-    borderRadius: "8px",
-    textAlign: "left",
-    fontSize: "13px",
-    fontWeight: 700,
-    color: "#334155",
-    cursor: "pointer",
-    transition: "all 0.1s",
-    width: "100%",
-  },
-  dropdownItemDanger: {
-    background: "none",
-    border: "none",
-    padding: "10px 14px",
-    borderRadius: "8px",
-    textAlign: "left",
-    fontSize: "13px",
-    fontWeight: 700,
-    color: "#991b1b",
-    cursor: "pointer",
-    transition: "all 0.1s",
-    width: "100%",
-  },
+  th: { padding: "16px 32px", textAlign: "left", fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", background: "#f8fafc" },
+  tr: { borderBottom: "1px solid #f1f5f9", cursor: "pointer" },
+  trSelected: { background: "rgba(44, 85, 48, 0.04)" },
+  td: { padding: "20px 32px", fontSize: "14px", color: "#475569" },
+  userCell: { display: "flex", alignItems: "center", gap: "14px" },
+  rowAvatar: { width: "40px", height: "40px", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "14px" },
+  userName: { fontWeight: 700, color: "#1e293b" },
+  userSub: { fontSize: "12px", color: "#94a3b8", marginTop: "2px" },
+  deptText: { fontWeight: 600 },
+  statusTag: { display: "inline-flex", padding: "6px 12px", borderRadius: "10px", fontSize: "12px", fontWeight: 800, textTransform: "uppercase" },
+  actionRow: { display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "12px" },
+  selectBtn: { padding: "8px 16px", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "13px", fontWeight: 700, cursor: "pointer" },
+  dotsBtn: { background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
+  dropdownWrapper: { position: "relative" },
+  dropdownMenu: { position: "absolute", top: "calc(100% + 8px)", right: 0, background: "#fff", borderRadius: "14px", border: "1px solid #e2e8f0", padding: "8px", minWidth: "160px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", zIndex: 100 },
+  dropdownItem: { display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "10px", border: "none", background: "none", width: "100%", textAlign: "left", fontSize: "13px", fontWeight: 600, color: "#475569", cursor: "pointer" },
+  dropdownItemDanger: { display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "10px", border: "none", background: "none", width: "100%", textAlign: "left", fontSize: "13px", fontWeight: 600, color: "#dc2626", cursor: "pointer" },
+  emptyTable: { padding: "64px 0", textAlign: "center" },
+  emptyTableContent: { display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", color: "#94a3b8" },
+  modalOverlay: { position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", zIndex: 1000 },
+  modal: { width: "min(840px, 100%)", background: "#fff", borderRadius: "28px", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", overflow: "hidden" },
+  modalHeader: { padding: "24px 32px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" },
+  modalTitle: { margin: 0, fontSize: "20px", fontWeight: 800, color: "#1e293b" },
+  iconBtn: { width: "36px", height: "36px", borderRadius: "10px", border: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
+  modalBody: { padding: "32px", maxHeight: "70vh", overflowY: "auto" },
+  modalProfile: { display: "flex", alignItems: "center", gap: "20px", padding: "24px", borderRadius: "20px", background: "#f8fafc", marginBottom: "24px", border: "1px solid #f1f5f9" },
+  bigAvatar: { width: "64px", height: "64px", borderRadius: "18px", background: "#2c5530", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", fontWeight: 800 },
+  modalName: { fontSize: "18px", fontWeight: 800, color: "#1e293b" },
+  modalSub: { fontSize: "14px", color: "#64748b", marginTop: "4px", fontWeight: 500 },
+  formGrid: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px" },
+  label: { display: "block", fontSize: "12px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px", marginLeft: "4px" },
+  input: { width: "100%", padding: "12px 16px", borderRadius: "14px", border: "1px solid #e2e8f0", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#fff" },
+  select: { width: "100%", padding: "12px 16px", borderRadius: "14px", border: "1px solid #e2e8f0", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#fff" },
+  readValue: { padding: "12px 16px", borderRadius: "14px", border: "1px solid #f1f5f9", background: "#f8fafc", color: "#475569", fontWeight: 600, fontSize: "14px" },
+  modalActions: { padding: "24px 32px", borderTop: "1px solid #f1f5f9", display: "flex", justifyContent: "flex-end", gap: "12px", background: "#f8fafc" },
+  removeModal: { width: "min(500px, 100%)", background: "#fff", borderRadius: "28px", overflow: "hidden" },
+  removeWarnBox: { padding: "16px", background: "#fef2f2", borderRadius: "16px", border: "1px solid #fee2e2", marginBottom: "20px", color: "#991b1b", fontWeight: 600 },
+  textarea: { width: "100%", minHeight: "100px", padding: "16px", borderRadius: "14px", border: "1px solid #e2e8f0", outline: "none", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#fff", resize: "none" },
 };
+
+export default EmployeeManagement;

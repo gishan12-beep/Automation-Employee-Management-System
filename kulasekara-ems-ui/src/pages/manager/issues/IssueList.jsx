@@ -361,12 +361,13 @@ const styles = {
   // KPI
   kpiGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 16, marginBottom: 24 },
   kpiCard: {
-    background: "rgba(255, 255, 255, 0.9)",
-    backdropFilter: "blur(12px)",
-    border: "1px solid rgba(255, 255, 255, 0.5)",
+    background: "var(--glass-bg)",
+    backdropFilter: "var(--glass-blur)",
+    WebkitBackdropFilter: "var(--glass-blur)",
+    border: "var(--glass-border)",
     borderRadius: 18,
     padding: 20,
-    boxShadow: "0 8px 25px rgba(0,0,0,0.03)",
+    boxShadow: "var(--glass-shadow)",
   },
   kpiLabel: { fontWeight: 700, color: "#6b7280", fontSize: 13, textTransform: "uppercase", marginBottom: 8 },
   kpiValue: { fontSize: "clamp(20px, 2.5vw, 24px)", fontWeight: 800, color: "#111827", marginBottom: 4 },
@@ -378,12 +379,13 @@ const styles = {
     gap: 16,
     flexWrap: "wrap",
     alignItems: "flex-end",
-    background: "rgba(255, 255, 255, 0.8)",
-    backdropFilter: "blur(12px)",
-    border: "1px solid rgba(255, 255, 255, 0.5)",
+    background: "var(--glass-bg)",
+    backdropFilter: "var(--glass-blur)",
+    WebkitBackdropFilter: "var(--glass-blur)",
+    border: "var(--glass-border)",
     borderRadius: 18,
     padding: 16,
-    boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
+    boxShadow: "var(--glass-shadow)",
     marginBottom: 24
   },
   selectGroup: { minWidth: 180, display: "grid", gap: 8 },
@@ -429,11 +431,12 @@ const styles = {
 
   // table
   tableCard: {
-    background: "rgba(255, 255, 255, 0.95)",
-    backdropFilter: "blur(12px)",
-    border: "1px solid rgba(255, 255, 255, 0.5)",
+    background: "var(--glass-bg)",
+    backdropFilter: "var(--glass-blur)",
+    WebkitBackdropFilter: "var(--glass-blur)",
+    border: "var(--glass-border)",
     borderRadius: 18,
-    boxShadow: "0 10px 30px rgba(0,0,0,0.03)",
+    boxShadow: "var(--glass-shadow)",
     overflow: "hidden",
     padding: 24
   },

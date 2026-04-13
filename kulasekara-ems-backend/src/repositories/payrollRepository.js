@@ -153,6 +153,28 @@ export const getDeductionsTotal = async (employeeId, month, year) => {
     return rows[0].total;
 };
 
+// ✅ Get individual incentives for an employee/month/year
+export const getIncentivesByEmployee = async (employeeId, month, year) => {
+    const [rows] = await pool.query(
+        `SELECT * FROM incentives 
+         WHERE employee_id = ? AND MONTH(date) = ? AND YEAR(date) = ? 
+         ORDER BY date DESC`,
+        [employeeId, month, year]
+    );
+    return rows;
+};
+
+// ✅ Get individual deductions for an employee/month/year
+export const getDeductionsByEmployee = async (employeeId, month, year) => {
+    const [rows] = await pool.query(
+        `SELECT * FROM deductions 
+         WHERE employee_id = ? AND MONTH(date) = ? AND YEAR(date) = ? 
+         ORDER BY date DESC`,
+        [employeeId, month, year]
+    );
+    return rows;
+};
+
 // ✅ Check existing payroll run - now returns the payroll_id
 export const checkExistingPayroll = async (employeeId, month, year) => {
     const [rows] = await pool.query(
@@ -284,6 +306,36 @@ export const insertPayrollAdjustment = async (adjustmentData, conn) => {
             adjustmentData.adjustment_type,
             adjustmentData.amount,
             adjustmentData.reason
+        ]
+    );
+};
+
+// ✅ Insert into incentives table
+export const insertIncentive = async (incentiveData, conn) => {
+    const db = conn || pool;
+    await db.query(
+        `INSERT INTO incentives (employee_id, date, amount, description) 
+         VALUES (?, ?, ?, ?)`,
+        [
+            incentiveData.employee_id,
+            incentiveData.date,
+            incentiveData.amount,
+            incentiveData.description
+        ]
+    );
+};
+
+// ✅ Insert into deductions table
+export const insertDeduction = async (deductionData, conn) => {
+    const db = conn || pool;
+    await db.query(
+        `INSERT INTO deductions (employee_id, date, amount, reason) 
+         VALUES (?, ?, ?, ?)`,
+        [
+            deductionData.employee_id,
+            deductionData.date,
+            deductionData.amount,
+            deductionData.reason
         ]
     );
 };

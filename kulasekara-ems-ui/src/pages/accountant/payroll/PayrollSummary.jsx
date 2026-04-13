@@ -1,7 +1,10 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
-import { getPayrollSummaryApi } from "../../../services/accountantPayrollService";
+import { 
+  getPayrollSummaryApi, 
+  processPayrollApi 
+} from "../../../services/accountantPayrollService";
 import { getEmployeesApi } from "../../../services/managerEmployeeService";
 
 const fmt = (n) =>
@@ -21,57 +24,77 @@ export default function PayrollSummary() {
   const [status, setStatus] = useState("ALL"); // ALL | SAVED | PENDING
   const [activeTab, setActiveTab] = useState("MONTHLY"); // "MONTHLY" | "OTHER"
   const [loading, setLoading] = useState(false);
+  const [processing, setProcessing] = useState(false);
   const [toast, setToast] = useState("");
+  const [toastType, setToastType] = useState("error"); // "error" | "success"
 
   const [rows, setRows] = useState([]); // payroll rows for the month
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
-      setToast("");
-      try {
-        const [res, allEmployees] = await Promise.all([
-          getPayrollSummaryApi({ month }),
-          getEmployeesApi()
-        ]);
-
-        const summaryData = res.rows || [];
-        const summaryMap = new Map();
-        summaryData.forEach(e => summaryMap.set(String(e.employeeId), e));
-
-        const mappedEmps = allEmployees
-          .filter(emp => emp.status === "ACTIVE")
-          .map(emp => {
-            const generatedRun = summaryMap.get(String(emp.employee_id));
-            if (generatedRun) {
-              return generatedRun; // It already has the mapped structure from accountantPayrollService
-            }
-            // If not generated yet
-            return {
-              payrollId: null,
-              employeeId: emp.employee_id,
-              name: `${emp.first_name || ""} ${emp.last_name || ""}`.trim(),
-              department: emp.department || "N/A",
-              basic_earnings: "-",
-              gross: "-",
-              deductions: "-",
-              net: "-",
-              isFinalized: false,
-              status: "PENDING",
-              salaryType: emp.salary_type || "MONTHLY"
-            };
-          });
-
-        setRows(mappedEmps);
-      } catch (e) {
-        console.error(e);
-        setToast("Failed to load payroll summary.");
-      } finally {
-        setLoading(false);
-      }
-    };
-    load();
+    loadSummary();
   }, [month]);
+
+  const loadSummary = async () => {
+    setLoading(true);
+    setToast("");
+    try {
+      const [res, allEmployees] = await Promise.all([
+        getPayrollSummaryApi({ month }),
+        getEmployeesApi()
+      ]);
+
+      const summaryData = res.rows || [];
+      const summaryMap = new Map();
+      summaryData.forEach(e => summaryMap.set(String(e.employeeId), e));
+
+      const mappedEmps = allEmployees
+        .filter(emp => emp.status === "ACTIVE")
+        .map(emp => {
+          const generatedRun = summaryMap.get(String(emp.employee_id));
+          if (generatedRun) {
+            return generatedRun;
+          }
+          return {
+            payrollId: null,
+            employeeId: emp.employee_id,
+            name: `${emp.first_name || ""} ${emp.last_name || ""}`.trim(),
+            department: emp.department || "N/A",
+            basic_earnings: "-",
+            gross: "-",
+            deductions: "-",
+            net: "-",
+            isFinalized: false,
+            status: "PENDING",
+            salaryType: emp.salary_type || "MONTHLY"
+          };
+        });
+
+      setRows(mappedEmps);
+    } catch (e) {
+      console.error(e);
+      setToast("Failed to load payroll summary.");
+      setToastType("error");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGenerateAll = async () => {
+    if (!window.confirm(`Generate payroll for all employees for ${month}?`)) return;
+    setProcessing(true);
+    setToast("");
+    try {
+      const res = await processPayrollApi({ month });
+      setToast(res.message || "Payroll generated successfully.");
+      setToastType("success");
+      await loadSummary();
+    } catch (err) {
+      setToast(err.response?.data?.message || "Generation failed.");
+      setToastType("error");
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   const filteredRows = useMemo(() => {
     const keyword = q.trim().toLowerCase();
@@ -134,14 +157,22 @@ export default function PayrollSummary() {
               <button className="btn" onClick={() => navigate("/accountant/dashboard")}>
                 ← Back
               </button>
-              <button className="btn btn-primary" onClick={() => navigate("/accountant/payroll")}>
+              <button 
+                className="btn btn-primary" 
+                onClick={handleGenerateAll}
+                disabled={processing || loading}
+              >
+                {processing ? "⏳ Generating..." : "⚡ Generate for All"}
+              </button>
+              <button className="btn" onClick={() => navigate("/accountant/payroll")}>
                 + Adjust Payroll
               </button>
             </div>
           </div>
 
           {toast ? (
-            <div className="alert">
+            <div className={`alert ${toastType === "success" ? "alert-success" : ""}`}>
+              {toastType === "success" ? "✅ " : "❌ "}
               {toast}
             </div>
           ) : null}
@@ -238,7 +269,7 @@ export default function PayrollSummary() {
                             className="btn btn-small"
                             onClick={() => openBuilder(r.employeeId)}
                             disabled={r.status === "PENDING"}
-                            title={r.status === "PENDING" ? "Manager must generate payroll first" : ""}
+                            title={r.status === "PENDING" ? "Use 'Generate for All' first" : ""}
                             style={{ opacity: r.status === "PENDING" ? 0.5 : 1 }}
                           >
                             {r.isFinalized ? "Edit / Rebuild" : "Adjust"}
@@ -266,6 +297,7 @@ export default function PayrollSummary() {
         .actions{display:flex;gap:12px;flex-wrap:wrap}
 
         .alert{background:#fee2e2;border:1px solid #fecaca;border-radius:12px;padding:16px;margin-bottom:24px;color:#991b1b;font-weight:600}
+        .alert-success{background:#dcfce7;border-color:#bbf7d0;color:#166534}
 
 
         .card{

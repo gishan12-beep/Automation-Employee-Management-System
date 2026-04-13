@@ -173,7 +173,7 @@ export default function ApplyLeave() {
           .emp-badge { padding: 10px 16px; border-radius: 12px; background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(8px); border: 1px solid rgba(255, 255, 255, 0.5); font-weight: 800; color: #2c5530; font-size: 13px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); }
 
           .kpi-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 24px; }
-          .card { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 20px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.03); }
+          .card { background: var(--glass-bg); backdrop-filter: var(--glass-blur); -webkit-backdrop-filter: var(--glass-blur); border: var(--glass-border); border-radius: 20px; padding: 24px; box-shadow: var(--glass-shadow); }
           .kpi-label { font-size: 11px; font-weight: 800; color: #6b7280; text-transform: uppercase; margin-bottom: 8px; }
           .kpi-value { font-size: 32px; font-weight: 900; color: #1f2937; margin-bottom: 4px; }
           .kpi-hint { font-size: 13px; color: #9ca3af; font-weight: 600; }

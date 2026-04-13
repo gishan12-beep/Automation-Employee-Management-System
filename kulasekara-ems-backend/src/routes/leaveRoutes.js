@@ -2,6 +2,7 @@ import express from "express";
 import {
     getLeaveRequests,
     updateLeaveRequestStatus,
+    fetchLeaveTypes,
 } from "../controllers/leaveController.js";
 import { requireAuth, requireRole } from "../middleware/authMiddleware.js";
 
@@ -17,5 +18,8 @@ router.patch(
     requireRole("MANAGER"),
     updateLeaveRequestStatus
 );
+
+// Manager gets leave types
+router.get("/leave-types", requireAuth, requireRole("MANAGER"), fetchLeaveTypes);
 
 export default router;

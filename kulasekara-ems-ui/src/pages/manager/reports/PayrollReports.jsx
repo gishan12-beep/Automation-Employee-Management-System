@@ -2,23 +2,37 @@
 import React, { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
+import { 
+  ArrowLeft, 
+  Download, 
+  Printer, 
+  Search, 
+  Filter, 
+  Calendar, 
+  Package, 
+  Wallet, 
+  TrendingUp, 
+  Clock, 
+  Gift, 
+  MinusCircle,
+  Eye,
+  FileText
+} from "lucide-react";
 
 const formatLKR = (n) =>
-  new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(Number(n || 0));
+  new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR", maximumFractionDigits: 0 }).format(Number(n || 0));
 
 export default function PayrollReports() {
   const [month, setMonth] = useState(getMonthKey(new Date()));
   const [department, setDepartment] = useState("ALL");
   const [q, setQ] = useState("");
+  const navigate = useNavigate();
 
   const data = useMemo(() => makeDummyPayroll(month), [month]);
-  const navigate = useNavigate();
 
   const rows = useMemo(() => {
     let list = [...data.employeePayroll];
-
     if (department !== "ALL") list = list.filter((r) => r.department === department);
-
     if (q.trim()) {
       const s = q.trim().toLowerCase();
       list = list.filter(
@@ -28,7 +42,6 @@ export default function PayrollReports() {
           r.salaryType.toLowerCase().includes(s)
       );
     }
-
     return list;
   }, [data, department, q]);
 
@@ -38,159 +51,147 @@ export default function PayrollReports() {
     const ot = rows.reduce((s, r) => s + r.overtimePay, 0);
     const incentives = rows.reduce((s, r) => s + r.incentives, 0);
     const deductions = rows.reduce((s, r) => s + r.deductions, 0);
-
     const paidCount = rows.filter((r) => r.status === "PAID").length;
     const pendingCount = rows.filter((r) => r.status !== "PAID").length;
-
     return { gross, net, ot, incentives, deductions, paidCount, pendingCount };
   }, [rows]);
 
   return (
     <AppLayout>
       <div style={styles.page}>
-        {/* Inline CSS Animations */}
         <style>{`
-          @keyframes float {
-            0%, 100% { transform: translateY(0px) translateX(0px); }
-            50% { transform: translateY(-20px) translateX(10px); }
-          }
-          @keyframes floatReverse {
-            0%, 100% { transform: translateY(0px) translateX(0px); }
-            50% { transform: translateY(20px) translateX(-10px); }
-          }
-          .floating-circle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
-          .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(76, 175, 80, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
-          .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(56, 142, 60, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
-          .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(67, 160, 71, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
+          .fade-in { animation: fadeIn 0.4s ease-out forwards; }
+          @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+          .table-row:hover { background: #f8fafc !important; }
         `}</style>
 
-        {/* Animated background elements */}
-        <div className="floating-circle fc-1"></div>
-        <div className="floating-circle fc-2"></div>
-        <div className="floating-circle fc-3"></div>
-
         <div style={styles.container}>
-          <div style={styles.headerRow}>
+          <button onClick={() => navigate(-1)} style={styles.btnBack}>
+            <ArrowLeft size={16} /> Back to Reports
+          </button>
+
+          <div style={styles.pageHeader}>
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                <button onClick={() => navigate(-1)} style={styles.backBtn}>
-                  ← Back
-                </button>
-                <h2 style={styles.heading}>Payroll Reports</h2>
-              </div>
-              <p style={styles.subText}>
-                Monthly payroll summary + employee-wise payroll listing .
-              </p>
+              <div style={styles.breadcrumb}>Manager / Financial Analysis</div>
+              <h1 style={styles.pageTitle}>Payroll Reports</h1>
+              <p style={styles.pageSubtitle}>Consolidated salary summaries and employee-wise payout data</p>
             </div>
 
             <div style={styles.actions}>
-              <button
-                style={styles.secondaryBtn}
-                onClick={() => alert("Export will be added ")}
-              >
-                Export (PDF/Excel)
+              <button style={styles.btnSecondary} onClick={() => alert("Coming soon...")}>
+                <Download size={16} /> Export
               </button>
-              <button style={styles.secondaryBtn} onClick={() => window.print()}>
-                Print
+              <button style={styles.btnSecondary} onClick={() => window.print()}>
+                <Printer size={16} /> Print
               </button>
             </div>
           </div>
 
           {/* Filters */}
-          <div style={styles.filters}>
+          <div style={styles.filters} className="fade-in">
             <div style={styles.filterItem}>
-              <div style={styles.label}>Month</div>
-              <input
-                type="month"
-                value={month}
-                onChange={(e) => setMonth(e.target.value)}
-                style={styles.input}
-              />
+              <label style={styles.label}>Select Month</label>
+              <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                <Calendar size={16} style={{ position: "absolute", left: "12px", color: "#94a3b8" }} />
+                <input
+                  type="month"
+                  value={month}
+                  onChange={(e) => setMonth(e.target.value)}
+                  style={{ ...styles.input, paddingLeft: "36px" }}
+                />
+              </div>
             </div>
 
             <div style={styles.filterItem}>
-              <div style={styles.label}>Department</div>
-              <select value={department} onChange={(e) => setDepartment(e.target.value)} style={styles.input}>
-                <option value="ALL">All</option>
-                <option value="Production">Production</option>
-                <option value="Packing">Packing</option>
-                <option value="peeling">Accounts</option>
-              </select>
+              <label style={styles.label}>Department</label>
+              <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                <Package size={16} style={{ position: "absolute", left: "12px", color: "#94a3b8" }} />
+                <select 
+                  value={department} 
+                  onChange={(e) => setDepartment(e.target.value)} 
+                  style={{ ...styles.input, paddingLeft: "36px", width: "200px", cursor: "pointer" }}
+                >
+                  <option value="ALL">All Departments</option>
+                  <option value="Production">Production</option>
+                  <option value="Packing">Packing</option>
+                  <option value="peeling">Accounts</option>
+                </select>
+              </div>
             </div>
 
             <div style={{ ...styles.filterItem, flex: 1 }}>
-              <div style={styles.label}>Search</div>
-              <input
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-                placeholder="Search by name, ID, salary type..."
-                style={styles.input}
-              />
+              <label style={styles.label}>Quick Search</label>
+              <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
+                <Search size={16} style={{ position: "absolute", left: "12px", color: "#94a3b8" }} />
+                <input
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                  placeholder="ID, Name, or Salary Type..."
+                  style={{ ...styles.input, paddingLeft: "36px", width: "100%" }}
+                />
+              </div>
             </div>
           </div>
 
-          {/* KPI cards */}
-          <div style={styles.kpiGrid}>
-            <KpiCard title="Total Gross Payroll" value={formatLKR(kpis.gross)} hint={`Month: ${month}`} />
-            <KpiCard title="Total Net Payroll" value={formatLKR(kpis.net)} hint="After deductions" />
-            <KpiCard title="Overtime Cost" value={formatLKR(kpis.ot)} hint="Total OT pay" />
-            <KpiCard title="Incentives" value={formatLKR(kpis.incentives)} hint="Bonuses/incentives" />
-            <KpiCard title="Deductions" value={formatLKR(kpis.deductions)} hint="Loans/No-pay etc." />
-            <KpiCard title="Payment Status" value={`${kpis.paidCount} Paid / ${kpis.pendingCount} Pending`} hint="Payroll state" />
+          {/* KPI grid */}
+          <div style={styles.kpiGrid} className="fade-in">
+            <KpiCard icon={<Wallet size={18} />} title="Total Gross" value={formatLKR(kpis.gross)} hint="Total before deductions" />
+            <KpiCard icon={<TrendingUp size={18} />} title="Total Net" value={formatLKR(kpis.net)} hint="After all deductions" />
+            <KpiCard icon={<Clock size={18} />} title="Overtime" value={formatLKR(kpis.ot)} hint="Accumulated OT costs" />
+            <KpiCard icon={<Gift size={18} />} title="Incentives" value={formatLKR(kpis.incentives)} hint="Performance bonuses" />
+            <KpiCard icon={<MinusCircle size={18} />} title="Deductions" value={formatLKR(kpis.deductions)} hint="Loans & adjustments" />
+            <KpiCard icon={<CheckCircle2 size={18} />} title="Completion" value={`${kpis.paidCount} Paid`} hint={`${kpis.pendingCount} Pending`} />
           </div>
 
           {/* Table */}
-          <div style={styles.panel}>
-            <div style={styles.panelTitle}>Employee-wise Payroll</div>
-            <div style={styles.tableWrap}>
+          <div style={styles.listCard} className="fade-in">
+            <div style={styles.listHeader}>
+              <h3 style={styles.listTitle}>Employee Payout Listing</h3>
+              <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 700 }}>{rows.length} records</div>
+            </div>
+            <div style={styles.tableWrapper}>
               <table style={styles.table}>
                 <thead>
                   <tr>
                     <th style={styles.th}>Employee</th>
-                    <th style={styles.th}>Department</th>
-                    <th style={styles.th}>Salary Type</th>
+                    <th style={styles.th}>Dept / Type</th>
                     <th style={styles.thRight}>Gross</th>
                     <th style={styles.thRight}>Deductions</th>
-                    <th style={styles.thRight}>Net</th>
+                    <th style={styles.thRight}>Net Pay</th>
                     <th style={styles.th}>Status</th>
-                    <th style={styles.th}>Actions</th>
+                    <th style={{ ...styles.th, textAlign: "right" }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((r) => (
-                    <tr key={r.id}>
+                    <tr key={r.id} className="table-row">
                       <td style={styles.td}>
-                        <div style={{ fontWeight: 900 }}>{r.employeeName}</div>
-                        <div style={{ opacity: 0.7, fontSize: 12 }}>{r.employeeId}</div>
+                        <div style={{ fontSize: "14px", fontWeight: 700, color: "#1e293b" }}>{r.employeeName}</div>
+                        <div style={{ fontSize: "11px", color: "#94a3b8" }}>{r.employeeId}</div>
                       </td>
-                      <td style={styles.td}>{r.department}</td>
-                      <td style={styles.td}>{r.salaryType}</td>
+                      <td style={styles.td}>
+                        <div style={{ fontWeight: 600 }}>{r.department}</div>
+                        <div style={{ fontSize: "11px", color: "#94a3b8" }}>{r.salaryType}</div>
+                      </td>
                       <td style={styles.tdRight}>{formatLKR(r.grossPay)}</td>
                       <td style={styles.tdRight}>{formatLKR(r.deductions)}</td>
-                      <td style={styles.tdRight}>{formatLKR(r.netPay)}</td>
+                      <td style={{ ...styles.tdRight, color: "#2c5530" }}>{formatLKR(r.netPay)}</td>
                       <td style={styles.td}>
                         {r.status === "PAID" ? (
-                          <span style={{ ...styles.badge, ...styles.badgePaid }}>Paid</span>
+                          <span style={styles.badgePaid}>Paid</span>
                         ) : (
-                          <span style={{ ...styles.badge, ...styles.badgePending }}>Pending</span>
+                          <span style={styles.badgePending}>Pending</span>
                         )}
                       </td>
-                      <td style={styles.td}>
-                        <button
-                          style={styles.smallBtn}
-                          onClick={() => alert("Hook this to Payroll Preview page later")}
-                        >
-                          View Slip
+                      <td style={{ ...styles.td, textAlign: "right" }}>
+                        <button style={styles.smallBtn} onClick={() => alert("Preview coming soon")}>
+                          <Eye size={12} /> View
                         </button>
                       </td>
                     </tr>
                   ))}
                   {rows.length === 0 && (
-                    <tr>
-                      <td style={styles.td} colSpan={8}>
-                        No payroll data for selected filters.
-                      </td>
-                    </tr>
+                    <tr><td colSpan={7} style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>No data found for selected filters</td></tr>
                   )}
                 </tbody>
               </table>
@@ -202,10 +203,13 @@ export default function PayrollReports() {
   );
 }
 
-function KpiCard({ title, value, hint }) {
+function KpiCard({ icon, title, value, hint }) {
   return (
     <div style={styles.kpiCard}>
-      <div style={styles.kpiTitle}>{title}</div>
+      <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "12px", color: "#94a3b8" }}>
+        {icon}
+        <div style={styles.kpiLabel}>{title}</div>
+      </div>
       <div style={styles.kpiValue}>{value}</div>
       <div style={styles.kpiHint}>{hint}</div>
     </div>
@@ -219,133 +223,43 @@ function getMonthKey(d) {
 }
 
 function makeDummyPayroll(monthKey) {
-  // later replace with API calls
   const employeePayroll = [
-    {
-      id: "PR1",
-      employeeId: "EMP001",
-      employeeName: "Kamal Perera",
-      department: "Production",
-      salaryType: "Daily Wage",
-      overtimePay: 3500,
-      incentives: 1000,
-      deductions: 500,
-      grossPay: 32000,
-      netPay: 31500,
-      status: "PENDING",
-    },
-    {
-      id: "PR2",
-      employeeId: "EMP002",
-      employeeName: "Nimal Silva",
-      department: "Accounts",
-      salaryType: "Monthly",
-      overtimePay: 0,
-      incentives: 2000,
-      deductions: 1500,
-      grossPay: 70000,
-      netPay: 68500,
-      status: "PAID",
-    },
-    {
-      id: "PR3",
-      employeeId: "EMP003",
-      employeeName: "Chamari Silva",
-      department: "Packing",
-      salaryType: "Daily Wage",
-      overtimePay: 2500,
-      incentives: 0,
-      deductions: 0,
-      grossPay: 30000,
-      netPay: 30000,
-      status: "PAID",
-    },
+    { id: "PR1", employeeId: "EMP001", employeeName: "Kamal Perera", department: "Production", salaryType: "Daily Wage", overtimePay: 3500, incentives: 1000, deductions: 500, grossPay: 32000, netPay: 31500, status: "PENDING" },
+    { id: "PR2", employeeId: "EMP002", employeeName: "Nimal Silva", department: "Accounts", salaryType: "Monthly", overtimePay: 0, incentives: 2000, deductions: 1500, grossPay: 70000, netPay: 68500, status: "PAID" },
+    { id: "PR3", employeeId: "EMP003", employeeName: "Chamari Silva", department: "Packing", salaryType: "Daily Wage", overtimePay: 2500, incentives: 0, deductions: 0, grossPay: 30000, netPay: 30000, status: "PAID" },
   ];
-
   return { month: monthKey, employeePayroll };
 }
 
 const styles = {
-  page: { position: "relative", minHeight: "100%", overflow: "hidden" },
-  container: { padding: 24, position: "relative", zIndex: 1 },
-  headerRow: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 24 },
-  heading: { margin: 0, fontSize: 26, fontWeight: 800, color: "#2c5530" },
-  subText: { marginTop: 6, marginBottom: 0, opacity: 0.8, color: "#4b5563" },
-
-  actions: { display: "flex", gap: 10, flexWrap: "wrap" },
-  secondaryBtn: {
-    background: "#fff",
-    border: "1px solid rgba(0,0,0,0.12)",
-    padding: "10px 16px",
-    borderRadius: 12,
-    cursor: "pointer",
-    fontWeight: 700,
-    color: "#374151",
-  },
-
-  filters: {
-    marginTop: 20,
-    display: "flex",
-    gap: 16,
-    flexWrap: "wrap",
-    background: "rgba(255, 255, 255, 0.8)",
-    backdropFilter: "blur(12px)",
-    border: "1px solid rgba(255, 255, 255, 0.5)",
-    borderRadius: 18,
-    padding: 16,
-    boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
-  },
-  filterItem: { minWidth: 200, display: "flex", flexDirection: "column", gap: 8 },
-  label: { fontWeight: 700, color: "#374151", fontSize: 13, textTransform: "uppercase" },
-  input: { border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 12px", outline: "none", fontSize: 14, background: "#f9fafb" },
-
-  kpiGrid: {
-    marginTop: 20,
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: 16,
-  },
-  kpiCard: {
-    background: "rgba(255, 255, 255, 0.9)",
-    backdropFilter: "blur(12px)",
-    border: "1px solid rgba(255, 255, 255, 0.5)",
-    borderRadius: 18,
-    padding: 20,
-    boxShadow: "0 8px 25px rgba(0,0,0,0.03)",
-  },
-  kpiTitle: { fontWeight: 700, color: "#6b7280", fontSize: 13, textTransform: "uppercase", marginBottom: 8 },
-  kpiValue: { fontSize: "18px", fontWeight: 700, color: "#111827", marginBottom: 4 },
-  kpiHint: { fontSize: 12, color: "#6b7280", fontWeight: 600 },
-
-  panel: {
-    marginTop: 24,
-    background: "rgba(255, 255, 255, 0.95)",
-    backdropFilter: "blur(12px)",
-    border: "1px solid rgba(255, 255, 255, 0.5)",
-    borderRadius: 18,
-    padding: 24,
-    boxShadow: "0 10px 30px rgba(0,0,0,0.03)",
-  },
-  panelTitle: { fontWeight: 800, marginBottom: 16, fontSize: 18, color: "#1f2937" },
-  tableWrap: { overflowX: "auto" },
-  table: { width: "100%", borderCollapse: "separate", borderSpacing: "0 4px" },
-  th: { textAlign: "left", padding: "12px 16px", fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" },
-  thRight: { textAlign: "right", padding: "12px 16px", fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" },
-  td: { padding: "12px 16px", background: "#f9fafb", fontSize: 14, color: "#374151", firstOfType: { borderRadius: "8px 0 0 8px" }, lastOfType: { borderRadius: "0 8px 8px 0" }, verticalAlign: "top" },
-  tdRight: { padding: "12px 16px", textAlign: "right", background: "#f9fafb", fontSize: 13, fontWeight: 600, color: "#111827", lastOfType: { borderRadius: "0 8px 8px 0" } },
-
-  badge: { padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, display: "inline-block" },
-  badgePaid: { background: "#DCFCE7", color: "#166534" },
-  badgePending: { background: "#FEF3C7", color: "#D97706" },
-
-  smallBtn: {
-    background: "#fff",
-    border: "1px solid #d1d5db",
-    padding: "6px 12px",
-    borderRadius: 8,
-    cursor: "pointer",
-    fontWeight: 600,
-    fontSize: 12,
-    color: "#374151",
-  },
+  page: { minHeight: "100%", background: "#f8fafc" },
+  container: { padding: "32px", maxWidth: "1600px", margin: "0 auto" },
+  breadcrumb: { fontSize: "11px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" },
+  pageHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "32px", gap: "24px", flexWrap: "wrap" },
+  pageTitle: { margin: 0, fontSize: "32px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.02em" },
+  pageSubtitle: { margin: "4px 0 0 0", fontSize: "15px", color: "#64748b", fontWeight: 500 },
+  btnBack: { background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", fontWeight: 700, color: "#64748b", marginBottom: "12px" },
+  actions: { display: "flex", gap: "12px" },
+  btnSecondary: { background: "#fff", color: "#475569", border: "1px solid #e2e8f0", padding: "10px 18px", borderRadius: "12px", cursor: "pointer", fontWeight: 700, fontSize: "13px", display: "flex", alignItems: "center", gap: "8px" },
+  filters: { display: "flex", gap: "16px", background: "#fff", borderRadius: "20px", padding: "20px", marginBottom: "32px", border: "1px solid #f1f5f9", boxShadow: "0 4px 20px rgba(0,0,0,0.02)", alignItems: "flex-end", flexWrap: "wrap" },
+  filterItem: { display: "flex", flexDirection: "column", gap: "8px" },
+  label: { fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" },
+  input: { height: "42px", borderRadius: "12px", border: "1px solid #e2e8f0", padding: "0 14px", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#f8fafc", outline: "none" },
+  kpiGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "16px", marginBottom: "32px" },
+  kpiCard: { background: "#fff", borderRadius: "20px", padding: "20px", border: "1px solid #f1f5f9", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" },
+  kpiLabel: { fontSize: "10px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" },
+  kpiValue: { fontSize: "18px", fontWeight: 900, color: "#1e293b" },
+  kpiHint: { fontSize: "11px", color: "#64748b", marginTop: "4px", fontWeight: 500 },
+  listCard: { background: "#fff", borderRadius: "24px", overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.03)", border: "1px solid #f1f5f9" },
+  listHeader: { padding: "20px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" },
+  listTitle: { margin: 0, fontSize: "16px", fontWeight: 800, color: "#1e293b" },
+  tableWrapper: { overflowX: "auto" },
+  table: { width: "100%", borderCollapse: "collapse" },
+  th: { padding: "14px 24px", textAlign: "left", fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", background: "#f8fafc", borderBottom: "1px solid #f1f5f9" },
+  thRight: { textAlign: "right", padding: "14px 24px", fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", background: "#f8fafc", borderBottom: "1px solid #f1f5f9" },
+  td: { padding: "16px 24px", fontSize: "14px", color: "#475569", borderBottom: "1px solid #f1f5f9" },
+  tdRight: { textAlign: "right", padding: "16px 24px", fontSize: "14px", fontWeight: 700, color: "#1e293b", borderBottom: "1px solid #f1f5f9" },
+  badgePaid: { padding: "4px 12px", borderRadius: "8px", fontSize: "11px", fontWeight: 800, background: "#ecfdf5", color: "#047857", textTransform: "uppercase" },
+  badgePending: { padding: "4px 12px", borderRadius: "8px", fontSize: "11px", fontWeight: 800, background: "#fff7ed", color: "#c2410c", textTransform: "uppercase" },
+  smallBtn: { display: "flex", alignItems: "center", gap: "6px", background: "#fff", border: "1px solid #e2e8f0", padding: "6px 14px", borderRadius: "8px", cursor: "pointer", fontWeight: 700, fontSize: "12px", color: "#2c5530" },
 };

@@ -258,6 +258,30 @@ export const getEmployees = async (req, res) => {
 };
 
 /**
+ * GET /api/manager/employees/settlement-ready
+ * - Fetch employees with status 'RESIGNED' or 'TERMINATED'
+ */
+export const getSettlementReadyEmployees = async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT e.*, 
+              s.salary_type, s.basic_rate, s.is_epf_eligible, s.effective_date,
+              d.name as department_name
+       FROM employee e
+       LEFT JOIN salary_configurations s ON e.employee_id = s.employee_id
+       LEFT JOIN departments d ON e.department_id = d.id
+       WHERE e.status IN ('RESIGNED', 'TERMINATED')
+       ORDER BY e.employee_id ASC`
+    );
+    console.log(`[BACKEND] getSettlementReadyEmployees: Found ${rows.length} employees`);
+    return res.json(rows);
+  } catch (err) {
+    console.error("Fetch settlement-ready employees failed:", err);
+    return res.status(500).json({ message: "Fetch failed", error: err.message });
+  }
+};
+
+/**
  * GET /api/manager/departments
  * - Fetch all departments
  */

@@ -4,6 +4,7 @@ import { Routes, Route, Navigate } from "react-router-dom";
 import Login from "../pages/auth/Login";
 import ForgotPassword from "../pages/auth/ForgotPassword";
 import ResetPassword from "../pages/auth/ResetPassword";
+import Unauthorized from "../pages/auth/Unauthorized";
 
 // Manager pages
 import ManagerDashboard from "../pages/manager/Dashboard";
@@ -84,12 +85,14 @@ function AppRoutes() {
       {/* ================= Accountant ================= */}
       <Route path="/accountant/dashboard" element={<PrivateRoute allowedRoles={["ACCOUNTANT"]}><AccountantDashboard /></PrivateRoute>} />
       <Route path="/accountant/payroll" element={<PrivateRoute allowedRoles={["ACCOUNTANT"]}><PayrollEditor /></PrivateRoute>} />
+      <Route path="/accountant/process-payroll" element={<PrivateRoute allowedRoles={["ACCOUNTANT"]}><ProcessPayroll /></PrivateRoute>} />
       <Route path="/accountant/payroll-summary" element={<PrivateRoute allowedRoles={["ACCOUNTANT"]}><PayrollSummary /></PrivateRoute>} />
       <Route path="/accountant/epf-etf" element={<PrivateRoute allowedRoles={["ACCOUNTANT"]}><EPFETF /></PrivateRoute>} />
       <Route path="/accountant/withdrawals" element={<PrivateRoute allowedRoles={["ACCOUNTANT"]}><BankWithdrawals /></PrivateRoute>} />
       <Route path="/accountant/payroll/:employeeId" element={<PrivateRoute allowedRoles={["ACCOUNTANT"]}><PayrollEditor /></PrivateRoute>} />
 
       {/* ================= Fallback ================= */}
+      <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

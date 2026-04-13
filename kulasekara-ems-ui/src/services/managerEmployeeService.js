@@ -35,3 +35,8 @@ export const getEmployeeAttendanceStatsApi = async (employee_id) => {
   const res = await api.get(`/manager/attendance/${employee_id}/stats`);
   return res.data;
 };
+
+export const getSettlementReadyEmployeesApi = async () => {
+  const res = await api.get("/manager/employees/settlement-ready");
+  return res.data;
+};

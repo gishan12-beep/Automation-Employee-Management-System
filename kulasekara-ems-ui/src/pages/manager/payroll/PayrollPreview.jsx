@@ -107,11 +107,12 @@ const styles = {
     overflow: "hidden", // Use flex col for better scrolling
     display: "flex",
     flexDirection: "column",
-    background: "rgba(255, 255, 255, 0.95)",
-    backdropFilter: "blur(20px)",
+    background: "var(--glass-bg)",
+    backdropFilter: "var(--glass-blur)",
+    WebkitBackdropFilter: "var(--glass-blur)",
     borderRadius: 24,
-    boxShadow: "0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.5)",
-    border: "1px solid rgba(255, 255, 255, 0.8)",
+    boxShadow: "var(--glass-shadow)",
+    border: "var(--glass-border)",
   },
   header: {
     padding: "20px 24px",
@@ -166,10 +167,10 @@ const styles = {
   grid2: { display: "grid", gap: 20, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" },
 
   panel: {
-    border: "1px solid rgba(0,0,0,0.06)",
+    border: "var(--glass-border)",
     borderRadius: 16,
     padding: 20,
-    background: "white",
+    background: "rgba(255, 255, 255, 0.3)",
     boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.05)",
   },
   panelTitle: { fontWeight: 700, marginBottom: 16, fontSize: 15, color: "#111827", display: "flex", alignItems: "center", gap: 8 },

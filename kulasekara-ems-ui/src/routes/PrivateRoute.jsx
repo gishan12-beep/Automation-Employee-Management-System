@@ -17,7 +17,7 @@ export default function PrivateRoute({ allowedRoles = [], children }) {
 
   // ❌ Role not allowed
   if (allowedRoles.length && !allowedRoles.map(r => r.toUpperCase()).includes(role)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/unauthorized" replace />;
   }
 
   // 🔒 Employee MUST change password
