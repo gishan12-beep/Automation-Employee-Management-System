@@ -137,9 +137,17 @@ export default function PayrollSummary() {
       });
   }, [rows, q, status, activeTab]);
 
+  const kpis = useMemo(() => {
+    // Only count rows that actually have payroll data (gross is not "-")
+    const activeRows = rows.filter(r => r.payrollId && r.gross !== "-");
+    const count = rows.length;
+    const gross = activeRows.reduce((s, r) => s + Number(r.gross || 0), 0);
+    const deductions = activeRows.reduce((s, r) => s + Number(r.deductions || 0), 0);
+    const net = activeRows.reduce((s, r) => s + Number(r.net || 0), 0);
+    return { count, gross, deductions, net };
+  }, [rows]);
 
   const openBuilder = (employeeId) => {
-    // If you added /accountant/payroll/:employeeId route, you can go directly
     navigate(`/accountant/payroll/${employeeId}?month=${month}`);
   };
 
@@ -166,10 +174,10 @@ export default function PayrollSummary() {
         <div className="floating-circle fc-3"></div>
 
         <div className="page-container">
-          <div className="page-header">
+          <div className="header">
             <div>
-              <h1 className="page-title">Payroll Summary</h1>
-              <p className="page-subtitle">Monthly overview of payroll totals and employee payouts.</p>
+              <h1 className="title">Payroll Summary</h1>
+              <p className="sub">Monthly overview of payroll totals and employee payouts.</p>
             </div>
             <div className="actions">
               <button className="btn" onClick={() => navigate("/accountant/dashboard")}>
@@ -189,15 +197,46 @@ export default function PayrollSummary() {
           </div>
 
           {toast ? (
-            <div className={`alert ${toastType === "success" ? "alert-success" : ""}`}>
+            <div className={`alert ${toastType === "success" ? "" : "alert-error"}`}>
               {toastType === "success" ? "✅ " : "❌ "}
               {toast}
             </div>
           ) : null}
 
+          {/* KPIs */}
+          <div className="kpiGrid">
+            <div className="kpi">
+              <div className="kpiLabel">Total Employees</div>
+              <div className="kpiValue">{kpis.count}</div>
+              <div className="kpiHint muted">Active in system</div>
+            </div>
+
+            <div className="kpi">
+              <div className="kpiLabel">Total Gross</div>
+              <div className="kpiValue">LKR {fmt(kpis.gross)}</div>
+              <div className="kpiHint muted">Before deductions</div>
+            </div>
+
+            <div className="kpi">
+              <div className="kpiLabel">Total Deductions</div>
+              <div className="kpiValue">LKR {fmt(kpis.deductions)}</div>
+              <div className="kpiHint muted">Taxes, EPF, etc.</div>
+            </div>
+
+            <div className="kpi">
+              <div className="kpiLabel">Total Net Pay</div>
+              <div className="kpiValue">LKR {fmt(kpis.net)}</div>
+              <div className="kpiHint muted">Final payout amount</div>
+            </div>
+          </div>
+
+          <div className="kpiTotal">
+            <div className="kpiTotalLabel">Total Payroll Liability</div>
+            <div className="kpiTotalValue">LKR {fmt(kpis.net)}</div>
+          </div>
 
           <div className="card">
-            <div className="card-title">🔍 Quick Filters</div>
+            <div className="cardTitle">🔍 Quick Filters</div>
 
             <div className="filters">
               <div className="field">
@@ -226,17 +265,17 @@ export default function PayrollSummary() {
           </div>
 
           <div className="card">
-            <div className="card-title" style={{ marginBottom: 16 }}>Payroll List</div>
+            <div className="cardTitle">Payroll List</div>
 
-            <div style={inlineStyles.tabContainer}>
+            <div className="tabContainer">
               <button
-                style={{ ...inlineStyles.tabBtn, ...(activeTab === "MONTHLY" ? inlineStyles.activeTab : {}) }}
+                className={`tabBtn ${activeTab === "MONTHLY" ? "active" : ""}`}
                 onClick={() => setActiveTab("MONTHLY")}
               >
                 Monthly Employees
               </button>
               <button
-                style={{ ...inlineStyles.tabBtn, ...(activeTab === "OTHER" ? inlineStyles.activeTab : {}) }}
+                className={`tabBtn ${activeTab === "OTHER" ? "active" : ""}`}
                 onClick={() => setActiveTab("OTHER")}
               >
                 Daily / Other Employees
@@ -316,145 +355,133 @@ export default function PayrollSummary() {
       </div>
 
       <style>{`
-        .page-wrapper{position:relative;min-height:100%;overflow:hidden;background:#f8fafc}
+        .page-wrapper{position:relative;min-height:100%;overflow:hidden}
         .page-container{padding:24px;position:relative;z-index:1}
         
-        .page-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:24px}
-        .page-title{font-size:28px;font-weight:900;color:#2c5530;margin:0}
-        .page-subtitle{margin:6px 0 0;color:#4b5563;font-size:15px}
+        .header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:24px}
+        .title{font-size:28px;font-weight:900;color:#2c5530;margin:0}
+        .sub{margin:6px 0 0;color:#4b5563;font-size:15px}
+        .actions{display:flex;gap:10px;flex-wrap:wrap}
+
+        .alert{background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:12px;margin-bottom:20px;color:#166534;font-weight:600}
+        .alert-error{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+
+        .kpiGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:16px}
+        @media (max-width: 1100px){.kpiGrid{grid-template-columns:repeat(2,1fr)}}
+        @media (max-width: 600px){.kpiGrid{grid-template-columns:1fr}}
         
-        .actions{display:flex;gap:12px;flex-wrap:wrap}
-
-        .alert{background:#fee2e2;border:1px solid #fecaca;border-radius:12px;padding:16px;margin-bottom:24px;color:#991b1b;font-weight:600}
-        .alert-success{background:#dcfce7;border-color:#bbf7d0;color:#166534}
-
+        .kpi{
+          background:rgba(255, 255, 255, 0.9);
+          backdrop-filter:blur(12px);
+          border:1px solid rgba(255, 255, 255, 0.5);
+          border-radius:18px;
+          padding:20px;
+          box-shadow:0 8px 25px rgba(0,0,0,0.03);
+        }
+        .kpiLabel{color:#6b7280;font-size:12px;font-weight:800;text-transform:uppercase}
+        .kpiValue{margin-top:8px;font-weight:900;font-size:20px;color:#1f2937}
+        .kpiHint{margin-top:6px;font-size:12px;color:#9ca3af;font-style:italic}
+        
+        .kpiTotal{
+          background:linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%);
+          color:#fff;
+          border-radius:18px;
+          padding:20px;
+          display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;
+          box-shadow:0 8px 25px rgba(74, 124, 78, 0.25);
+        }
+        .kpiTotalLabel{font-weight:800;opacity:0.95;text-transform:uppercase;font-size:14px}
+        .kpiTotalValue{font-weight:900;font-size:24px}
 
         .card{
           background:rgba(255, 255, 255, 0.9);
           backdrop-filter:blur(12px);
           border:1px solid rgba(255, 255, 255, 0.5);
-          border-radius:20px;
+          border-radius:18px;
           padding:24px;
-          margin-bottom:24px;
-          box-shadow:0 10px 40px rgba(0,0,0,0.04);
-        }
-        
-        .card-title{
-          font-weight:800;
           margin-bottom:20px;
-          color:#1e293b;
-          text-transform:uppercase;
-          font-size:15px;
-          border-bottom:1px solid rgba(0,0,0,0.05);
-          padding-bottom:12px;
+          box-shadow:0 8px 25px rgba(0,0,0,0.03);
         }
+        .cardTitle{font-size:16px;font-weight:800;margin:0 0 20px 0;color:#1f2937;text-transform:uppercase;border-bottom:1px solid rgba(0,0,0,0.05);padding-bottom:12px}
 
-        .filters{display:grid;grid-template-columns:1fr 2fr 1fr;gap:20px}
+        .filters{display:grid;grid-template-columns:1fr 2fr 1fr;gap:16px}
         @media (max-width: 900px){.filters{grid-template-columns:1fr}}
-        .field label{display:block;font-size:12px;color:#64748b;margin-bottom:8px;font-weight:800;text-transform:uppercase}
-        .field input,.field select{
+        .field label{display:block;font-size:12px;color:#6b7280;margin-bottom:6px;font-weight:800;text-transform:uppercase}
+        .field input, .field select{
           width:100%;
-          border:1px solid #e2e8f0;
+          padding:10px 14px;
           border-radius:12px;
-          padding:12px 16px;
+          border:1px solid #e5e7eb;
+          background:#fff;
           font-size:14px;
           font-weight:600;
           outline:none;
-          background:#fcfdfe;
           transition:all 0.2s;
         }
-        .field input:focus, .field select:focus{border-color:#4a7c4e;box-shadow:0 0 0 4px rgba(74, 124, 78, 0.1)}
+        .field input:focus, .field select:focus{border-color:#4a7c4e;box-shadow:0 0 0 3px rgba(74, 124, 78, 0.1)}
 
-        .tableWrap{
-          overflow:visible;
-          border-radius:16px;
-          border:1px solid #e2e8f0;
-          background:#fff;
-        }
-        .table{width:100%;border-collapse:separate;border-spacing:0;min-width:1000px}
-        thead th{
-          background:#f8fafc;
-          color:#64748b;
-          text-align:left;
-          font-size:12px;
-          font-weight:800;
-          padding:16px;
-          border-bottom:2px solid #f1f5f9;
-          text-transform:uppercase;
-          letter-spacing:0.025em;
-        }
-        tbody tr:hover td{background:#f1f5f9}
-        tbody td{padding:16px 20px;border-bottom:1px solid #f1f5f9;color:#334155;font-size:14px;transition:background 0.2s}
+        .tabContainer{display:flex;gap:10px;margin-bottom:20px;border-bottom:1px solid rgba(0,0,0,0.05);padding-bottom:10px}
+        .tabBtn{background:none;border:none;padding:8px 16px;font-size:14px;font-weight:700;color:#9ca3af;cursor:pointer;transition:all 0.2s;border-radius:8px}
+        .tabBtn:hover{background:rgba(74, 124, 78, 0.05);color:#4a7c4e}
+        .tabBtn.active{background:#ecfdf5;color:#047857;border:1px solid #a7f3d0}
+
+        .tableWrap{overflow:hidden;border-radius:12px;border:1px solid #e5e7eb}
+        .table{width:100%;border-collapse:separate;border-spacing:0;min-width:1000px;background:#fff}
+        thead th{background:#f9fafb;color:#6b7280;text-align:left;font-size:12px;font-weight:800;padding:14px 16px;border-bottom:1px solid #e5e7eb;text-transform:uppercase}
+        tbody td{padding:14px 16px;border-bottom:1px solid #f3f4f6;color:#374151;font-size:14px;font-weight:500}
+        tbody tr:last-child td{border-bottom:none}
+        
         .right{text-align:right}
-        .strong{font-weight:900;color:#0f172a}
-        .muted{color:#94a3b8}
+        .strong{font-weight:800;color:#111827}
+        .muted{color:#9ca3af}
 
-        .empCell{display:flex;align-items:center;gap:14px}
+        .empCell{display:flex;align-items:center;gap:12px}
         .avatar{
-          width:42px;height:42px;border-radius:14px;
-          background:linear-gradient(135deg, #4a7c4e 0%, #2c5530 100%);
+          width:38px;height:38px;border-radius:50%;
+          background:linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%);
           color:#fff;display:flex;align-items:center;justify-content:center;
-          font-weight:900;font-size:18px;box-shadow:0 8px 20px rgba(44,85,48,0.2)
+          font-weight:800;font-size:14px;
+          box-shadow:0 4px 10px rgba(74, 124, 78, 0.2)
         }
-        .empName{font-weight:800;color:#1e293b}
-        .empId{font-size:11px;font-weight:700;margin-top:2px}
+        .empName{font-weight:700;color:#1f2937}
+        .empId{font-size:12px;color:#6b7280}
 
         .badge{
           display:inline-flex;align-items:center;gap:6px;
-          font-size:11px;font-weight:900;padding:6px 14px;border-radius:99px;
-          border:1px solid transparent;text-transform:uppercase;letter-spacing:0.05em;
+          font-size:11px;font-weight:800;padding:4px 10px;border-radius:999px;
+          text-transform:uppercase;letter-spacing:0.5px;
         }
-        .badge.ok{background:#dcfce7;border-color:#bbf7d0;color:#166534}
-        .badge.warn{background:#fef9c3;border-color:#fef08a;color:#854d0e}
+        .badge.ok{background:#ecfdf5;color:#047857;border:1px solid #a7f3d0}
+        .badge.warn{background:#fffbeb;color:#b45309;border:1px solid #fde68a}
+        .badge.info{background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe}
 
         .btn{
           padding:10px 20px;
           border-radius:12px;
-          font-weight:800;
-          font-size:13px;
+          font-weight:700;
+          font-size:14px;
           cursor:pointer;
           border:none;
           transition:all 0.2s;
-          background:#f1f5f9;
-          color:#475569;
+          background:#fff;
+          border:1px solid #d1d5db;
+          color:#374151;
         }
-        .btn:hover:not(:disabled){transform:translateY(-1px);background:#e2e8f0;color:#1e293b}
+        .btn:hover:not(:disabled){background:#f9fafb;transform:translateY(-1px)}
         .btn:disabled{opacity:0.6;cursor:not-allowed}
         
         .btn-primary{
-          background:linear-gradient(135deg, #4a7c4e 0%, #2c5530 100%);
+          background:linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%);
           color:#fff;
-          box-shadow:0 4px 12px rgba(44,85,48,0.2);
+          border:none;
+          box-shadow:0 4px 12px rgba(74, 124, 78, 0.2);
         }
-        .btn-primary:hover:not(:disabled){box-shadow:0 8px 20px rgba(44,85,48,0.3)}
-        
-        .btn-small{padding:8px 14px;font-size:11px;text-transform:uppercase;letter-spacing:0.025em}
+        .btn-primary:hover:not(:disabled){transform:translateY(-1px);box-shadow:0 6px 16px rgba(74, 124, 78, 0.3)}
+
+        .btn-small{padding:8px 14px;font-size:12px}
       `}</style>
     </AppLayout>
   );
 }
 
-const inlineStyles = {
-  tabContainer: {
-    display: "flex",
-    gap: 10,
-    marginBottom: 16,
-    borderBottom: "2px solid #e5e7eb",
-    paddingBottom: 4,
-  },
-  tabBtn: {
-    background: "transparent",
-    border: "none",
-    padding: "8px 16px",
-    fontSize: 14,
-    fontWeight: 700,
-    color: "#6b7280",
-    cursor: "pointer",
-    position: "relative",
-    bottom: -1,
-  },
-  activeTab: {
-    color: "#2c5530",
-    borderBottom: "3px solid #2c5530",
-  },
-};
+
