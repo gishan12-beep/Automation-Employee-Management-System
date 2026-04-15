@@ -27,7 +27,7 @@ export default function PayrollPreview({ employee, payroll, onClose }) {
 
         <div style={styles.tabs}>
             <button
-              style={{ ...styles.tab, styles: styles.tabActive }}
+              style={{ ...styles.tab, ...styles.tabActive }}
             >
               Breakdown
             </button>
@@ -159,9 +159,10 @@ const styles = {
     transition: "all 0.2s",
   },
   tabActive: {
-    background: "#e8f5e9", // Light green
-    color: "#2c5530", // Dark green
+    background: "#4a7c4e",
+    color: "#fff",
     fontWeight: 700,
+    boxShadow: "0 4px 10px rgba(74, 124, 78, 0.2)",
   },
   body: { padding: 24, overflowY: "auto" },
   grid2: { display: "grid", gap: 20, gridTemplateColumns: "repeat(2, minmax(0, 1fr))" },

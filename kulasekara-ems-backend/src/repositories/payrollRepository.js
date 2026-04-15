@@ -192,11 +192,12 @@ export const updatePayrollRunFull = async (payrollData, conn) => {
         `UPDATE payroll_runs SET 
           basic_earnings = ?, total_ot_pay = ?, total_incentives = ?, total_deductions = ?,
           gross_pay = ?, epf_employee = ?, epf_employer = ?, etf_employer = ?, net_pay = ?,
-          generated_at = NOW()
+          status = ?, generated_at = NOW()
          WHERE payroll_id = ?`,
         [
             payrollData.basic_earnings, payrollData.total_ot_pay, payrollData.total_incentives, payrollData.total_deductions,
             payrollData.gross_pay, payrollData.epf_employee, payrollData.epf_employer, payrollData.etf_employer, payrollData.net_pay,
+            payrollData.status || 'PENDING',
             payrollData.payroll_id
         ]
     );
@@ -229,12 +230,13 @@ export const insertPayrollRun = async (payrollData, conn) => {
           employee_id, month, year, 
           basic_earnings, total_ot_pay, total_incentives, total_deductions,
           gross_pay, epf_employee, epf_employer, etf_employer, net_pay,
-          generated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+          status, generated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
         [
             payrollData.employee_id, payrollData.month, payrollData.year,
             payrollData.basic_earnings, payrollData.total_ot_pay, payrollData.total_incentives, payrollData.total_deductions,
-            payrollData.gross_pay, payrollData.epf_employee, payrollData.epf_employer, payrollData.etf_employer, payrollData.net_pay
+            payrollData.gross_pay, payrollData.epf_employee, payrollData.epf_employer, payrollData.etf_employer, payrollData.net_pay,
+            payrollData.status || 'PENDING'
         ]
     );
     return result.insertId;
@@ -339,3 +341,10 @@ export const insertDeduction = async (deductionData, conn) => {
         ]
     );
 };
+export async function updatePayrollStatus(payrollId, status, conn) {
+    const db = conn || pool;
+    await db.query(
+        `UPDATE payroll_runs SET status = ? WHERE payroll_id = ?`,
+        [status, payrollId]
+    );
+}

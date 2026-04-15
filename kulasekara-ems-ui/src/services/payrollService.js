@@ -72,30 +72,19 @@ export const getPayrollSummaryApi = async (month, year) => {
   }));
 };
 
+// Manager/Accountant: Get Itemized Details
+export const getPayrollDetailsApi = async (month, year, employeeId) => {
+  const res = await api.get(`/payroll/details/${month}/${year}/${employeeId}`);
+  return res.data;
+};
+
 export const getMyFinalSettlementPreview = async () => {
-  // UI mock. Later calculate using attendance + payroll + deductions
-  return {
-    employeeId: "EMP001",
-    employeeName: "Kamal Perera",
-    designation: "Machine Operator",
-    lastWorkingDate: "2025-10-31",
-    settlementDate: "2025-11-05",
-
-    earnings: {
-      unpaidSalary: 25000,
-      overtime: 4500,
-      leaveEncashment: 12000,
-      bonus: 5000,
-      other: 0,
-    },
-
-    deductions: {
-      advances: 6000,
-      loans: 0,
-      epfEtfAdjustments: 1500,
-      other: 0,
-    },
-
-    notes: "This is a preview. Final values will be confirmed by Manager/Accountant.",
-  };
+  try {
+    const res = await api.get("/employee/settlement/preview");
+    return res.data;
+  } catch (err) {
+    if (err.response?.status === 404) return null;
+    console.error("Error fetching settlement preview:", err);
+    throw err;
+  }
 };

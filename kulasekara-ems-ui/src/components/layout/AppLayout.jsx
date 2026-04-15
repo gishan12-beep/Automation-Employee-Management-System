@@ -16,10 +16,10 @@ function AppLayout({ children }) {
       { name: "Employees", path: "/manager/employees" },
       { name: "Attendance", path: "/manager/attendance" },
       { name: "Payroll", path: "/manager/payroll" },
-      { name: "Reports", path: "/manager/reports" },
       { name: "Issues", path: "/manager/issues" },
       { name: "Leave Requests", path: "/manager/leaves" },
       { name: "Final Settlement", path: "/manager/settlement" },
+      { name: "Reports", path: "/manager/reports" },
       { name: "Settings", path: "/manager/settings" },
     ],
     EMPLOYEE: [

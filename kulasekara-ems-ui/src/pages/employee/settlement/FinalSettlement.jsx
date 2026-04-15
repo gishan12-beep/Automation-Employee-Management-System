@@ -1,13 +1,28 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import { getMyFinalSettlementPreview } from "../../../services/payrollService";
 import { formatLKR } from "../../../utils/salaryUtils";
 
 export default function FinalSettlement() {
-  const [data, setData] = useState(null);
+  const [data, setData] = useState(undefined);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+
+  const fetchSettlement = async () => {
+    setLoading(true);
+    try {
+      const res = await getMyFinalSettlementPreview();
+      setData(res);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    getMyFinalSettlementPreview().then(setData);
+    fetchSettlement();
   }, []);
 
   const totals = useMemo(() => {
@@ -38,12 +53,35 @@ export default function FinalSettlement() {
 
   return (
     <AppLayout>
-      <div style={{ maxWidth: 1100, margin: "0 auto" }}>
-        <h2 style={{ marginTop: 0 }}>Final Settlement</h2>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: 20 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 20 }}>
+          <h2 style={{ margin: 0 }}>Final Settlement</h2>
+          <button 
+            style={{ ...secondaryBtn, width: "auto", marginTop: 0 }} 
+            onClick={() => navigate("/employee/dashboard")}
+          >
+            Back to Dashboard
+          </button>
+        </div>
 
-        {!data ? (
+        {loading ? (
           <div style={card}>
             <p>Loading settlement preview...</p>
+          </div>
+        ) : !data ? (
+          <div style={{ ...card, textAlign: "center", padding: "60px 20px" }}>
+            <div style={{ fontSize: 40, marginBottom: 16 }}>📄</div>
+            <h3>No Settlement Record Found</h3>
+            <p style={muted}>
+              You do not have a finalized settlement record at this moment. 
+              If you have resigned or been terminated, your settlement will be processed by the HR/Accounts department soon.
+            </p>
+            <button 
+              style={{ ...secondaryBtn, width: "auto", padding: "10px 20px", marginTop: 20 }} 
+              onClick={fetchSettlement}
+            >
+              Refresh Status
+            </button>
           </div>
         ) : (
           <>
@@ -58,69 +96,72 @@ export default function FinalSettlement() {
 
                 <div style={{ textAlign: "right" }}>
                   <p style={muted}><b>Last Working Date</b></p>
-                  <p style={big}>{data.lastWorkingDate}</p>
-                  <p style={muted}><b>Settlement Date</b>: {data.settlementDate}</p>
+                  <p style={big}>{new Date(data.lastWorkingDate).toLocaleDateString()}</p>
+                  <p style={muted}><b>Settlement Date</b>: {new Date(data.settlementDate).toLocaleDateString()}</p>
+                  <p style={{ ...muted, color: data.status === 'PAID' ? '#16a34a' : '#ea580c', fontWeight: 800 }}>
+                    Status: {data.status}
+                  </p>
                 </div>
               </div>
 
-              <div style={{ marginTop: 12, background: "#f8fafc", border: "1px solid #e2e8f0", padding: 12, borderRadius: 10 }}>
-                <p style={{ margin: 0, color: "#475569" }}>{data.notes}</p>
-              </div>
+              {data.notes && (
+                <div style={{ marginTop: 12, background: "#f8fafc", border: "1px solid #e2e8f0", padding: 12, borderRadius: 10 }}>
+                  <p style={{ margin: 0, color: "#475569", fontSize: 13 }}>{data.notes}</p>
+                </div>
+              )}
             </div>
 
             {/* Breakdown */}
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+            <div style={{ display: "grid", gridTemplateColumns: isCompact() ? "1fr" : "1fr 1fr", gap: 12 }}>
               {/* Earnings */}
               <div style={card}>
-                <h3 style={{ marginTop: 0 }}>Earnings</h3>
+                <h3 style={{ marginTop: 0, fontSize: 16 }}>Earnings</h3>
                 <Row label="Unpaid Salary" value={formatLKR(data.earnings.unpaidSalary)} />
                 <Row label="Overtime" value={formatLKR(data.earnings.overtime)} />
                 <Row label="Leave Encashment" value={formatLKR(data.earnings.leaveEncashment)} />
-                <Row label="Bonus / Incentive" value={formatLKR(data.earnings.bonus)} />
+                <Row label="Bonus / Gratuity" value={formatLKR(data.earnings.bonus)} />
                 <Row label="Other" value={formatLKR(data.earnings.other)} />
-                <hr />
+                <hr style={{ opacity: 0.1 }} />
                 <Row strong label="Total Earnings" value={formatLKR(totals.totalEarnings)} />
               </div>
 
               {/* Deductions */}
               <div style={card}>
-                <h3 style={{ marginTop: 0 }}>Deductions</h3>
+                <h3 style={{ marginTop: 0, fontSize: 16 }}>Deductions</h3>
                 <Row label="Advances" value={formatLKR(data.deductions.advances)} />
                 <Row label="Loans" value={formatLKR(data.deductions.loans)} />
                 <Row label="EPF/ETF Adjustments" value={formatLKR(data.deductions.epfEtfAdjustments)} />
-                <Row label="Other" value={formatLKR(data.deductions.other)} />
-                <hr />
+                <Row label="Other Deductions" value={formatLKR(data.deductions.other)} />
+                <hr style={{ opacity: 0.1 }} />
                 <Row strong label="Total Deductions" value={formatLKR(totals.totalDeductions)} />
               </div>
             </div>
 
             {/* Net Settlement */}
-            <div style={{ ...card, marginTop: 12 }}>
-              <h2 style={{ marginTop: 0, textAlign: "right" }}>
-                Net Settlement: {formatLKR(totals.netSettlement)}
+            <div style={{ ...card, marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+              <h2 style={{ margin: 0 }}>
+                Net Settlement: {formatLKR(data.netSettlement || totals.netSettlement)}
               </h2>
 
-              <button
-                type="button"
-                onClick={() => alert("Request settlement confirmation will be added later")}
-                style={primaryBtn}
-              >
-                Request Confirmation
-              </button>
-
-              <button
-                type="button"
-                onClick={() => alert("Download PDF will be added later")}
-                style={secondaryBtn}
-              >
-                Download PDF
-              </button>
+              <div style={{ display: "flex", gap: 10 }}>
+                <button
+                  type="button"
+                  onClick={() => alert("PDF Feature coming soon")}
+                  style={{ ...secondaryBtn, width: "auto", marginTop: 0 }}
+                >
+                  Download PDF
+                </button>
+              </div>
             </div>
           </>
         )}
       </div>
     </AppLayout>
   );
+}
+
+function isCompact() {
+    return window.innerWidth < 800;
 }
 
 function Row({ label, value, strong }) {

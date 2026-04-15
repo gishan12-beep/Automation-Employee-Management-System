@@ -3,7 +3,8 @@ import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import { 
   getPayrollSummaryApi, 
-  processPayrollApi 
+  processPayrollApi,
+  approvePayrollApi
 } from "../../../services/accountantPayrollService";
 import { getEmployeesApi } from "../../../services/managerEmployeeService";
 
@@ -90,6 +91,23 @@ export default function PayrollSummary() {
       await loadSummary();
     } catch (err) {
       setToast(err.response?.data?.message || "Generation failed.");
+      setToastType("error");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const handleApprove = async (payrollId) => {
+    if (!window.confirm("Approve this payroll run? This will make it visible to the Manager.")) return;
+    setProcessing(true);
+    setToast("");
+    try {
+      const res = await approvePayrollApi(payrollId);
+      setToast(res.message || "Payroll approved.");
+      setToastType("success");
+      await loadSummary();
+    } catch (err) {
+      setToast(err.response?.data?.message || "Approval failed.");
       setToastType("error");
     } finally {
       setProcessing(false);
@@ -260,20 +278,31 @@ export default function PayrollSummary() {
                         <td className="right">{fmt(r.deductions)}</td>
                         <td className="right strong">{fmt(r.net)}</td>
                         <td>
-                          <span className={`badge ${r.status === "GENERATED" || r.status === "FINALIZED" ? "ok" : "warn"}`}>
-                            {r.status === "PENDING" ? "Pending" : r.status === "FINALIZED" ? "Finalized" : "Generated"}
+                          <span className={`badge ${r.status === "READY" ? "ok" : r.status === "PENDING" ? "warn" : "info"}`}>
+                            {r.status === "PENDING" ? "Pending Approval" : r.status === "READY" ? "Ready" : r.status}
                           </span>
                         </td>
                         <td className="right">
-                          <button
-                            className="btn btn-small"
-                            onClick={() => openBuilder(r.employeeId)}
-                            disabled={r.status === "PENDING"}
-                            title={r.status === "PENDING" ? "Use 'Generate for All' first" : ""}
-                            style={{ opacity: r.status === "PENDING" ? 0.5 : 1 }}
-                          >
-                            {r.isFinalized ? "Edit / Rebuild" : "Adjust"}
-                          </button>
+                          <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                            {r.status === "PENDING" && (
+                              <button
+                                className="btn btn-small btn-primary"
+                                onClick={() => handleApprove(r.payrollId)}
+                                disabled={processing}
+                              >
+                                {processing ? "..." : "Approve"}
+                              </button>
+                            )}
+                            <button
+                              className="btn btn-small"
+                              onClick={() => openBuilder(r.employeeId)}
+                              disabled={r.status === "NO_RECORD" || r.status === "NOT_READY"} // Adjusted for potential missing records
+                              title={r.payrollId ? "" : "Generate payroll first"}
+                              style={{ opacity: r.payrollId ? 1 : 0.5 }}
+                            >
+                              {r.isFinalized ? "Edit / Rebuild" : "Adjust"}
+                            </button>
+                          </div>
                         </td>
                       </tr>
                     ))}

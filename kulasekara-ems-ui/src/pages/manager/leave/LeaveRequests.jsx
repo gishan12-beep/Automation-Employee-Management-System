@@ -183,12 +183,30 @@ export default function LeaveRequests() {
     <AppLayout>
       <div style={styles.page}>
         <style>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-20px) translateX(10px); }
+          }
+          @keyframes floatReverse {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(20px) translateX(-10px); }
+          }
+          .floating-circle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
+          .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
+          .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
+          .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
+          
           .fade-in { animation: fadeIn 0.4s ease-out forwards; }
           .drawer-anim { animation: slideIn 0.3s cubic-bezier(0.16, 1, 0.3, 1); }
           @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
           @keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
-          .table-row:hover { background: #f8fafc !important; }
+          .table-row { transition: all 0.2s; cursor: pointer; }
+          .table-row:hover { background: rgba(248, 250, 252, 0.8) !important; }
         `}</style>
+        
+        <div className="floating-circle fc-1"></div>
+        <div className="floating-circle fc-2"></div>
+        <div className="floating-circle fc-3"></div>
 
         <div style={styles.container}>
           {/* Header */}
@@ -378,45 +396,126 @@ export default function LeaveRequests() {
 }
 
 const styles = {
-  page: { minHeight: "100%", background: "#f8fafc" },
-  container: { padding: "32px", maxWidth: "1400px", margin: "0 auto", position: "relative", zIndex: 1 },
-  breadcrumb: { fontSize: "11px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" },
+  page: { minHeight: "100%", position: "relative", overflow: "hidden" },
+  container: { padding: "32px", maxWidth: "1600px", margin: "0 auto", position: "relative", zIndex: 1 },
+  breadcrumb: { fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" },
   pageHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "32px", gap: "24px", flexWrap: "wrap" },
-  pageTitle: { margin: 0, fontSize: "32px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.02em" },
+  pageTitle: { margin: 0, fontSize: "32px", fontWeight: 900, color: "#2c5530", letterSpacing: "-0.02em" },
   pageSubtitle: { margin: "4px 0 0 0", fontSize: "15px", color: "#64748b", fontWeight: 500 },
   headerActions: { display: "flex", gap: "10px" },
-  btnSecondary: { display: "flex", alignItems: "center", gap: "8px", background: "#fff", color: "#475569", border: "1px solid #e2e8f0", padding: "10px 18px", borderRadius: "12px", cursor: "pointer", fontWeight: 700, fontSize: "13px" },
-  kpiGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "24px", marginBottom: "32px" },
-  kpiCard: { background: "#fff", borderRadius: "24px", padding: "24px", border: "1px solid #f1f5f9", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" },
+  btnSecondary: { 
+    display: "flex", 
+    alignItems: "center", 
+    gap: "8px", 
+    background: "#fff", 
+    color: "#475569", 
+    border: "1px solid #e2e8f0", 
+    padding: "10px 18px", 
+    borderRadius: "12px", 
+    cursor: "pointer", 
+    fontWeight: 700, 
+    fontSize: "13px",
+    transition: "all 0.2s"
+  },
+  kpiGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "20px", marginBottom: "32px" },
+  kpiCard: { 
+    background: "rgba(255, 255, 255, 0.9)", 
+    backdropFilter: "blur(12px)",
+    borderRadius: "24px", 
+    padding: "24px", 
+    border: "1px solid rgba(255, 255, 255, 0.5)", 
+    boxShadow: "0 8px 30px rgba(0,0,0,0.02)" 
+  },
   kpiLabel: { fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "12px" },
   kpiValue: { fontSize: "32px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.03em" },
   kpiHint: { fontSize: "12px", color: "#94a3b8", marginTop: "4px", fontWeight: 500 },
-  filterCard: { background: "#fff", borderRadius: "24px", padding: "24px", border: "1px solid #f1f5f9", boxShadow: "0 4px 20px rgba(0,0,0,0.02)", marginBottom: "32px" },
+  filterCard: { 
+    background: "rgba(255, 255, 255, 0.8)", 
+    backdropFilter: "blur(12px)", 
+    borderRadius: "24px", 
+    padding: "24px", 
+    border: "1px solid rgba(255, 255, 255, 0.5)", 
+    boxShadow: "0 4px 20px rgba(0,0,0,0.02)", 
+    marginBottom: "32px" 
+  },
   filterGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "20px", alignItems: "flex-end" },
   label: { display: "block", fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" },
   fieldValue: { fontSize: "15px", fontWeight: 700, color: "#1e293b" },
-  input: { width: "100%", padding: "12px 14px", borderRadius: "12px", border: "1px solid #e2e8f0", outline: "none", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#f8fafc" },
-  select: { width: "100%", padding: "12px 14px", borderRadius: "12px", border: "1px solid #e2e8f0", outline: "none", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#f8fafc", cursor: "pointer" },
-  listCard: { background: "#fff", borderRadius: "24px", overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.03)", border: "1px solid #f1f5f9" },
-  listHeader: { padding: "24px 32px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" },
+  input: { 
+    width: "100%", 
+    padding: "12px 14px", 
+    borderRadius: "12px", 
+    border: "1px solid #e2e8f0", 
+    outline: "none", 
+    fontSize: "14px", 
+    fontWeight: 600, 
+    color: "#1e293b", 
+    background: "#fff",
+    transition: "border-color 0.2s"
+  },
+  select: { 
+    width: "100%", 
+    padding: "12px 14px", 
+    borderRadius: "12px", 
+    border: "1px solid #e2e8f0", 
+    outline: "none", 
+    fontSize: "14px", 
+    fontWeight: 600, 
+    color: "#1e293b", 
+    background: "#fff", 
+    cursor: "pointer",
+    transition: "border-color 0.2s"
+  },
+  listCard: { 
+    background: "rgba(255, 255, 255, 0.9)", 
+    backdropFilter: "blur(12px)", 
+    borderRadius: "24px", 
+    overflow: "hidden", 
+    boxShadow: "0 10px 30px rgba(0,0,0,0.03)", 
+    border: "1px solid rgba(255, 255, 255, 0.5)" 
+  },
+  listHeader: { padding: "24px 32px", borderBottom: "1px solid rgba(0,0,0,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center" },
   listTitle: { margin: 0, fontSize: "18px", fontWeight: 800, color: "#1e293b" },
   tableWrapper: { overflowX: "auto" },
-  table: { width: "100%", borderCollapse: "collapse" },
-  th: { padding: "16px 32px", textAlign: "left", fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", background: "#f8fafc" },
-  td: { padding: "20px 32px", fontSize: "14px", color: "#475569", borderBottom: "1px solid #f1f5f9" },
-  mono: { fontFamily: "monospace", fontWeight: 700, color: "#2c5530" },
-  btnAction: { display: "flex", alignItems: "center", gap: "8px", padding: "8px 16px", borderRadius: "10px", border: "1px solid #e2e8f0", background: "#fff", color: "#2c5530", fontWeight: 700, fontSize: "13px", cursor: "pointer", transition: "all 0.2s" },
-  iconBtn: { width: "40px", height: "40px", borderRadius: "12px", border: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" },
-  drawerOverlay: { position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(8px)", display: "flex", justifyContent: "flex-end", zIndex: 1000 },
-  drawerContent: { width: "min(560px, 100%)", background: "#fff", height: "100%", display: "flex", flexDirection: "column" },
-  drawerHeader: { padding: "32px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "flex-start" },
+  table: { width: "100%", borderCollapse: "separate", borderSpacing: 0 },
+  th: { 
+    padding: "16px 32px", 
+    textAlign: "left", 
+    fontSize: "11px", 
+    fontWeight: 800, 
+    color: "#94a3b8", 
+    textTransform: "uppercase", 
+    letterSpacing: "0.1em", 
+    background: "rgba(248, 250, 252, 0.5)",
+    borderBottom: "1px solid rgba(0,0,0,0.05)"
+  },
+  td: { padding: "20px 32px", fontSize: "14px", color: "#475569", borderBottom: "1px solid rgba(0,0,0,0.05)" },
+  mono: { fontFamily: "monospace", fontWeight: 700, color: "#4a7c4e" },
+  btnAction: { 
+    display: "flex", 
+    alignItems: "center", 
+    gap: "8px", 
+    padding: "8px 16px", 
+    borderRadius: "10px", 
+    border: "1px solid #e2e8f0", 
+    background: "#fff", 
+    color: "#4a7c4e", 
+    fontWeight: 700, 
+    fontSize: "13px", 
+    cursor: "pointer", 
+    transition: "all 0.2s" 
+  },
+  iconBtn: { width: "40px", height: "40px", borderRadius: "12px", border: "1px solid #e2e8f0", background: "rgba(248, 250, 252, 0.5)", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" },
+  drawerOverlay: { position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.3)", backdropFilter: "blur(8px)", display: "flex", justifyContent: "flex-end", zIndex: 1000 },
+  drawerContent: { width: "min(560px, 100%)", background: "#fff", height: "100%", display: "flex", flexDirection: "column", boxShadow: "-10px 0 50px rgba(0,0,0,0.1)" },
+  drawerHeader: { padding: "32px", borderBottom: "1px solid rgba(0,0,0,0.05)", display: "flex", justifyContent: "space-between", alignItems: "flex-start" },
   drawerTitle: { margin: 0, fontSize: "22px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.02em" },
   drawerSubtitle: { margin: "4px 0 0", fontSize: "14px", color: "#64748b", fontWeight: 500 },
   drawerBody: { padding: "32px", flex: 1, overflowY: "auto" },
-  drawerSection: { background: "#f8fafc", borderRadius: "20px", padding: "24px", border: "1px solid #f1f5f9", marginBottom: "24px" },
+  drawerSection: { background: "rgba(248, 250, 252, 0.5)", borderRadius: "20px", padding: "24px", border: "1px solid rgba(0,0,0,0.05)", marginBottom: "24px" },
   fieldGroup: { marginBottom: "12px" },
   reasonBox: { padding: "16px", background: "#fff", borderRadius: "12px", border: "1px solid #e2e8f0", fontSize: "14px", color: "#475569", fontWeight: 500, lineHeight: "1.6" },
   textarea: { width: "100%", padding: "16px", borderRadius: "12px", border: "1px solid #e2e8f0", outline: "none", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#fff", resize: "none" },
-  btnApprove: { flex: 1, height: "48px", background: "#2c5530", color: "#fff", border: "none", borderRadius: "12px", fontWeight: 700, fontSize: "14px", cursor: "pointer", boxShadow: "0 4px 12px rgba(44, 85, 48, 0.2)" },
-  btnReject: { flex: 1, height: "48px", background: "#dc2626", color: "#fff", border: "none", borderRadius: "12px", fontWeight: 700, fontSize: "14px", cursor: "pointer", boxShadow: "0 4px 12px rgba(220, 38, 38, 0.2)" },
+  btnApprove: { flex: 1, height: "48px", background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)", color: "#fff", border: "none", borderRadius: "12px", fontWeight: 700, fontSize: "14px", cursor: "pointer", boxShadow: "0 8px 20px rgba(74, 124, 78, 0.25)" },
+  btnReject: { flex: 1, height: "48px", background: "linear-gradient(135deg, #dc2626 0%, #ef4444 100%)", color: "#fff", border: "none", borderRadius: "12px", fontWeight: 700, fontSize: "14px", cursor: "pointer", boxShadow: "0 8px 20px rgba(220, 38, 38, 0.25)" },
 };

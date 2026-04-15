@@ -1,6 +1,8 @@
 // src/pages/employee/EmployeeDashboard.jsx
 import React, { useMemo, useState, useEffect } from "react";
+import { useNavigate, Link } from "react-router-dom";
 import AppLayout from "../../components/layout/AppLayout";
+import { getEmployeeDashboardStats, getRecentActivity as getRecentActivityApi } from "../../services/dashboardService";
 
 function safeParse(json) {
   try {
@@ -44,29 +46,51 @@ function buildDisplayName(userObj) {
   return "";
 }
 
+
 export default function EmployeeDashboard() {
-  // ✅ live values (employee session)
-  // should be EMPLOYEE
   const employeeIdLS = localStorage.getItem("employee_id") || localStorage.getItem("employeeId") || "";
-
   const [user, setUser] = useState(() => safeParse(localStorage.getItem("user") || "null"));
+  
+  const [stats, setStats] = useState({
+    presentDays: 0,
+    absentDays: 0,
+    otHours: 0,
+    thisMonthNet: 0,
+    pendingIssues: 0,
+    approvedLeaves: 0,
+  });
 
-  // keep in sync after login
+  const [recentAttendance, setRecentAttendance] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const u = safeParse(localStorage.getItem("user") || "null");
     if (u) setUser(u);
+    fetchData();
   }, []);
 
-  // ✅ Build employee object (NO MOCK NAME)
+  const fetchData = async () => {
+    setLoading(true);
+    try {
+      const statsData = await getEmployeeDashboardStats();
+      const activityData = await getRecentActivityApi();
+      setStats(statsData);
+      setRecentAttendance(activityData.attendance || []);
+      setNotifications(activityData.notifications || []);
+    } catch (err) {
+      console.error("Dashboard data fetch failed:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const employee = useMemo(() => {
     const displayName = buildDisplayName(user);
-
-    // If user data is wrong (example: still contains "manager"), force a safe fallback
     const finalName = displayName || "Employee";
-
     return {
       name: finalName,
-      role: "Employee", // always employee label in employee dashboard
+      role: "Employee",
       department: user?.department || user?.departmentName || user?.department_name || "—",
       employeeId: user?.employeeId || user?.employee_id || user?.employeeID || employeeIdLS || "—",
       email: user?.email || "—",
@@ -75,37 +99,11 @@ export default function EmployeeDashboard() {
     };
   }, [user, employeeIdLS]);
 
-  // UI-only stats (replace with API later)
-  const stats = useMemo(
-    () => ({
-      presentDays: Number(user?.presentDays ?? 18),
-      absentDays: Number(user?.absentDays ?? 2),
-      otHours: Number(user?.otHours ?? 14.5),
-      thisMonthNet: Number(user?.thisMonthNet ?? 86500),
-      pendingIssues: Number(user?.pendingIssues ?? 1),
-      approvedLeaves: Number(user?.approvedLeaves ?? 2),
-    }),
-    [user]
-  );
-
-  const [recentAttendance] = useState([
-    { date: "2026-01-22", in: "08:05", out: "16:10", status: "Present" },
-    { date: "2026-01-21", in: "08:11", out: "16:02", status: "Present" },
-    { date: "2026-01-20", in: "—", out: "—", status: "Leave" },
-    { date: "2026-01-19", in: "08:02", out: "16:25", status: "Present" },
-  ]);
-
-  const [notifications] = useState([
-    { title: "Payslip Ready", desc: "Your January payslip is available to download.", time: "2h ago" },
-    { title: "Attendance Updated", desc: "Your check-in/out has been confirmed.", time: "Yesterday" },
-    { title: "Policy Update", desc: "New OT policy effective from next month.", time: "3 days ago" },
-  ]);
-
   const quickActions = [
-    { title: "View Attendance", subtitle: "Check daily in/out", icon: "🕒" },
-    { title: "View Payslips", subtitle: "Download salary slips", icon: "📄" },
-    { title: "Request Leave", subtitle: "Send leave request", icon: "📝" },
-    { title: "Raise Issue", subtitle: "Report a concern", icon: "⚠️" },
+    { title: "View Attendance", subtitle: "Check daily in/out", icon: "🕒", path: "/employee/attendance" },
+    { title: "View Payslips", subtitle: "Download salary slips", icon: "📄", path: "/employee/payroll/salary-history" },
+    { title: "Request Leave", subtitle: "Send leave request", icon: "📝", path: "/employee/leave" },
+    { title: "Raise Issue", subtitle: "Report a concern", icon: "⚠️", path: "/employee/issues/status" },
   ];
 
   const [isCompact, setIsCompact] = useState(() => window.innerWidth < 1200);
@@ -290,10 +288,12 @@ export default function EmployeeDashboard() {
         background: "rgba(74, 124, 78, 0.05)",
       };
       if (type === "ok")
-        return { ...base, background: "rgba(74, 124, 78, 0.15)", borderColor: "rgba(74, 124, 78, 0.3)" };
+        return { ...base, background: "rgba(74, 124, 78, 0.15)", borderColor: "rgba(74, 124, 78, 0.3)", color: "#166534" };
       if (type === "info")
-        return { ...base, background: "rgba(59,130,246,0.10)", borderColor: "rgba(59,130,246,0.25)" };
-      return { ...base, background: "rgba(245,158,11,0.10)", borderColor: "rgba(245,158,11,0.25)" };
+        return { ...base, background: "rgba(59,130,246,0.10)", borderColor: "rgba(59,130,246,0.25)", color: "#1e40af" };
+      if (type === "error")
+        return { ...base, background: "rgba(239,68,68,0.10)", borderColor: "rgba(239,68,68,0.25)", color: "#991b1b" };
+      return { ...base, background: "rgba(245,158,11,0.10)", borderColor: "rgba(245,158,11,0.25)", color: "#92400e" };
     },
 
     profile: { display: "flex", flexDirection: "column", gap: 10 },
@@ -327,13 +327,52 @@ export default function EmployeeDashboard() {
   };
 
   const pillType = (status) => {
-    if (status === "Present") return "ok";
-    if (status === "Leave") return "info";
-    return "warn";
+    const s = String(status || "").toUpperCase();
+    if (s === "PRESENT") return "ok";
+    if (s === "LATE" || s === "HALF_DAY") return "warn";
+    if (s === "ABSENT") return "error";
+    return "info";
   };
 
-  // ✅ (Optional) quick visible debug, remove later
-  // console.log("role:", role, "user:", user);
+  const formatDate = (dateStr) => {
+    if (!dateStr) return "—";
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString("en-GB", { day: "2-digit", month: "short", year: "numeric" });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const formatTimeAgo = (timeStr) => {
+    if (!timeStr) return "—";
+    try {
+      const d = new Date(timeStr);
+      const now = new Date();
+      const diffMs = now - d;
+      const diffMins = Math.floor(diffMs / 60000);
+      const diffHrs = Math.floor(diffMins / 60);
+      const diffDays = Math.floor(diffHrs / 24);
+
+      if (diffMins < 60) return `${diffMins}m ago`;
+      if (diffHrs < 24) return `${diffHrs}h ago`;
+      return `${diffDays}d ago`;
+    } catch {
+      return timeStr;
+    }
+  };
+
+  const navigate = useNavigate();
+
+  if (loading) {
+    return (
+      <AppLayout>
+        <div style={{ padding: 40, textAlign: "center", fontWeight: 800, color: "#4a7c4e" }}>
+          Loading Dashboard Data...
+        </div>
+      </AppLayout>
+    );
+  }
 
   return (
     <AppLayout>
@@ -386,27 +425,31 @@ export default function EmployeeDashboard() {
 
             <div style={styles.actions}>
               {quickActions.map((a) => (
-                <button
+                <Link
                   key={a.title}
-                  type="button"
-                  style={styles.actionBtn}
-                  onClick={() => alert(`UI only: ${a.title}`)}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "rgba(74, 124, 78, 0.08)";
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "rgba(74, 124, 78, 0.04)";
-                    e.currentTarget.style.transform = "translateY(0)";
-                  }}
+                  to={a.path || "#"}
+                  style={{ textDecoration: "none", width: "100%" }}
                 >
-                  <div style={styles.actionIcon}>{a.icon}</div>
-                  <div style={styles.actionText}>
-                    <div style={styles.actionTitle}>{a.title}</div>
-                    <div style={styles.actionSub}>{a.subtitle}</div>
-                  </div>
-                  <div style={styles.actionArrow}>›</div>
-                </button>
+                  <button
+                    type="button"
+                    style={styles.actionBtn}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "rgba(74, 124, 78, 0.08)";
+                      e.currentTarget.style.transform = "translateY(-1px)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "rgba(74, 124, 78, 0.04)";
+                      e.currentTarget.style.transform = "translateY(0)";
+                    }}
+                  >
+                    <div style={styles.actionIcon}>{a.icon}</div>
+                    <div style={styles.actionText}>
+                      <div style={styles.actionTitle}>{a.title}</div>
+                      <div style={styles.actionSub}>{a.subtitle}</div>
+                    </div>
+                    <div style={styles.actionArrow}>›</div>
+                  </button>
+                </Link>
               ))}
             </div>
           </div>
@@ -414,9 +457,11 @@ export default function EmployeeDashboard() {
           <div style={styles.card}>
             <div style={styles.cardHead}>
               <h2 style={styles.cardTitle}>Recent Attendance</h2>
-              <button style={styles.linkBtn} type="button" onClick={() => alert("UI only: View all attendance")}>
-                View all
-              </button>
+              <Link to="/employee/attendance" style={{ textDecoration: "none" }}>
+                <button style={styles.linkBtn} type="button">
+                  View all
+                </button>
+              </Link>
             </div>
 
             <div style={styles.tableWrap}>
@@ -424,17 +469,17 @@ export default function EmployeeDashboard() {
                 <thead>
                   <tr>
                     <th style={styles.th}>Date</th>
-                    <th style={styles.th}>Check In</th>
-                    <th style={styles.th}>Check Out</th>
+                    <th style={styles.th}>In</th>
+                    <th style={styles.th}>Out</th>
                     <th style={styles.th}>Status</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {recentAttendance.map((r) => (
-                    <tr key={r.date}>
-                      <td style={styles.td}>{r.date}</td>
-                      <td style={styles.td}>{r.in}</td>
-                      <td style={styles.td}>{r.out}</td>
+                  {recentAttendance.map((r, idx) => (
+                    <tr key={r.date || idx}>
+                      <td style={styles.td}>{formatDate(r.date)}</td>
+                      <td style={styles.td}>{r.in || "—"}</td>
+                      <td style={styles.td}>{r.out || "—"}</td>
                       <td style={styles.td}>
                         <span style={styles.pill(pillType(r.status))}>{r.status}</span>
                       </td>
@@ -468,15 +513,17 @@ export default function EmployeeDashboard() {
             </div>
 
             <div style={styles.notiList}>
-              {notifications.map((n) => (
-                <div key={n.title} style={styles.noti}>
+              {notifications.length === 0 ? (
+                <div style={{ fontSize: 13, opacity: 0.6, textAlign: "center", padding: 20 }}>No recent notifications</div>
+              ) : notifications.map((n, idx) => (
+                <div key={idx} style={styles.noti}>
                   <div style={styles.dot} />
                   <div style={styles.notiBody}>
                     <div style={styles.notiTitleRow}>
                       <div style={styles.notiTitle}>{n.title}</div>
-                      <div style={styles.notiTime}>{n.time}</div>
+                      <div style={styles.notiTime}>{formatTimeAgo(n.time)}</div>
                     </div>
-                    <div style={styles.notiDesc}>{n.desc}</div>
+                    <div style={styles.notiDesc}>{n.desc || n.description}</div>
                   </div>
                 </div>
               ))}

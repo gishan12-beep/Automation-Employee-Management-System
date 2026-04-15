@@ -55,10 +55,28 @@ export default function AttendanceReports() {
     <AppLayout>
       <div style={styles.page}>
         <style>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-20px) translateX(10px); }
+          }
+          @keyframes floatReverse {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(20px) translateX(-10px); }
+          }
+          .floating-circle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
+          .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
+          .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
+          .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
+          
           .fade-in { animation: fadeIn 0.4s ease-out forwards; }
           @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-          .table-row:hover { background: #f8fafc !important; }
+          .table-row { transition: all 0.2s; cursor: pointer; }
+          .table-row:hover { background: rgba(248, 250, 252, 0.8) !important; }
         `}</style>
+        
+        <div className="floating-circle fc-1"></div>
+        <div className="floating-circle fc-2"></div>
+        <div className="floating-circle fc-3"></div>
 
         <div style={styles.container}>
           <button onClick={() => navigate(-1)} style={styles.btnBack}>
@@ -73,11 +91,8 @@ export default function AttendanceReports() {
             </div>
 
             <div style={styles.actions}>
-              <button style={styles.btnSecondary} onClick={() => alert("Coming soon...")}>
-                <Download size={16} /> Export
-              </button>
-              <button style={styles.btnSecondary} onClick={() => window.print()}>
-                <Printer size={16} /> Print
+              <button style={styles.printBtn} onClick={() => window.print()}>
+                <Printer size={16} /> Print Report
               </button>
             </div>
           </div>
@@ -217,31 +232,106 @@ function makeDummyAttendance(monthKey) {
 }
 
 const styles = {
-  page: { minHeight: "100%", background: "#f8fafc" },
-  container: { padding: "32px", maxWidth: "1600px", margin: "0 auto" },
-  breadcrumb: { fontSize: "11px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" },
+  page: { minHeight: "100%", position: "relative", overflow: "hidden" },
+  container: { padding: "32px", maxWidth: "1600px", margin: "0 auto", position: "relative", zIndex: 1 },
+  breadcrumb: { fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" },
   pageHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "32px", gap: "24px", flexWrap: "wrap" },
-  pageTitle: { margin: 0, fontSize: "32px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.02em" },
+  pageTitle: { margin: 0, fontSize: "32px", fontWeight: 900, color: "#2c5530", letterSpacing: "-0.02em" },
   pageSubtitle: { margin: "4px 0 0 0", fontSize: "15px", color: "#64748b", fontWeight: 500 },
   btnBack: { background: "none", border: "none", padding: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: "8px", fontSize: "14px", fontWeight: 700, color: "#64748b", marginBottom: "12px" },
   actions: { display: "flex", gap: "12px" },
-  btnSecondary: { background: "#fff", color: "#475569", border: "1px solid #e2e8f0", padding: "10px 18px", borderRadius: "12px", cursor: "pointer", fontWeight: 700, fontSize: "13px", display: "flex", alignItems: "center", gap: "8px" },
-  filters: { display: "flex", gap: "16px", background: "#fff", borderRadius: "20px", padding: "20px", marginBottom: "32px", border: "1px solid #f1f5f9", boxShadow: "0 4px 20px rgba(0,0,0,0.02)", alignItems: "flex-end", flexWrap: "wrap" },
+  printBtn: {
+    padding: "12px 24px", 
+    borderRadius: "14px", 
+    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)", 
+    color: "#fff", 
+    border: "none", 
+    fontWeight: 700, 
+    cursor: "pointer", 
+    display: "flex", 
+    alignItems: "center", 
+    gap: "8px",
+    boxShadow: "0 8px 20px rgba(74, 124, 78, 0.25)",
+    transition: "transform 0.2s"
+  },
+  filters: { 
+    display: "flex", 
+    gap: "16px", 
+    background: "rgba(255, 255, 255, 0.8)", 
+    backdropFilter: "blur(12px)",
+    borderRadius: "20px", 
+    padding: "20px", 
+    marginBottom: "32px", 
+    border: "1px solid rgba(255, 255, 255, 0.5)", 
+    boxShadow: "0 4px 20px rgba(0,0,0,0.02)", 
+    alignItems: "flex-end", 
+    flexWrap: "wrap" 
+  },
   filterItem: { display: "flex", flexDirection: "column", gap: "8px" },
   label: { fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" },
-  input: { height: "42px", borderRadius: "12px", border: "1px solid #e2e8f0", padding: "0 14px", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#f8fafc", outline: "none" },
-  kpiGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "16px", marginBottom: "32px" },
-  kpiCard: { background: "#fff", borderRadius: "20px", padding: "20px", border: "1px solid #f1f5f9", boxShadow: "0 4px 20px rgba(0,0,0,0.02)" },
-  kpiLabel: { fontSize: "10px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" },
-  kpiValue: { fontSize: "18px", fontWeight: 900, color: "#1e293b" },
-  kpiHint: { fontSize: "11px", color: "#64748b", marginTop: "4px", fontWeight: 500 },
-  listCard: { background: "#fff", borderRadius: "24px", overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.03)", border: "1px solid #f1f5f9" },
-  listHeader: { padding: "20px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f8fafc" },
-  listTitle: { margin: 0, fontSize: "16px", fontWeight: 800, color: "#1e293b" },
+  input: { 
+    height: "44px", 
+    borderRadius: "14px", 
+    border: "1px solid #e2e8f0", 
+    padding: "0 16px", 
+    fontSize: "14px", 
+    fontWeight: 600, 
+    color: "#1e293b", 
+    background: "#fff", 
+    outline: "none" 
+  },
+  kpiGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "20px", marginBottom: "32px" },
+  kpiCard: { 
+    background: "rgba(255, 255, 255, 0.9)", 
+    backdropFilter: "blur(12px)",
+    borderRadius: "24px", 
+    padding: "24px", 
+    border: "1px solid rgba(255, 255, 255, 0.5)", 
+    boxShadow: "0 8px 30px rgba(0,0,0,0.02)" 
+  },
+  kpiLabel: { fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" },
+  kpiValue: { fontSize: "22px", fontWeight: 900, color: "#1e293b" },
+  kpiHint: { fontSize: "12px", color: "#64748b", marginTop: "4px", fontWeight: 600 },
+  listCard: { 
+    background: "rgba(255, 255, 255, 0.9)", 
+    backdropFilter: "blur(12px)",
+    borderRadius: "24px", 
+    overflow: "hidden", 
+    boxShadow: "0 10px 30px rgba(0,0,0,0.03)", 
+    border: "1px solid rgba(255, 255, 255, 0.5)" 
+  },
+  listHeader: { 
+    padding: "20px 24px", 
+    borderBottom: "1px solid rgba(0,0,0,0.05)", 
+    display: "flex", 
+    justifyContent: "space-between", 
+    alignItems: "center", 
+    background: "rgba(248, 250, 252, 0.5)" 
+  },
+  listTitle: { margin: 0, fontSize: "16px", fontWeight: 800, color: "#1f2937" },
   tableWrapper: { overflowX: "auto" },
-  table: { width: "100%", borderCollapse: "collapse" },
-  th: { padding: "14px 24px", textAlign: "left", fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", background: "#f8fafc", borderBottom: "1px solid #f1f5f9" },
-  thRight: { textAlign: "right", padding: "14px 24px", fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", background: "#f8fafc", borderBottom: "1px solid #f1f5f9" },
-  td: { padding: "16px 24px", fontSize: "14px", color: "#475569", borderBottom: "1px solid #f1f5f9" },
-  tdRight: { textAlign: "right", padding: "16px 24px", fontSize: "14px", fontWeight: 700, color: "#1e293b", borderBottom: "1px solid #f1f5f9" },
+  table: { width: "100%", borderCollapse: "separate", borderSpacing: 0 },
+  th: { 
+    padding: "16px 24px", 
+    textAlign: "left", 
+    fontSize: "11px", 
+    fontWeight: 800, 
+    color: "#94a3b8", 
+    textTransform: "uppercase", 
+    letterSpacing: "0.05em", 
+    background: "rgba(248, 250, 252, 0.5)", 
+    borderBottom: "1px solid rgba(0,0,0,0.05)" 
+  },
+  thRight: { 
+    textAlign: "right", 
+    padding: "16px 24px", 
+    fontSize: "11px", 
+    fontWeight: 800, 
+    color: "#94a3b8", 
+    textTransform: "uppercase", 
+    background: "rgba(248, 250, 252, 0.5)", 
+    borderBottom: "1px solid rgba(0,0,0,0.05)" 
+  },
+  td: { padding: "18px 24px", fontSize: "14px", color: "#475569", borderBottom: "1px solid rgba(0,0,0,0.05)" },
+  tdRight: { textAlign: "right", padding: "18px 24px", fontSize: "14px", fontWeight: 700, color: "#1e293b", borderBottom: "1px solid rgba(0,0,0,0.05)" },
 };

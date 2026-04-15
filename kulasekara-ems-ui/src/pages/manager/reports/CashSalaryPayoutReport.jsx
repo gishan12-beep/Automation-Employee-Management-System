@@ -57,9 +57,9 @@ export default function CashSalaryPayoutReport() {
             50% { transform: translateY(20px) translateX(-10px); }
           }
           .floating-circle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
-          .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(76, 175, 80, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
-          .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(56, 142, 60, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
-          .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(67, 160, 71, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
+          .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
+          .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
+          .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
         `}</style>
 
         {/* Animated background elements */}
@@ -70,12 +70,11 @@ export default function CashSalaryPayoutReport() {
         <div style={styles.container}>
           <div style={styles.headerRow}>
             <div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-                <button onClick={() => navigate(-1)} style={styles.backBtn}>
-                  ← Back
-                </button>
-                <h2 style={styles.heading}>Cash Salary Payout Report</h2>
-              </div>
+              <button onClick={() => navigate(-1)} style={styles.backBtn}>
+                <ArrowLeft size={16} /> Back to Reports
+              </button>
+              <div style={styles.breadcrumb}>Manager / Financial Analysis</div>
+              <h2 style={styles.heading}>Cash Salary Payouts</h2>
               <p style={styles.subText}>
                 List employees paid via cash, pending payments, and voucher/receipt tracking.
               </p>
@@ -277,33 +276,36 @@ function makeDummyCashData(monthKey) {
 
 const styles = {
   page: { position: "relative", minHeight: "100%", overflow: "hidden" },
-  container: { padding: 24, position: "relative", zIndex: 1 },
-  headerRow: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 24 },
-  heading: { margin: 0, fontSize: 26, fontWeight: 800, color: "#2c5530" },
-  subText: { marginTop: 6, marginBottom: 0, opacity: 0.8, color: "#4b5563" },
+  container: { padding: "32px", position: "relative", zIndex: 1, maxWidth: "1600px", margin: "0 auto" },
+  breadcrumb: { fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" },
+  headerRow: { display: "flex", justifyContent: "space-between", gap: 24, flexWrap: "wrap", alignItems: "flex-end", marginBottom: 32 },
+  heading: { margin: 0, fontSize: "32px", fontWeight: 900, color: "#2c5530", letterSpacing: "-0.02em" },
+  subText: { marginTop: 4, marginBottom: 0, fontSize: "15px", color: "#64748b", fontWeight: 500 },
   backBtn: {
     background: "none",
     border: "none",
     padding: 0,
     cursor: "pointer",
-    fontSize: 14,
+    fontSize: "14px",
     fontWeight: 700,
-    color: "#6b7280",
+    color: "#64748b",
     display: "flex",
     alignItems: "center",
+    gap: "8px",
+    marginBottom: "12px"
   },
-
-  actions: { display: "flex", gap: 10, flexWrap: "wrap" },
+  actions: { display: "flex", gap: 12 },
   secondaryBtn: {
-    background: "#fff",
-    border: "1px solid rgba(0,0,0,0.12)",
-    padding: "10px 16px",
-    borderRadius: 12,
-    cursor: "pointer",
-    fontWeight: 700,
-    color: "#374151"
+    padding: "12px 24px", 
+    borderRadius: "14px", 
+    background: "#fff", 
+    color: "#475569", 
+    border: "1px solid #e2e8f0", 
+    fontWeight: 700, 
+    cursor: "pointer", 
+    fontSize: "14px",
+    transition: "all 0.2s"
   },
-
   filters: {
     marginTop: 20,
     display: "flex",
@@ -312,16 +314,26 @@ const styles = {
     background: "rgba(255, 255, 255, 0.8)",
     backdropFilter: "blur(12px)",
     border: "1px solid rgba(255, 255, 255, 0.5)",
-    borderRadius: 18,
-    padding: 16,
+    borderRadius: "20px",
+    padding: "20px",
     boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
+    alignItems: "flex-end"
   },
   filterItem: { minWidth: 200, display: "flex", flexDirection: "column", gap: 8 },
-  label: { fontWeight: 700, color: "#374151", fontSize: 13, textTransform: "uppercase" },
-  input: { border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 12px", outline: "none", fontSize: 14, background: "#f9fafb" },
-
+  label: { fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" },
+  input: { 
+    height: "44px", 
+    borderRadius: "14px", 
+    border: "1px solid #e2e8f0", 
+    padding: "0 16px", 
+    fontSize: "14px", 
+    fontWeight: 600, 
+    color: "#1e293b", 
+    background: "#fff", 
+    outline: "none" 
+  },
   summaryStrip: {
-    marginTop: 20,
+    marginTop: 24,
     display: "flex",
     gap: 16,
     flexWrap: "wrap",
@@ -330,49 +342,65 @@ const styles = {
     background: "rgba(255, 255, 255, 0.9)",
     backdropFilter: "blur(12px)",
     border: "1px solid rgba(255, 255, 255, 0.5)",
-    borderRadius: 18,
-    padding: "16px 20px",
-    minWidth: 160,
-    boxShadow: "0 8px 25px rgba(0,0,0,0.03)",
+    borderRadius: "24px",
+    padding: "20px 24px",
+    minWidth: 180,
+    boxShadow: "0 8px 30px rgba(0,0,0,0.02)",
   },
-  summaryLabel: { fontWeight: 700, color: "#6b7280", fontSize: 12, textTransform: "uppercase" },
-  summaryValue: { fontWeight: 800, fontSize: 18, marginTop: 4, color: "#111827" },
-
+  summaryLabel: { fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" },
+  summaryValue: { fontSize: "20px", fontWeight: 900, color: "#1e293b", marginTop: 8 },
   panel: {
-    marginTop: 24,
-    background: "rgba(255, 255, 255, 0.95)",
+    marginTop: 32,
+    background: "rgba(255, 255, 255, 0.9)",
     backdropFilter: "blur(12px)",
     border: "1px solid rgba(255, 255, 255, 0.5)",
-    borderRadius: 18,
-    padding: 24,
+    borderRadius: "24px",
+    overflow: "hidden",
     boxShadow: "0 10px 30px rgba(0,0,0,0.03)",
   },
   tableWrap: { overflowX: "auto" },
-  table: { width: "100%", borderCollapse: "separate", borderSpacing: "0 4px" },
-  th: { textAlign: "left", padding: "12px 16px", fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" },
-  thRight: { textAlign: "right", padding: "12px 16px", fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" },
-  td: { padding: "12px 16px", background: "#f9fafb", fontSize: 14, color: "#374151", firstOfType: { borderRadius: "8px 0 0 8px" }, lastOfType: { borderRadius: "0 8px 8px 0" }, verticalAlign: "top" },
-  tdRight: { padding: "12px 16px", textAlign: "right", background: "#f9fafb", fontSize: 14, fontWeight: 700, color: "#111827", lastOfType: { borderRadius: "0 8px 8px 0" } },
-
-  badge: { padding: "4px 12px", borderRadius: 20, fontSize: 12, fontWeight: 700, display: "inline-block" },
+  table: { width: "100%", borderCollapse: "separate", borderSpacing: 0 },
+  th: { 
+    textAlign: "left", 
+    padding: "16px 20px", 
+    fontSize: "11px", 
+    fontWeight: 800, 
+    color: "#94a3b8", 
+    textTransform: "uppercase",
+    background: "rgba(248, 250, 252, 0.5)", 
+    borderBottom: "1px solid rgba(0,0,0,0.05)" 
+  },
+  thRight: { 
+    textAlign: "right", 
+    padding: "16px 20px", 
+    fontSize: "11px", 
+    fontWeight: 800, 
+    color: "#94a3b8", 
+    textTransform: "uppercase",
+    background: "rgba(248, 250, 252, 0.5)", 
+    borderBottom: "1px solid rgba(0,0,0,0.05)" 
+  },
+  td: { padding: "16px 20px", fontSize: "14px", color: "#475569", borderBottom: "1px solid rgba(0,0,0,0.05)" },
+  tdRight: { padding: "16px 20px", textAlign: "right", fontSize: "14px", fontWeight: 700, color: "#1e293b", borderBottom: "1px solid rgba(0,0,0,0.05)" },
+  badge: { padding: "6px 12px", borderRadius: "10px", fontSize: "11px", fontWeight: 800, textTransform: "uppercase" },
   badgePaid: { background: "#DCFCE7", color: "#166534" },
   badgePending: { background: "#FEF3C7", color: "#D97706" },
-
   smallBtn: {
-    background: "#fff",
-    border: "1px solid #d1d5db",
-    padding: "6px 12px",
-    borderRadius: 8,
-    cursor: "pointer",
-    fontWeight: 600,
-    fontSize: 12,
-    color: "#374151",
+    padding: "8px 16px", 
+    borderRadius: "10px", 
+    background: "#fff", 
+    color: "#475569", 
+    border: "1px solid #e2e8f0", 
+    fontWeight: 700, 
+    cursor: "pointer", 
+    fontSize: "12px",
     marginRight: 8,
-    marginBottom: 6,
+    marginBottom: 4,
+    transition: "all 0.2s"
   },
   smallBtnPrimary: {
-    background: "#2c5530",
-    color: "#fff",
+    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)", 
+    color: "#fff", 
     border: "none",
   },
 };

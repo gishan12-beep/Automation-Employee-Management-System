@@ -11,16 +11,26 @@ import { sendCredentialsEmail } from "../utils/mailer.js";
  */
 export const getDashboardStats = async (req, res) => {
   try {
+    const today = new Date().toISOString().slice(0, 10);
     const [empRows] = await pool.query(
       `SELECT COUNT(*) as activeCount FROM employee WHERE status = 'ACTIVE'`
     );
     const [leaveRows] = await pool.query(
       "SELECT COUNT(*) as pendingCount FROM leave_requests WHERE status = 'PENDING'"
     );
+    const [attRows] = await pool.query(
+      "SELECT COUNT(*) as attCount FROM attendance WHERE date = ?",
+      [today]
+    );
+    const [issueRows] = await pool.query(
+      "SELECT COUNT(*) as issueCount FROM issues WHERE status = 'PENDING'"
+    );
 
     return res.json({
       activeCount: empRows[0].activeCount,
-      pendingLeaveCount: leaveRows[0].pendingCount
+      pendingLeaveCount: leaveRows[0].pendingCount,
+      todayAttendanceCount: attRows[0].attCount,
+      pendingIssueCount: issueRows[0].issueCount
     });
   } catch (err) {
     return res.status(500).json({ message: "Fetch stats failed", error: err.message });

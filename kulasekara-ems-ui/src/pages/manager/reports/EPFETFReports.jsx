@@ -48,9 +48,9 @@ export default function EPFETFReports() {
             50% { transform: translateY(20px) translateX(-10px); }
           }
           .floating-circle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
-          .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(76, 175, 80, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
-          .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(56, 142, 60, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
-          .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(67, 160, 71, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
+          .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
+          .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
+          .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
         `}</style>
 
         {/* Animated background elements */}
@@ -183,20 +183,22 @@ function makeDummyContrib(monthKey) {
 
 const styles = {
   page: { position: "relative", minHeight: "100%", overflow: "hidden" },
-  container: { padding: 24, position: "relative", zIndex: 1 },
-  headerRow: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 24 },
-  heading: { margin: 0, fontSize: 26, fontWeight: 800, color: "#2c5530" },
-  subText: { marginTop: 6, marginBottom: 0, opacity: 0.8, color: "#4b5563" },
+  container: { padding: 32, position: "relative", zIndex: 1 },
+  headerRow: { display: "flex", justifyContent: "space-between", gap: 12, flexWrap: "wrap", alignItems: "center", marginBottom: 32 },
+  heading: { margin: 0, fontSize: 32, fontWeight: 900, color: "#2c5530" },
+  subText: { marginTop: 6, marginBottom: 0, fontSize: 15, color: "#64748b", fontWeight: 500 },
 
-  actions: { display: "flex", gap: 10, flexWrap: "wrap" },
+  actions: { display: "flex", gap: 12, flexWrap: "wrap" },
   secondaryBtn: {
-    background: "#fff",
-    border: "1px solid rgba(0,0,0,0.12)",
-    padding: "10px 16px",
-    borderRadius: 12,
-    cursor: "pointer",
-    fontWeight: 700,
-    color: "#374151"
+    padding: "12px 24px", 
+    borderRadius: "14px", 
+    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)", 
+    color: "#fff", 
+    border: "none", 
+    fontWeight: 700, 
+    cursor: "pointer", 
+    boxShadow: "0 8px 20px rgba(74, 124, 78, 0.25)",
+    transition: "transform 0.2s"
   },
   backBtn: {
     background: "none",
@@ -218,46 +220,75 @@ const styles = {
     background: "rgba(255, 255, 255, 0.8)",
     backdropFilter: "blur(12px)",
     border: "1px solid rgba(255, 255, 255, 0.5)",
-    borderRadius: 18,
-    padding: 16,
+    borderRadius: "20px",
+    padding: "20px",
     boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
   },
   filterItem: { minWidth: 200, display: "flex", flexDirection: "column", gap: 8 },
-  label: { fontWeight: 700, color: "#374151", fontSize: 13, textTransform: "uppercase" },
-  input: { border: "1px solid #e5e7eb", borderRadius: 10, padding: "10px 12px", outline: "none", fontSize: 14, background: "#f9fafb" },
+  label: { fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" },
+  input: { 
+    height: "44px", 
+    borderRadius: "14px", 
+    border: "1px solid #e2e8f0", 
+    padding: "0 16px", 
+    fontSize: "14px", 
+    fontWeight: 600, 
+    color: "#1e293b", 
+    background: "#fff", 
+    outline: "none" 
+  },
 
   kpiGrid: {
     marginTop: 20,
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: 16,
+    gap: 20,
   },
   kpiCard: {
     background: "rgba(255, 255, 255, 0.9)",
     backdropFilter: "blur(12px)",
     border: "1px solid rgba(255, 255, 255, 0.5)",
-    borderRadius: 18,
-    padding: 20,
-    boxShadow: "0 8px 25px rgba(0,0,0,0.03)",
+    borderRadius: "24px",
+    padding: "24px",
+    boxShadow: "0 8px 30px rgba(0,0,0,0.02)",
   },
-  kpiTitle: { fontWeight: 700, color: "#6b7280", fontSize: 13, textTransform: "uppercase", marginBottom: 8 },
-  kpiValue: { fontSize: "18px", fontWeight: 700, color: "#111827", marginBottom: 4 },
-  kpiHint: { fontSize: 12, color: "#6b7280", fontWeight: 600 },
+  kpiTitle: { fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 12 },
+  kpiValue: { fontSize: "22px", fontWeight: 900, color: "#1e293b", marginBottom: 6 },
+  kpiHint: { fontSize: "12px", color: "#64748b", fontWeight: 600 },
 
   panel: {
-    marginTop: 24,
-    background: "rgba(255, 255, 255, 0.95)",
+    marginTop: 32,
+    background: "rgba(255, 255, 255, 0.9)",
     backdropFilter: "blur(12px)",
     border: "1px solid rgba(255, 255, 255, 0.5)",
-    borderRadius: 18,
+    borderRadius: "24px",
     padding: 24,
     boxShadow: "0 10px 30px rgba(0,0,0,0.03)",
+    overflow: "hidden"
   },
-  panelTitle: { fontWeight: 800, marginBottom: 16, fontSize: 18, color: "#1f2937" },
+  panelTitle: { fontWeight: 800, marginBottom: 20, fontSize: 18, color: "#1f2937" },
   tableWrap: { overflowX: "auto" },
-  table: { width: "100%", borderCollapse: "separate", borderSpacing: "0 4px" },
-  th: { textAlign: "left", padding: "12px 16px", fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" },
-  thRight: { textAlign: "right", padding: "12px 16px", fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase" },
-  td: { padding: "12px 16px", background: "#f9fafb", fontSize: 14, color: "#374151", firstOfType: { borderRadius: "8px 0 0 8px" }, lastOfType: { borderRadius: "0 8px 8px 0" }, verticalAlign: "top" },
-  tdRight: { padding: "12px 16px", textAlign: "right", background: "#f9fafb", fontSize: 14, fontWeight: 700, color: "#111827", lastOfType: { borderRadius: "0 8px 8px 0" } },
+  table: { width: "100%", borderCollapse: "separate", borderSpacing: 0 },
+  th: { 
+    textAlign: "left", 
+    padding: "16px 24px", 
+    fontSize: "11px", 
+    fontWeight: 800, 
+    color: "#94a3b8", 
+    textTransform: "uppercase",
+    background: "rgba(248, 250, 252, 0.5)", 
+    borderBottom: "1px solid rgba(0,0,0,0.05)" 
+  },
+  thRight: { 
+    textAlign: "right", 
+    padding: "16px 24px", 
+    fontSize: "11px", 
+    fontWeight: 800, 
+    color: "#94a3b8", 
+    textTransform: "uppercase",
+    background: "rgba(248, 250, 252, 0.5)", 
+    borderBottom: "1px solid rgba(0,0,0,0.05)" 
+  },
+  td: { padding: "18px 24px", fontSize: "14px", color: "#475569", borderBottom: "1px solid rgba(0,0,0,0.05)" },
+  tdRight: { padding: "18px 24px", textAlign: "right", fontSize: "14px", fontWeight: 700, color: "#1e293b", borderBottom: "1px solid rgba(0,0,0,0.05)" },
 };

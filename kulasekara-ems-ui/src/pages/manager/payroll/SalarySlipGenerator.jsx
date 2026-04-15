@@ -7,14 +7,18 @@ const LKR = (n) =>
     maximumFractionDigits: 0,
   }).format(Number(n || 0));
 
-export default function SalarySlipGenerator({ employee, payroll, onClose }) {
+export default function SalarySlipGenerator({ employee, payroll, details, onClose }) {
   // Now payroll is the exact mapped object from ProcessPayroll's summary API
+  // details is { incentives: [], deductions: [] } (optional)
 
   const slipNo = useMemo(() => {
     return `SLIP-${employee.employeeID}-${Date.now().toString().slice(-6)}`;
   }, [employee.employeeID]);
 
   const onPrint = () => window.print();
+
+  const incentives = details?.incentives || [];
+  const deductions = details?.deductions || [];
 
   return (
     <div style={styles.overlay} onMouseDown={onClose}>
@@ -58,7 +62,21 @@ export default function SalarySlipGenerator({ employee, payroll, onClose }) {
 
               <Line label="Basic Earnings" value={LKR(payroll.basicSalary)} />
               <Line label="Overtime Pay" value={LKR(payroll.otPay)} />
-              <Line label="Incentives" value={LKR(payroll.incentives)} />
+              
+              {incentives.length > 0 ? (
+                <>
+                  {incentives.map((inc, i) => (
+                    <Line key={`inc-${i}`} label={inc.description || "Incentive"} value={LKR(inc.amount)} />
+                  ))}
+                  {(() => {
+                    const manualSum = incentives.reduce((sum, item) => sum + Number(item.amount), 0);
+                    const diff = Number(payroll.incentives) - manualSum;
+                    return diff > 1 ? <Line label="Other Incentives" value={LKR(diff)} /> : null;
+                  })()}
+                </>
+              ) : (
+                <Line label="Incentives" value={LKR(payroll.incentives)} />
+              )}
 
               <hr style={styles.hr} />
               <Line label="Gross Pay" value={LKR(payroll.gross)} strong />
@@ -71,9 +89,24 @@ export default function SalarySlipGenerator({ employee, payroll, onClose }) {
               <div style={styles.note}>
                 Employer side: EPF {LKR(payroll.epfEmployer)} • ETF {LKR(payroll.etfEmployer)}
               </div>
-              <Line label="Other Deductions" value={LKR(payroll.deductions)} />
+              
+              {deductions.length > 0 ? (
+                <>
+                  {deductions.map((ded, i) => (
+                    <Line key={`ded-${i}`} label={ded.reason || "Other Deduction"} value={LKR(ded.amount)} />
+                  ))}
+                  {(() => {
+                    const manualSum = deductions.reduce((sum, item) => sum + Number(item.amount), 0);
+                    const diff = Number(payroll.deductions) - manualSum;
+                    return diff > 1 ? <Line label="Other Deductions" value={LKR(diff)} /> : null;
+                  })()}
+                </>
+              ) : (
+                <Line label="Other Deductions" value={LKR(payroll.deductions)} />
+              )}
+
               <hr style={styles.hr} />
-              <Line label="Total Deductions" value={LKR((payroll.epfEmployee || 0) + (payroll.deductions || 0))} />
+              <Line label="Total Deductions" value={LKR(Number(payroll.epfEmployee || 0) + Number(payroll.deductions || 0))} />
               <Line label="Net Pay" value={LKR(payroll.netPay)} strong />
             </div>
           </div>

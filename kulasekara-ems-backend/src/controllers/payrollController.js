@@ -147,3 +147,15 @@ export const updatePayrollRun = async (req, res) => {
         return res.status(500).json({ message: err.message || "Failed to update payroll" });
     }
 };
+
+// ✅ POST /api/payroll/approve/:payrollId (Accountant)
+export const approvePayroll = async (req, res) => {
+    try {
+        const { payrollId } = req.params;
+        const result = await payrollService.approvePayrollRun(payrollId);
+        return res.json(result);
+    } catch (err) {
+        console.error("APPROVE PAYROLL ERROR:", err);
+        return res.status(500).json({ message: err.message || "Approval failed" });
+    }
+};

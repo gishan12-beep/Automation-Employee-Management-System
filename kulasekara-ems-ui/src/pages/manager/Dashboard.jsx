@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import AppLayout from "../../components/layout/AppLayout";
 import { getEmployeesApi, getDashboardStatsApi } from "../../services/managerEmployeeService";
 import { markAttendanceApi } from "../../services/managerAttendanceService";
@@ -144,8 +144,8 @@ function Dashboard() {
               />
               <SummaryCard
                 title="Attendance Today"
-                value="40"
-                hint="72% present"
+                value={stats?.todayAttendanceCount || 0}
+                hint="Employees clocked in"
                 icon={<Clock size={24} />}
                 color="#2563eb"
                 bg="#eff6ff"
@@ -158,12 +158,12 @@ function Dashboard() {
                 icon={<ClipboardList size={24} />}
                 color="#d97706"
                 bg="#fffbeb"
-                onClick={() => navigate("/manager/leave")}
+                onClick={() => navigate("/manager/leaves")}
               />
               <SummaryCard
                 title="Issues Reported"
-                value="3"
-                hint="Needs attention"
+                value={stats?.pendingIssueCount || 0}
+                hint="Awaiting resolution"
                 icon={<AlertCircle size={24} />}
                 color="#dc2626"
                 bg="#fef2f2"
@@ -231,7 +231,7 @@ function Dashboard() {
                 <ActionButton
                   label="Add Employee"
                   icon={<UserPlus size={20} />}
-                  onClick={() => navigate("/manager/employees")}
+                  path="/manager/employees"
                 />
                 <ActionButton
                   label="Mark Attendance"
@@ -241,12 +241,12 @@ function Dashboard() {
                 <ActionButton
                   label="View Payroll Summary"
                   icon={<Wallet size={20} />}
-                  onClick={() => navigate("/manager/payroll")}
+                  path="/manager/payroll"
                 />
                 <ActionButton
                   label="Generate Report"
                   icon={<FileText size={20} />}
-                  onClick={() => navigate("/manager/reports")}
+                  path="/manager/reports"
                 />
               </div>
             </div>
@@ -755,13 +755,14 @@ function SummaryCard({ title, value, hint, icon, color, bg, onClick }) {
   );
 }
 
-function ActionButton({ label, icon, onClick }) {
+function ActionButton({ label, icon, onClick, path }) {
   const [hovered, setHovered] = useState(false);
   
-  return (
+  const content = (
     <button 
       style={{
         ...styles.actionButton,
+        width: "100%",
         transform: hovered ? "translateY(-4px)" : "none",
         border: hovered ? "1px solid rgba(44, 85, 48, 0.2)" : styles.actionButton.border,
         boxShadow: hovered ? "0 10px 20px rgba(0,0,0,0.04)" : styles.actionButton.boxShadow,
@@ -776,4 +777,14 @@ function ActionButton({ label, icon, onClick }) {
       <span style={styles.actionText}>{label}</span>
     </button>
   );
+
+  if (path) {
+    return (
+      <Link to={path} style={{ textDecoration: "none" }}>
+        {content}
+      </Link>
+    );
+  }
+
+  return content;
 }

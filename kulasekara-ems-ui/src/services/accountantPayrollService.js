@@ -126,3 +126,8 @@ export async function processSinglePayrollApi({ month, employeeId }) {
   const res = await api.post(`/payroll/process/${m}/${y}/${employeeId}`);
   return res.data;
 }
+
+export async function approvePayrollApi(payrollId) {
+  const res = await api.post(`/payroll/approve/${payrollId}`);
+  return res.data;
+}

@@ -7,12 +7,17 @@ import {
   markCheckIn,
   markCheckOut
 } from "../controllers/employeeAttendanceController.js";
+import { 
+  getEmployeeStats, 
+  getRecentActivity 
+} from "../controllers/dashboardController.js";
 
 import {
   getEmployeeLeaves,
   submitLeaveRequest,
   fetchLeaveTypes
 } from "../controllers/leaveController.js";
+import { getMySettlementPreview } from "../controllers/settlementController.js";
 
 const router = express.Router();
 
@@ -29,9 +34,8 @@ router.use(
 );
 
 // Dashboard
-router.get("/dashboard", (req, res) => {
-  res.json({ message: "Employee dashboard access granted" });
-});
+router.get("/dashboard/stats", getEmployeeStats);
+router.get("/dashboard/recent-activity", getRecentActivity);
 
 // Attendance
 router.get("/attendance/today", getTodayAttendance);
@@ -42,5 +46,8 @@ router.put("/attendance/check-out", markCheckOut);
 router.get("/leaves", getEmployeeLeaves);
 router.post("/leaves", submitLeaveRequest);
 router.get("/leave-types", fetchLeaveTypes);
+
+// Final Settlement
+router.get("/settlement/preview", getMySettlementPreview);
 
 export default router;

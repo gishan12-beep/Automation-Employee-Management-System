@@ -51,4 +51,12 @@ router.patch(
     payrollController.updatePayrollRun
 );
 
+// Approve Payroll (Accountant)
+router.post(
+    "/approve/:payrollId",
+    requireAuth,
+    requireRole("ACCOUNTANT"),
+    payrollController.approvePayroll
+);
+
 export default router;

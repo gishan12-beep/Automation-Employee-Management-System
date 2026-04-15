@@ -309,17 +309,35 @@ function EmployeeManagement() {
     <AppLayout>
       <div style={styles.page}>
         <style>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-20px) translateX(10px); }
+          }
+          @keyframes floatReverse {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(20px) translateX(-10px); }
+          }
+          .floating-circle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
+          .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
+          .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
+          .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
+          
           .fade-in { animation: fadeIn 0.4s ease-out forwards; }
           @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-          .table-row:hover { background: rgba(44, 85, 48, 0.03) !important; transform: scale(1.002); }
+          .table-row { transition: all 0.2s; cursor: pointer; }
+          .table-row:hover { background: rgba(248, 250, 252, 0.8) !important; }
         `}</style>
+        
+        <div className="floating-circle fc-1"></div>
+        <div className="floating-circle fc-2"></div>
+        <div className="floating-circle fc-3"></div>
 
         <div style={styles.container}>
           <div style={styles.pageHeader}>
             <div>
-              <div style={styles.breadcrumb}>Manager / Employees</div>
-              <h1 style={styles.pageTitle}>Employee Management</h1>
-              <p style={styles.pageSubtitle}>Manage your team members and their employment details</p>
+              <div style={styles.breadcrumb}>Manager / People Management</div>
+              <h1 style={styles.pageTitle}>Employee Directory</h1>
+              <p style={styles.pageSubtitle}>Manage your workforce and employment records</p>
             </div>
 
             <div style={styles.headerActions}>
@@ -551,80 +569,129 @@ function EmployeeManagement() {
 }
 
 const styles = {
-  page: { minHeight: "100%", background: "#f8fafc" },
-  container: { padding: "32px", maxWidth: "1400px", margin: "0 auto" },
-  breadcrumb: { fontSize: "12px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px" },
+  page: { minHeight: "100%", position: "relative", overflow: "hidden" },
+  container: { padding: "32px", maxWidth: "1600px", margin: "0 auto", position: "relative", zIndex: 1 },
+  breadcrumb: { fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" },
   pageHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "32px", gap: "24px", flexWrap: "wrap" },
-  pageTitle: { margin: 0, fontSize: "32px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.02em" },
+  pageTitle: { margin: 0, fontSize: "32px", fontWeight: 900, color: "#2c5530", letterSpacing: "-0.02em" },
   pageSubtitle: { margin: "4px 0 0 0", fontSize: "15px", color: "#64748b", fontWeight: 500 },
   headerActions: { display: "flex", alignItems: "center", gap: "16px" },
   searchWrapper: { position: "relative", display: "flex", alignItems: "center" },
   searchIcon: { position: "absolute", left: "14px", color: "#94a3b8" },
-  searchInput: { padding: "12px 16px 12px 42px", borderRadius: "14px", border: "1px solid #e2e8f0", width: "280px", outline: "none", fontSize: "14px", fontWeight: 600 },
-  btnPrimary: { display: "flex", alignItems: "center", gap: "8px", background: "#2c5530", color: "#fff", border: "none", padding: "12px 20px", borderRadius: "14px", cursor: "pointer", fontWeight: 700, fontSize: "14px", boxShadow: "0 4px 12px rgba(44, 85, 48, 0.2)" },
-  btnSecondary: { background: "#fff", color: "#2c5530", border: "1px solid #e2e8f0", padding: "12px 20px", borderRadius: "14px", cursor: "pointer", fontWeight: 700 },
-  btnDanger: { background: "#dc2626", color: "#fff", border: "none", padding: "12px 20px", borderRadius: "14px", cursor: "pointer", fontWeight: 700 },
-  profileCard: { background: "#fff", borderRadius: "24px", padding: "32px", boxShadow: "0 4px 20px rgba(0,0,0,0.03)", border: "1px solid #f1f5f9", marginBottom: "32px" },
+  searchInput: { 
+    height: "44px", 
+    padding: "0 16px 0 42px", 
+    borderRadius: "14px", 
+    border: "1px solid #e2e8f0", 
+    width: "280px", 
+    outline: "none", 
+    fontSize: "14px", 
+    fontWeight: 600, 
+    background: "rgba(255, 255, 255, 0.8)",
+    backdropFilter: "blur(4px)" 
+  },
+  btnPrimary: { 
+    display: "flex", 
+    alignItems: "center", 
+    gap: "8px", 
+    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)", 
+    color: "#fff", 
+    border: "none", 
+    padding: "12px 24px", 
+    borderRadius: "14px", 
+    cursor: "pointer", 
+    fontWeight: 700, 
+    fontSize: "14px", 
+    boxShadow: "0 8px 20px rgba(74, 124, 78, 0.25)" 
+  },
+  btnSecondary: { background: "#fff", color: "#475569", border: "1px solid #e2e8f0", padding: "12px 24px", borderRadius: "14px", cursor: "pointer", fontWeight: 700 },
+  btnDanger: { background: "linear-gradient(135deg, #dc2626 0%, #ef4444 100%)", color: "#fff", border: "none", padding: "12px 24px", borderRadius: "14px", cursor: "pointer", fontWeight: 700, boxShadow: "0 8px 20px rgba(220, 38, 38, 0.2)" },
+  profileCard: { 
+    background: "rgba(255, 255, 255, 0.8)", 
+    backdropFilter: "blur(12px)",
+    borderRadius: "24px", 
+    padding: "32px", 
+    boxShadow: "0 4px 25px rgba(0,0,0,0.02)", 
+    border: "1px solid rgba(255, 255, 255, 0.5)", 
+    marginBottom: "32px" 
+  },
   profileContent: { display: "flex", gap: "32px", alignItems: "flex-start" },
   avatarContainer: { position: "relative" },
-  avatarMain: { width: "84px", height: "84px", borderRadius: "24px", background: "#2c5530", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", fontWeight: 900 },
+  avatarMain: { width: "84px", height: "84px", borderRadius: "24px", background: "linear-gradient(135deg, #4a7c4e 0%, #3a703f 100%)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "32px", fontWeight: 900 },
   statusIndicator: { position: "absolute", bottom: "-4px", right: "-4px", width: "20px", height: "20px", borderRadius: "50%", border: "4px solid #fff" },
   profileInfo: { flex: 1 },
   profileHeaderRow: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "20px" },
-  profileName: { margin: 0, fontSize: "24px", fontWeight: 800, color: "#1e293b" },
+  profileName: { margin: 0, fontSize: "24px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.01em" },
   profileMetaGroup: { display: "flex", gap: "12px", marginTop: "8px" },
-  metaBadge: { display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "#f1f5f9", borderRadius: "10px", fontSize: "12px", fontWeight: 700, color: "#475569" },
+  metaBadge: { display: "flex", alignItems: "center", gap: "6px", padding: "6px 12px", background: "rgba(0,0,0,0.03)", borderRadius: "10px", fontSize: "12px", fontWeight: 800, color: "#64748b" },
   profileActions: { display: "flex", gap: "10px" },
-  iconActionBtn: { width: "40px", height: "40px", borderRadius: "12px", border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#475569" },
+  iconActionBtn: { width: "40px", height: "40px", borderRadius: "12px", border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b", transition: "all 0.2s" },
   contactGrid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "20px" },
-  contactItem: { display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", fontWeight: 600, color: "#475569" },
-  emptyState: { padding: "48px", textAlign: "center", background: "#fff", borderRadius: "24px", border: "1px dashed #cbd5e1", marginBottom: "32px" },
-  emptyIcon: { color: "#cbd5e1", marginBottom: "16px", display: "inline-block" },
-  listCard: { background: "#fff", borderRadius: "24px", overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.03)", border: "1px solid #f1f5f9" },
-  listHeader: { padding: "24px 32px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" },
-  listIconBox: { width: "36px", height: "36px", borderRadius: "10px", background: "#ecfdf5", color: "#059669", display: "flex", alignItems: "center", justifyContent: "center" },
+  contactItem: { display: "flex", alignItems: "center", gap: "10px", fontSize: "14px", fontWeight: 600, color: "#64748b" },
+  emptyState: { padding: "48px", textAlign: "center", background: "rgba(255, 255, 255, 0.5)", backdropFilter: "blur(8px)", borderRadius: "24px", border: "2px dashed #e2e8f0", marginBottom: "32px", color: "#94a3b8" },
+  emptyIcon: { color: "#e2e8f0", marginBottom: "16px", display: "inline-block" },
+  listCard: { 
+    background: "rgba(255, 255, 255, 0.9)", 
+    backdropFilter: "blur(12px)",
+    borderRadius: "24px", 
+    overflow: "hidden", 
+    boxShadow: "0 10px 30px rgba(0,0,0,0.03)", 
+    border: "1px solid rgba(255, 255, 255, 0.5)" 
+  },
+  listHeader: { padding: "24px 32px", borderBottom: "1px solid rgba(0,0,0,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(248, 250, 252, 0.5)" },
+  listIconBox: { width: "36px", height: "36px", borderRadius: "10px", background: "rgba(74, 124, 78, 0.1)", color: "#4a7c4e", display: "flex", alignItems: "center", justifyContent: "center" },
   listTitle: { margin: 0, fontSize: "18px", fontWeight: 800, color: "#1e293b" },
-  countBadge: { padding: "6px 14px", borderRadius: "12px", background: "#f1f5f9", fontSize: "12px", fontWeight: 800, color: "#475569" },
+  countBadge: { padding: "6px 14px", borderRadius: "12px", background: "#f1f5f9", fontSize: "12px", fontWeight: 800, color: "#64748b" },
   tableWrapper: { overflowX: "auto" },
-  table: { width: "100%", borderCollapse: "collapse" },
-  th: { padding: "16px 32px", textAlign: "left", fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", background: "#f8fafc" },
-  tr: { borderBottom: "1px solid #f1f5f9", cursor: "pointer" },
-  trSelected: { background: "rgba(44, 85, 48, 0.04)" },
-  td: { padding: "20px 32px", fontSize: "14px", color: "#475569" },
+  table: { width: "100%", borderCollapse: "separate", borderSpacing: 0 },
+  th: { 
+    padding: "16px 32px", 
+    textAlign: "left", 
+    fontSize: "11px", 
+    fontWeight: 800, 
+    color: "#94a3b8", 
+    textTransform: "uppercase", 
+    letterSpacing: "0.1em", 
+    background: "rgba(248, 250, 252, 0.5)",
+    borderBottom: "1px solid rgba(0,0,0,0.05)"
+  },
+  tr: { cursor: "pointer" },
+  trSelected: { background: "rgba(74, 124, 78, 0.05)" },
+  td: { padding: "20px 32px", fontSize: "14px", color: "#475569", borderBottom: "1px solid rgba(0,0,0,0.05)" },
   userCell: { display: "flex", alignItems: "center", gap: "14px" },
   rowAvatar: { width: "40px", height: "40px", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: "14px" },
   userName: { fontWeight: 700, color: "#1e293b" },
   userSub: { fontSize: "12px", color: "#94a3b8", marginTop: "2px" },
-  deptText: { fontWeight: 600 },
-  statusTag: { display: "inline-flex", padding: "6px 12px", borderRadius: "10px", fontSize: "12px", fontWeight: 800, textTransform: "uppercase" },
+  deptText: { fontWeight: 800, color: "#1e293b" },
+  statusTag: { display: "inline-flex", padding: "6px 12px", borderRadius: "10px", fontSize: "11px", fontWeight: 800, textTransform: "uppercase" },
   actionRow: { display: "flex", alignItems: "center", justifyContent: "flex-end", gap: "12px" },
-  selectBtn: { padding: "8px 16px", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "13px", fontWeight: 700, cursor: "pointer" },
-  dotsBtn: { background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: "10px", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
+  selectBtn: { padding: "8px 16px", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "12px", fontWeight: 800, cursor: "pointer", transition: "all 0.2s" },
+  dotsBtn: { background: "#fff", border: "1px solid #e2e8f0", borderRadius: "10px", width: "36px", height: "36px", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" },
   dropdownWrapper: { position: "relative" },
-  dropdownMenu: { position: "absolute", top: "calc(100% + 8px)", right: 0, background: "#fff", borderRadius: "14px", border: "1px solid #e2e8f0", padding: "8px", minWidth: "160px", boxShadow: "0 10px 25px rgba(0,0,0,0.1)", zIndex: 100 },
-  dropdownItem: { display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "10px", border: "none", background: "none", width: "100%", textAlign: "left", fontSize: "13px", fontWeight: 600, color: "#475569", cursor: "pointer" },
-  dropdownItemDanger: { display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "10px", border: "none", background: "none", width: "100%", textAlign: "left", fontSize: "13px", fontWeight: 600, color: "#dc2626", cursor: "pointer" },
+  dropdownMenu: { position: "absolute", top: "calc(100% + 8px)", right: 0, background: "#fff", borderRadius: "16px", border: "1px solid #e2e8f0", padding: "8px", minWidth: "180px", boxShadow: "0 10px 40px rgba(0,0,0,0.08)", zIndex: 100 },
+  dropdownItem: { display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "10px", border: "none", background: "none", width: "100%", textAlign: "left", fontSize: "13px", fontWeight: 700, color: "#475569", cursor: "pointer" },
+  dropdownItemDanger: { display: "flex", alignItems: "center", gap: "10px", padding: "10px 14px", borderRadius: "10px", border: "none", background: "none", width: "100%", textAlign: "left", fontSize: "13px", fontWeight: 700, color: "#dc2626", cursor: "pointer" },
   emptyTable: { padding: "64px 0", textAlign: "center" },
   emptyTableContent: { display: "flex", flexDirection: "column", alignItems: "center", gap: "16px", color: "#94a3b8" },
-  modalOverlay: { position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(8px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", zIndex: 1000 },
-  modal: { width: "min(840px, 100%)", background: "#fff", borderRadius: "28px", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", overflow: "hidden" },
-  modalHeader: { padding: "24px 32px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center" },
-  modalTitle: { margin: 0, fontSize: "20px", fontWeight: 800, color: "#1e293b" },
-  iconBtn: { width: "36px", height: "36px", borderRadius: "10px", border: "1px solid #e2e8f0", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer" },
+  modalOverlay: { position: "fixed", inset: 0, background: "rgba(15, 23, 42, 0.4)", backdropFilter: "blur(12px)", display: "flex", alignItems: "center", justifyContent: "center", padding: "24px", zIndex: 1000 },
+  modal: { width: "min(840px, 100%)", background: "#fff", borderRadius: "32px", boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", overflow: "hidden" },
+  modalHeader: { padding: "24px 32px", borderBottom: "1px solid rgba(0,0,0,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(248, 250, 252, 0.5)" },
+  modalTitle: { margin: 0, fontSize: "20px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.01em" },
+  iconBtn: { width: "36px", height: "36px", borderRadius: "10px", border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" },
   modalBody: { padding: "32px", maxHeight: "70vh", overflowY: "auto" },
-  modalProfile: { display: "flex", alignItems: "center", gap: "20px", padding: "24px", borderRadius: "20px", background: "#f8fafc", marginBottom: "24px", border: "1px solid #f1f5f9" },
-  bigAvatar: { width: "64px", height: "64px", borderRadius: "18px", background: "#2c5530", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", fontWeight: 800 },
-  modalName: { fontSize: "18px", fontWeight: 800, color: "#1e293b" },
+  modalProfile: { display: "flex", alignItems: "center", gap: "20px", padding: "24px", borderRadius: "24px", background: "rgba(248, 250, 252, 0.8)", marginBottom: "24px", border: "1px solid rgba(0,0,0,0.03)" },
+  bigAvatar: { width: "64px", height: "64px", borderRadius: "20px", background: "linear-gradient(135deg, #4a7c4e 0%, #3a703f 100%)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", fontWeight: 900 },
+  modalName: { fontSize: "18px", fontWeight: 900, color: "#1e293b" },
   modalSub: { fontSize: "14px", color: "#64748b", marginTop: "4px", fontWeight: 500 },
   formGrid: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px" },
-  label: { display: "block", fontSize: "12px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: "8px", marginLeft: "4px" },
-  input: { width: "100%", padding: "12px 16px", borderRadius: "14px", border: "1px solid #e2e8f0", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#fff" },
-  select: { width: "100%", padding: "12px 16px", borderRadius: "14px", border: "1px solid #e2e8f0", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#fff" },
-  readValue: { padding: "12px 16px", borderRadius: "14px", border: "1px solid #f1f5f9", background: "#f8fafc", color: "#475569", fontWeight: 600, fontSize: "14px" },
-  modalActions: { padding: "24px 32px", borderTop: "1px solid #f1f5f9", display: "flex", justifyContent: "flex-end", gap: "12px", background: "#f8fafc" },
-  removeModal: { width: "min(500px, 100%)", background: "#fff", borderRadius: "28px", overflow: "hidden" },
-  removeWarnBox: { padding: "16px", background: "#fef2f2", borderRadius: "16px", border: "1px solid #fee2e2", marginBottom: "20px", color: "#991b1b", fontWeight: 600 },
-  textarea: { width: "100%", minHeight: "100px", padding: "16px", borderRadius: "14px", border: "1px solid #e2e8f0", outline: "none", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#fff", resize: "none" },
+  label: { display: "block", fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px", marginLeft: "4px" },
+  input: { width: "100%", padding: "12px 16px", borderRadius: "14px", border: "1px solid #e2e8f0", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#fff", outline: "none", transition: "border-color 0.2s" },
+  select: { width: "100%", padding: "12px 16px", borderRadius: "14px", border: "1px solid #e2e8f0", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#fff", outline: "none", cursor: "pointer", transition: "border-color 0.2s" },
+  readValue: { padding: "12px 16px", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.03)", background: "rgba(248, 250, 252, 0.5)", color: "#475569", fontWeight: 700, fontSize: "14px" },
+  modalActions: { padding: "24px 32px", borderTop: "1px solid rgba(0,0,0,0.05)", display: "flex", justifyContent: "flex-end", gap: "12px", background: "rgba(248, 250, 252, 0.5)" },
+  removeModal: { width: "min(500px, 100%)", background: "#fff", borderRadius: "32px", overflow: "hidden", boxShadow: "0 25px 50px rgba(0,0,0,0.15)" },
+  removeWarnBox: { padding: "20px", background: "#fef2f2", borderRadius: "20px", border: "1px solid #fee2e2", marginBottom: "24px", color: "#b91c1c", fontWeight: 700, fontSize: "14px" },
+  textarea: { width: "100%", minHeight: "120px", padding: "16px", borderRadius: "16px", border: "1px solid #e2e8f0", outline: "none", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#fff", resize: "none" },
 };
 
 export default EmployeeManagement;

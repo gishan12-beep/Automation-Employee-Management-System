@@ -17,12 +17,13 @@ import ManagerSettings from "../pages/manager/settings/ManagerSettings";
 import SettlementCalculator from "../pages/manager/Settlement/SettlementCalculator";
 import SettlementSummary from "../pages/manager/Settlement/SettlementSummary";
 import ReportsDashboard from "../pages/manager/reports/ReportsDashboard";
-import CashCoinDashboard from "../pages/manager/reports/CashCoinDashboard";
-import CashSalaryPayoutReport from "../pages/manager/reports/CashSalaryPayoutReport";
-import CashSummaryReport from "../pages/manager/reports/CashSummaryReport";
+
 import PayrollReports from "../pages/manager/reports/PayrollReports";
 import AttendanceReports from "../pages/manager/reports/AttendanceReports";
 import EPFETFReports from "../pages/manager/reports/EPFETFReports";
+import IssueReports from "../pages/manager/reports/IssueReports";
+import LeaveReports from "../pages/manager/reports/LeaveReports";
+import SettlementReports from "../pages/manager/reports/SettlementReports";
 import LeaveRequests from "../pages/manager/leave/LeaveRequests";
 
 // Employee pages
@@ -60,12 +61,13 @@ function AppRoutes() {
       <Route path="/manager/payroll" element={<PrivateRoute allowedRoles={["MANAGER"]}><ProcessPayroll /></PrivateRoute>} />
       <Route path="/manager/settings" element={<PrivateRoute allowedRoles={["MANAGER"]}><ManagerSettings /></PrivateRoute>} />
       <Route path="/manager/reports" element={<PrivateRoute allowedRoles={["MANAGER"]}><ReportsDashboard /></PrivateRoute>} />
-      <Route path="/manager/reports/cash" element={<PrivateRoute allowedRoles={["MANAGER"]}><CashCoinDashboard /></PrivateRoute>} />
-      <Route path="/manager/reports/cash/payouts" element={<PrivateRoute allowedRoles={["MANAGER"]}><CashSalaryPayoutReport /></PrivateRoute>} />
-      <Route path="/manager/reports/cash/summary" element={<PrivateRoute allowedRoles={["MANAGER"]}><CashSummaryReport /></PrivateRoute>} />
+
       <Route path="/manager/reports/payroll" element={<PrivateRoute allowedRoles={["MANAGER"]}><PayrollReports /></PrivateRoute>} />
       <Route path="/manager/reports/attendance" element={<PrivateRoute allowedRoles={["MANAGER"]}><AttendanceReports /></PrivateRoute>} />
       <Route path="/manager/reports/epf" element={<PrivateRoute allowedRoles={["MANAGER"]}><EPFETFReports /></PrivateRoute>} />
+      <Route path="/manager/reports/issues" element={<PrivateRoute allowedRoles={["MANAGER"]}><IssueReports /></PrivateRoute>} />
+      <Route path="/manager/reports/leaves" element={<PrivateRoute allowedRoles={["MANAGER"]}><LeaveReports /></PrivateRoute>} />
+      <Route path="/manager/reports/settlement" element={<PrivateRoute allowedRoles={["MANAGER"]}><SettlementReports /></PrivateRoute>} />
       <Route path="/manager/issues" element={<PrivateRoute allowedRoles={["MANAGER"]}><IssueList /></PrivateRoute>} />
       <Route path="/manager/issues/:issueId" element={<PrivateRoute allowedRoles={["MANAGER"]}><IssueDetail /></PrivateRoute>} />
       <Route path="/manager/leaves" element={<PrivateRoute allowedRoles={["MANAGER"]}><LeaveRequests /></PrivateRoute>} />

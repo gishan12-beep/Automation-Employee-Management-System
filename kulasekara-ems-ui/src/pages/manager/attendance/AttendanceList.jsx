@@ -157,20 +157,38 @@ export default function AttendanceList() {
     <AppLayout>
       <div style={styles.page}>
         <style>{`
+          @keyframes float {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(-20px) translateX(10px); }
+          }
+          @keyframes floatReverse {
+            0%, 100% { transform: translateY(0px) translateX(0px); }
+            50% { transform: translateY(20px) translateX(-10px); }
+          }
+          .floating-circle { position: absolute; border-radius: 50%; pointer-events: none; z-index: 0; }
+          .fc-1 { animation: float 20s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.08) 0%, transparent 70%); width: 400px; height: 400px; top: -100px; left: -100px; }
+          .fc-2 { animation: floatReverse 25s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.06) 0%, transparent 70%); width: 350px; height: 350px; bottom: -80px; right: -80px; }
+          .fc-3 { animation: float 18s ease-in-out infinite; background: radial-gradient(circle, rgba(74, 124, 78, 0.05) 0%, transparent 70%); width: 250px; height: 250px; top: 20%; right: 10%; }
+          
           .fade-in { animation: fadeIn 0.4s ease-out forwards; }
           @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-          .table-row:hover { background: #f8fafc !important; }
+          .table-row { transition: all 0.2s; cursor: pointer; }
+          .table-row:hover { background: rgba(248, 250, 252, 0.8) !important; }
           .scroll-custom::-webkit-scrollbar { width: 6px; }
-          .scroll-custom::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
+          .scroll-custom::-webkit-scrollbar-thumb { background: rgba(74, 124, 78, 0.2); border-radius: 10px; }
         `}</style>
+
+        <div className="floating-circle fc-1"></div>
+        <div className="floating-circle fc-2"></div>
+        <div className="floating-circle fc-3"></div>
 
         <div style={styles.container}>
           {/* Header */}
           <div style={styles.pageHeader}>
             <div>
-              <div style={styles.breadcrumb}>Manager / Attendance & Work Management</div>
+              <div style={styles.breadcrumb}>Manager / Attendance & Monitoring</div>
               <h1 style={styles.pageTitle}>Log & Monitor Output</h1>
-              <p style={styles.pageSubtitle}>Manage daily work logs for workers and track attendance stats</p>
+              <p style={styles.pageSubtitle}>Manage daily work logs and track personnel attendance</p>
             </div>
             <div style={styles.searchWrap}>
               <Search size={18} style={styles.searchIcon} />
@@ -391,41 +409,82 @@ function InfoItem({ icon, label, value }) {
 }
 
 const styles = {
-  page: { minHeight: "100%", background: "#f8fafc" },
-  container: { padding: "32px", maxWidth: "1600px", margin: "0 auto" },
-  breadcrumb: { fontSize: "11px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" },
+  page: { minHeight: "100%", position: "relative", overflow: "hidden" },
+  container: { padding: "32px", maxWidth: "1600px", margin: "0 auto", position: "relative", zIndex: 1 },
+  breadcrumb: { fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "8px" },
   pageHeader: { display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "32px", gap: "24px", flexWrap: "wrap" },
-  pageTitle: { margin: 0, fontSize: "32px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.02em" },
+  pageTitle: { margin: 0, fontSize: "32px", fontWeight: 900, color: "#2c5530", letterSpacing: "-0.02em" },
   pageSubtitle: { margin: "4px 0 0 0", fontSize: "15px", color: "#64748b", fontWeight: 500 },
   searchWrap: { position: "relative", display: "flex", alignItems: "center", width: "320px" },
   searchIcon: { position: "absolute", left: "14px", color: "#94a3b8" },
-  searchInput: { height: "42px", width: "100%", borderRadius: "12px", border: "1px solid #e2e8f0", padding: "0 14px 0 42px", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#fff", outline: "none" },
+  searchInput: { height: "44px", width: "100%", borderRadius: "14px", border: "1px solid #e2e8f0", padding: "0 14px 0 42px", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "rgba(255, 255, 255, 0.8)", backdropFilter: "blur(4px)", outline: "none" },
   grid2: { display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: "24px", marginBottom: "32px" },
-  card: { background: "#fff", borderRadius: "24px", overflow: "hidden", boxShadow: "0 4px 20px rgba(0,0,0,0.03)", border: "1px solid #f1f5f9", display: "flex", flexDirection: "column", height: "calc(100vh - 200px)", minHeight: "600px" },
-  cardHeader: { padding: "20px 24px", borderBottom: "1px solid #f1f5f9", display: "flex", justifyContent: "space-between", alignItems: "center", background: "#fff" },
+  card: { 
+    background: "rgba(255, 255, 255, 0.9)", 
+    backdropFilter: "blur(12px)", 
+    borderRadius: "24px", 
+    overflow: "hidden", 
+    boxShadow: "0 10px 30px rgba(0,0,0,0.03)", 
+    border: "1px solid rgba(255, 255, 255, 0.5)", 
+    display: "flex", 
+    flexDirection: "column", 
+    height: "calc(100vh - 200px)", 
+    minHeight: "600px" 
+  },
+  cardHeader: { padding: "20px 24px", borderBottom: "1px solid rgba(0,0,0,0.05)", display: "flex", justifyContent: "space-between", alignItems: "center", background: "rgba(248, 250, 252, 0.5)" },
   cardTitle: { margin: 0, fontSize: "16px", fontWeight: 800, color: "#1e293b" },
-  badgeActive: { padding: "4px 10px", borderRadius: "8px", fontSize: "11px", fontWeight: 800, background: "#ecfdf5", color: "#047857", textTransform: "uppercase" },
-  badgeInactive: { padding: "4px 10px", borderRadius: "8px", fontSize: "11px", fontWeight: 800, background: "#fef2f2", color: "#b91c1c", textTransform: "uppercase" },
+  badgeActive: { padding: "4px 10px", borderRadius: "8px", fontSize: "10px", fontWeight: 800, background: "rgba(16, 185, 129, 0.1)", color: "#059669", textTransform: "uppercase" },
+  badgeInactive: { padding: "4px 10px", borderRadius: "8px", fontSize: "10px", fontWeight: 800, background: "rgba(239, 68, 68, 0.1)", color: "#dc2626", textTransform: "uppercase" },
   profileSection: { padding: "24px", display: "flex", gap: "20px", alignItems: "center" },
-  profileAvatar: { width: "70px", height: "70px", borderRadius: "18px", background: "linear-gradient(135deg, #2c5530 0%, #3a703f 100%)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", fontWeight: 900 },
+  profileAvatar: { width: "70px", height: "70px", borderRadius: "20px", background: "linear-gradient(135deg, #4a7c4e 0%, #3a703f 100%)", color: "#fff", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "28px", fontWeight: 900 },
   profileInfo: { flex: 1 },
   profileName: { fontSize: "20px", fontWeight: 900, color: "#1e293b", letterSpacing: "-0.01em", margin: 0 },
   profileMeta: { fontSize: "13px", color: "#64748b", fontWeight: 500, marginTop: "2px" },
   infoGrid: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px", marginTop: "4px" },
-  infoItem: { background: "#f8fafc", borderRadius: "12px", padding: "12px 14px", border: "1px solid #f1f5f9" },
+  infoItem: { background: "rgba(248, 250, 252, 0.5)", borderRadius: "12px", padding: "12px 14px", border: "1px solid rgba(0,0,0,0.03)" },
   infoLabel: { fontSize: "9px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em" },
   infoValue: { fontSize: "13px", fontWeight: 700, color: "#1e293b", marginTop: "2px" },
   emptyState: { flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "40px", color: "#94a3b8", textAlign: "center" },
-  dateInput: { padding: "8px 12px", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "13px", fontWeight: 600, color: "#1e293b", background: "#f8fafc", outline: "none" },
-  btnPrimary: { display: "flex", alignItems: "center", gap: "8px", padding: "8px 16px", borderRadius: "10px", background: "#2c5530", color: "#fff", border: "none", fontWeight: 700, fontSize: "13px", cursor: "pointer", boxShadow: "0 4px 12px rgba(44, 85, 48, 0.2)" },
+  dateInput: { padding: "8px 12px", borderRadius: "10px", border: "1px solid #e2e8f0", fontSize: "13px", fontWeight: 600, color: "#1e293b", background: "#fff", outline: "none" },
+  btnPrimary: { 
+    display: "flex", 
+    alignItems: "center", 
+    gap: "8px", 
+    padding: "8px 16px", 
+    borderRadius: "10px", 
+    background: "linear-gradient(135deg, #4a7c4e 0%, #5a8c5e 100%)", 
+    color: "#fff", 
+    border: "none", 
+    fontWeight: 700, 
+    fontSize: "13px", 
+    cursor: "pointer", 
+    boxShadow: "0 4px 12px rgba(74, 124, 78, 0.2)" 
+  },
   btnDisabled: { display: "flex", alignItems: "center", gap: "8px", padding: "8px 16px", borderRadius: "10px", background: "#f1f5f9", color: "#94a3b8", border: "none", fontWeight: 700, fontSize: "13px", cursor: "not-allowed" },
   summaryRow: { display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "16px", padding: "24px" },
-  summaryCard: { background: "#fff", borderRadius: "16px", padding: "16px", textAlign: "center", border: "1px solid #f1f5f9", boxShadow: "0 2px 10px rgba(0,0,0,0.02)" },
+  summaryCard: { 
+    background: "rgba(255,255,255,0.5)", 
+    borderRadius: "16px", 
+    padding: "16px", 
+    textAlign: "center", 
+    border: "1px solid rgba(255,255,255,0.5)",
+    boxShadow: "0 4px 15px rgba(0,0,0,0.02)" 
+  },
   summaryValue: { fontSize: "18px", fontWeight: 900, color: "#1e293b" },
   summaryLabel: { fontSize: "10px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", marginTop: "4px" },
   tableWrapper: { overflowX: "auto" },
-  table: { width: "100%", borderCollapse: "collapse" },
-  th: { padding: "14px 24px", textAlign: "left", fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.1em", background: "#f8fafc" },
-  td: { padding: "16px 24px", fontSize: "14px", color: "#475569", borderBottom: "1px solid #f1f5f9" },
-  iconBtnSmall: { width: "30px", height: "30px", borderRadius: "8px", border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b" },
+  table: { width: "100%", borderCollapse: "separate", borderSpacing: 0 },
+  th: { 
+    padding: "14px 24px", 
+    textAlign: "left", 
+    fontSize: "11px", 
+    fontWeight: 800, 
+    color: "#94a3b8", 
+    textTransform: "uppercase", 
+    letterSpacing: "0.1em", 
+    background: "rgba(248, 250, 252, 0.5)",
+    borderBottom: "1px solid rgba(0,0,0,0.05)"
+  },
+  td: { padding: "16px 24px", fontSize: "14px", color: "#475569", borderBottom: "1px solid rgba(0,0,0,0.05)" },
+  iconBtnSmall: { width: "32px", height: "32px", borderRadius: "8px", border: "1px solid #e2e8f0", background: "#fff", display: "flex", alignItems: "center", justifyContent: "center", cursor: "pointer", color: "#64748b", transition: "all 0.2s" },
 };

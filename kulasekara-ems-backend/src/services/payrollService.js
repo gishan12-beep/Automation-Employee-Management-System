@@ -112,7 +112,8 @@ export const processMonthlyPayroll = async (month, year) => {
                 epf_employee: parseFloat((epfEmployee || 0).toFixed(2)),
                 epf_employer: parseFloat((epfEmployer || 0).toFixed(2)),
                 etf_employer: parseFloat((etfEmployer || 0).toFixed(2)),
-                net_pay: parseFloat((netPay || 0).toFixed(2))
+                net_pay: parseFloat((netPay || 0).toFixed(2)),
+                status: 'PENDING'
             };
 
             if (existingId) {
@@ -246,7 +247,8 @@ export const processSingleEmployeePayroll = async (employeeId, month, year) => {
             epf_employee: parseFloat((epfEmployee || 0).toFixed(2)),
             epf_employer: parseFloat((epfEmployer || 0).toFixed(2)),
             etf_employer: parseFloat((etfEmployer || 0).toFixed(2)),
-            net_pay: parseFloat((netPay || 0).toFixed(2))
+            net_pay: parseFloat((netPay || 0).toFixed(2)),
+            status: 'PENDING'
         };
 
         let resultId = existingId;
@@ -419,4 +421,13 @@ export const editPayrollRun = async (payrollId, patch, editedByUser) => {
     } finally {
         conn.release();
     }
+};
+
+// ✅ Approve Payroll Run (Accountant sets status to READY)
+export const approvePayrollRun = async (payrollId) => {
+    const run = await payrollRepo.getPayrollRunById(payrollId);
+    if (!run) throw new Error("Payroll run not found");
+    
+    await payrollRepo.updatePayrollStatus(payrollId, 'READY');
+    return { success: true, message: "Payroll approved and marked as READY" };
 };
