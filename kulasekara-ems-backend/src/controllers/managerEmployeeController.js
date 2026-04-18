@@ -311,6 +311,7 @@ export const getDepartments = async (req, res) => {
  */
 export const updateEmployee = async (req, res) => {
   const { employee_id } = req.params;
+  console.log(`[BACKEND] updateEmployee: ID=${employee_id}, Body=`, JSON.stringify(req.body, null, 2));
   const {
     department_id,
     first_name,
@@ -327,18 +328,19 @@ export const updateEmployee = async (req, res) => {
     await conn.beginTransaction();
 
     // 1) Update Employee Table
+    const depId = Number(department_id);
     await conn.query(
       `UPDATE employee 
        SET department_id=?, first_name=?, last_name=?, nic=?, email=?, phone=?, status=?
        WHERE employee_id=?`,
       [
-        Number(department_id),
-        String(first_name),
-        String(last_name),
-        String(nic),
-        String(email),
-        String(phone),
-        String(status),
+        !isNaN(depId) && department_id !== "" && department_id !== null ? depId : null,
+        String(first_name || ""),
+        String(last_name || ""),
+        String(nic || ""),
+        String(email || ""),
+        String(phone || ""),
+        String(status || "ACTIVE"),
         employee_id,
       ]
     );
@@ -361,28 +363,36 @@ export const updateEmployee = async (req, res) => {
       );
 
       if (existingConfig.length > 0) {
+        const brate = Number(basic_rate);
+        const rawStype = String(salary_type || "MONTHLY").toUpperCase();
+        const safeStype = (rawStype === "MONTHLY" || rawStype === "DAILY") ? rawStype : "MONTHLY";
+
         await conn.query(
           `UPDATE salary_configurations
            SET salary_type=?, basic_rate=?, is_epf_eligible=?, effective_date=?
            WHERE employee_id=?`,
           [
-            String(salary_type),
-            Number(basic_rate),
+            safeStype,
+            !isNaN(brate) ? brate : 0,
             Number(is_epf_eligible) ? 1 : 0,
-            String(effective_date),
+            (effective_date && String(effective_date) !== "null" && String(effective_date) !== "undefined") ? String(effective_date) : new Date().toISOString().slice(0, 10),
             employee_id,
           ]
         );
       } else {
+        const brate = Number(basic_rate);
+        const rawStype = String(salary_type || "MONTHLY").toUpperCase();
+        const safeStype = (rawStype === "MONTHLY" || rawStype === "DAILY") ? rawStype : "MONTHLY";
+
         await conn.query(
           `INSERT INTO salary_configurations (employee_id, salary_type, basic_rate, is_epf_eligible, effective_date)
            VALUES (?, ?, ?, ?, ?)`,
           [
             employee_id,
-            String(salary_type),
-            Number(basic_rate),
+            safeStype,
+            !isNaN(brate) ? brate : 0,
             Number(is_epf_eligible) ? 1 : 0,
-            String(effective_date),
+            (effective_date && String(effective_date) !== "null" && String(effective_date) !== "undefined") ? String(effective_date) : new Date().toISOString().slice(0, 10),
           ]
         );
       }
@@ -405,6 +415,7 @@ export const updateEmployee = async (req, res) => {
     });
   } catch (err) {
     await conn.rollback();
+    console.error("[BACKEND] updateEmployee Error:", err);
     return res.status(500).json({ message: "Update failed", error: err.message });
   } finally {
     conn.release();

@@ -197,38 +197,46 @@ function EmployeeManagement() {
   const handleSave = async () => {
     const isExisting = employees.some((emp) => String(emp.employee_id) === String(formData.employee_id));
 
-    if (!String(formData.employee_id || "").trim()) return alert("Please fill Employee ID.");
-    if (!String(formData.department_id || "").trim()) return alert("Please select Department.");
-    if (!formData.first_name?.trim()) return alert("Please fill First Name.");
-    if (!formData.last_name?.trim()) return alert("Please fill Last Name.");
+    // Validation is only required for new employees
+    if (!isExisting) {
+      if (!String(formData.employee_id || "").trim()) return alert("Please fill Employee ID.");
+      if (!String(formData.department_id || "").trim()) return alert("Please select Department.");
+      if (!formData.first_name?.trim()) return alert("Please fill First Name.");
+      if (!formData.last_name?.trim()) return alert("Please fill Last Name.");
 
-    const nicRegex = /^([0-9]{9}[x|X|v|V]|[0-9]{12})$/;
-    const phoneRegex = /^0[0-9]{9}$/;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const nicRegex = /^([0-9]{9}[x|X|v|V]|[0-9]{12})$/;
+      const phoneRegex = /^0[0-9]{9}$/;
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-    if (!formData.nic?.trim() || !nicRegex.test(formData.nic.trim())) return alert("Invalid NIC format.");
-    if (!formData.email?.trim() || !emailRegex.test(formData.email.trim())) return alert("Invalid Email address.");
-    if (!formData.phone?.trim() || !phoneRegex.test(formData.phone.trim())) return alert("Invalid Phone number.");
+      if (!formData.nic?.trim() || !nicRegex.test(formData.nic.trim())) return alert("Invalid NIC format.");
+      if (!formData.email?.trim() || !emailRegex.test(formData.email.trim())) return alert("Invalid Email address.");
+      if (!formData.phone?.trim() || !phoneRegex.test(formData.phone.trim())) return alert("Invalid Phone number.");
 
-    if (!String(formData.salary_type || "").trim()) return alert("Please select Salary Type.");
-    if (formData.salary_type === "MONTHLY" && (Number(formData.basic_rate) <= 0 || !formData.basic_rate)) return alert("Invalid Basic Rate.");
-    if (!String(formData.effective_date || "").trim()) return alert("Please select Effective Date.");
+      if (!String(formData.salary_type || "").trim()) return alert("Please select Salary Type.");
+      if (formData.salary_type === "MONTHLY" && (Number(formData.basic_rate) <= 0 || !formData.basic_rate)) return alert("Invalid Basic Rate.");
+      if (!String(formData.effective_date || "").trim()) return alert("Please select Effective Date.");
+    }
 
     if (isExisting) {
       try {
+        const safeTrim = (val, fallback = "") => {
+          if (val === null || val === undefined) return fallback;
+          return String(val).trim();
+        };
+
         const payload = {
-          department_id: Number(formData.department_id),
-          first_name: String(formData.first_name).trim(),
-          last_name: String(formData.last_name || "-").trim(),
-          nic: String(formData.nic).trim(),
-          email: String(formData.email).trim(),
-          phone: String(formData.phone).trim(),
-          status: String(formData.status || "ACTIVE").trim(),
+          department_id: formData.department_id ? Number(formData.department_id) : null,
+          first_name: safeTrim(formData.first_name),
+          last_name: safeTrim(formData.last_name, "-"),
+          nic: safeTrim(formData.nic),
+          email: safeTrim(formData.email),
+          phone: safeTrim(formData.phone),
+          status: safeTrim(formData.status, "ACTIVE"),
           salary_configuration: {
-            salary_type: String(formData.salary_type).trim(),
-            basic_rate: formData.salary_type === "DAILY" ? 0 : Number(formData.basic_rate),
+            salary_type: safeTrim(formData.salary_type, "MONTHLY"),
+            basic_rate: formData.salary_type === "DAILY" ? 0 : Number(formData.basic_rate || 0),
             is_epf_eligible: Number(formData.is_epf_eligible) ? 1 : 0,
-            effective_date: String(formData.effective_date).trim(),
+            effective_date: safeTrim(formData.effective_date, new Date().toISOString().slice(0, 10)),
           },
         };
 
