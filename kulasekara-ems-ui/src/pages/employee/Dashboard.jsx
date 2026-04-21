@@ -50,6 +50,7 @@ function buildDisplayName(userObj) {
 export default function EmployeeDashboard() {
   const employeeIdLS = localStorage.getItem("employee_id") || localStorage.getItem("employeeId") || "";
   const [user, setUser] = useState(() => safeParse(localStorage.getItem("user") || "null"));
+  const [fetchedProfile, setFetchedProfile] = useState(null);
   
   const [stats, setStats] = useState({
     presentDays: 0,
@@ -75,7 +76,12 @@ export default function EmployeeDashboard() {
     try {
       const statsData = await getEmployeeDashboardStats();
       const activityData = await getRecentActivityApi();
+      
       setStats(statsData);
+      if (statsData.profile) {
+        setFetchedProfile(statsData.profile);
+      }
+      
       setRecentAttendance(activityData.attendance || []);
       setNotifications(activityData.notifications || []);
     } catch (err) {
@@ -86,18 +92,24 @@ export default function EmployeeDashboard() {
   };
 
   const employee = useMemo(() => {
-    const displayName = buildDisplayName(user);
-    const finalName = displayName || "Employee";
+    // Prioritize fetched data from database, fallback to localStorage
+    const p = fetchedProfile || user || {};
+    
+    // build name
+    const first = cleanName(p.firstName || p.first_name);
+    const last = cleanName(p.lastName || p.last_name);
+    const full = `${first} ${last}`.trim() || cleanName(p.name) || cleanName(p.username) || p.email || "Employee";
+
     return {
-      name: finalName,
+      name: full,
       role: "Employee",
-      department: user?.department || user?.departmentName || user?.department_name || "—",
-      employeeId: user?.employeeId || user?.employee_id || user?.employeeID || employeeIdLS || "—",
-      email: user?.email || "—",
-      phone: user?.phone || user?.contactNo || user?.contact_no || "—",
-      status: user?.status || "Active",
+      department: p.department_name || p.departmentName || p.department || "—",
+      employeeId: p.employee_id || p.employeeId || employeeIdLS || "—",
+      email: p.email || "—",
+      phone: p.phone || p.contactNo || p.contact_no || "—",
+      status: p.status || "Active",
     };
-  }, [user, employeeIdLS]);
+  }, [user, fetchedProfile, employeeIdLS]);
 
   const quickActions = [
     { title: "View Attendance", subtitle: "Check daily in/out", icon: "🕒", path: "/employee/attendance" },

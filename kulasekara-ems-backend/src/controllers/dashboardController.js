@@ -16,6 +16,16 @@ export const getEmployeeStats = async (req, res) => {
         const monthPadded = String(month).padStart(2, '0');
         const startOfMonth = `${year}-${monthPadded}-01`;
 
+        // 0. Profile Info
+        const [profileRows] = await pool.query(
+            `SELECT e.*, d.name as department_name 
+             FROM employee e 
+             LEFT JOIN departments d ON e.department_id = d.id 
+             WHERE e.employee_id = ?`,
+            [employeeId]
+        );
+        const profile = profileRows[0] || null;
+
         // 1. Attendance Stats (Present/Absent/Late)
         const [attendanceRows] = await pool.query(
             `SELECT status, COUNT(*) as count 
@@ -40,8 +50,8 @@ export const getEmployeeStats = async (req, res) => {
 
         // 2. OT Hours
         const [otRows] = await pool.query(
-            `SELECT SUM(hours) as total_hours FROM overtime_records 
-             WHERE employee_id = ? AND MONTH(date) = ? AND YEAR(date) = ? AND status = 'APPROVED'`,
+            `SELECT SUM(ot_hours) as total_hours FROM overtime_records 
+             WHERE employee_id = ? AND MONTH(date) = ? AND YEAR(date) = ?`,
             [employeeId, month, year]
         );
         const otHours = otRows[0].total_hours || 0;
@@ -77,6 +87,7 @@ export const getEmployeeStats = async (req, res) => {
         }
 
         res.json({
+            profile,
             presentDays,
             absentDays,
             otHours,

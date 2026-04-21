@@ -1,7 +1,8 @@
 // src/pages/manager/reports/CashCoinDashboard.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
+import { getCashPayoutReportApi } from "../../../services/reportService";
 
 const formatLKR = (n) =>
   new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(Number(n || 0));
@@ -11,28 +12,51 @@ export default function CashCoinDashboard() {
 
   const [month, setMonth] = useState(getMonthKey(new Date())); // "YYYY-MM"
 
-  // Dummy data (replace later with API results)
-  const data = useMemo(() => makeDummyCashData(month), [month]);
+  const [cashData, setCashData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    fetchCashData();
+  }, [month]);
+
+  const fetchCashData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [yearStr, monthStr] = month.split("-");
+      const res = await getCashPayoutReportApi(parseInt(monthStr, 10), parseInt(yearStr, 10));
+      setCashData(res);
+    } catch (err) {
+      console.error("Failed to fetch cash dashboard data:", err);
+      setError("Failed to load cash data.");
+      setCashData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const kpis = useMemo(() => {
-    const cashWithdrawn = data.withdrawals.reduce((s, w) => s + w.amount, 0);
-    const cashPaid = data.payouts
-      .filter((p) => p.method === "CASH" && p.status === "PAID")
-      .reduce((s, p) => s + p.netPay, 0);
+    // We don't have withdrawals table yet, so 0 for now or fetch if available
+    const cashWithdrawn = 0; 
+    
+    const cashPaid = cashData
+      .filter((p) => p.status === "PAID")
+      .reduce((s, p) => s + Number(p.net_pay || 0), 0);
 
-    const cashPending = data.payouts
-      .filter((p) => p.method === "CASH" && p.status !== "PAID")
-      .reduce((s, p) => s + p.netPay, 0);
+    const cashPending = cashData
+      .filter((p) => p.status !== "PAID")
+      .reduce((s, p) => s + Number(p.net_pay || 0), 0);
 
     const employeesPaidCash = new Set(
-      data.payouts.filter((p) => p.method === "CASH" && p.status === "PAID").map((p) => p.employeeId)
+      cashData.filter((p) => p.status === "PAID").map((p) => p.employee_id)
     ).size;
 
     const diff = cashWithdrawn - cashPaid;
     const avgCash = employeesPaidCash > 0 ? cashPaid / employeesPaidCash : 0;
 
     return { cashWithdrawn, cashPaid, cashPending, diff, employeesPaidCash, avgCash };
-  }, [data]);
+  }, [cashData]);
 
   const risk = kpis.diff !== 0;
 
@@ -127,21 +151,12 @@ export default function CashCoinDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.withdrawals.slice(0, 5).map((w) => (
-                      <tr key={w.id}>
-                        <td style={styles.td}>{w.date}</td>
-                        <td style={styles.td}>{w.bankRef}</td>
-                        <td style={styles.tdRight}>{formatLKR(w.amount)}</td>
-                        <td style={styles.td}>{w.withdrawnBy}</td>
-                      </tr>
-                    ))}
-                    {data.withdrawals.length === 0 && (
-                      <tr>
-                        <td style={styles.td} colSpan={4}>
-                          No withdrawals for this month.
-                        </td>
-                      </tr>
-                    )}
+                    {/* Withdrawals temporarily empty until table added */}
+                    <tr>
+                      <td style={styles.td} colSpan={4}>
+                        No withdrawals recorded in system.
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -160,24 +175,23 @@ export default function CashCoinDashboard() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.payouts
-                      .filter((p) => p.method === "CASH")
+                    {cashData
                       .filter((p) => p.status !== "PAID")
                       .slice(0, 5)
                       .map((p) => (
-                        <tr key={p.id}>
-                          <td style={styles.td}>{p.employeeName}</td>
-                          <td style={styles.td}>{p.salaryType}</td>
-                          <td style={styles.tdRight}>{formatLKR(p.netPay)}</td>
+                        <tr key={p.payroll_id}>
+                          <td style={styles.td}>{p.first_name} {p.last_name}</td>
+                          <td style={styles.td}>{p.department || "N/A"}</td>
+                          <td style={styles.tdRight}>{formatLKR(p.net_pay)}</td>
                           <td style={styles.td}>
                             <span style={{ ...styles.badge, ...styles.badgePending }}>Pending</span>
                           </td>
                         </tr>
                       ))}
-                    {data.payouts.filter((p) => p.method === "CASH" && p.status !== "PAID").length === 0 && (
+                    {cashData.filter((p) => p.status !== "PAID").length === 0 && (
                       <tr>
                         <td style={styles.td} colSpan={4}>
-                          No pending cash payouts 🎉
+                          {loading ? "Loading..." : "No pending cash payouts 🎉"}
                         </td>
                       </tr>
                     )}
@@ -216,65 +230,6 @@ function getMonthKey(d) {
   return `${yyyy}-${mm}`;
 }
 
-function makeDummyCashData(monthKey) {
-  // You can tweak data to match your factory
-  const payouts = [
-    {
-      id: "P1",
-      employeeId: "EMP001",
-      employeeName: "Kamal Perera",
-      salaryType: "Daily Wage",
-      netPay: 28500,
-      method: "CASH",
-      status: "PENDING",
-      paidOn: "",
-      paidBy: "",
-      voucherNo: "",
-    },
-    {
-      id: "P2",
-      employeeId: "EMP002",
-      employeeName: "Nimal Silva",
-      salaryType: "Monthly",
-      netPay: 65000,
-      method: "BANK",
-      status: "PAID",
-      paidOn: `${monthKey}-25`,
-      paidBy: "Accountant",
-      voucherNo: "BANK-TRF-221",
-    },
-    {
-      id: "P3",
-      employeeId: "EMP003",
-      employeeName: "Saman Jay",
-      salaryType: "Daily Wage",
-      netPay: 31200,
-      method: "CASH",
-      status: "PAID",
-      paidOn: `${monthKey}-28`,
-      paidBy: "Bank Accountant",
-      voucherNo: "VCH-0198",
-    },
-    {
-      id: "P4",
-      employeeId: "EMP004",
-      employeeName: "Chamari Silva",
-      salaryType: "Daily Wage",
-      netPay: 29500,
-      method: "CASH",
-      status: "PAID",
-      paidOn: `${monthKey}-28`,
-      paidBy: "Bank Accountant",
-      voucherNo: "VCH-0199",
-    },
-  ];
-
-  const withdrawals = [
-    { id: "W1", date: `${monthKey}-24`, bankRef: "BNK-REF-8123", amount: 100000, withdrawnBy: "Manager" },
-    { id: "W2", date: `${monthKey}-28`, bankRef: "BNK-REF-8191", amount: 20000, withdrawnBy: "Manager" },
-  ];
-
-  return { payouts, withdrawals };
 }
 
 const styles = {

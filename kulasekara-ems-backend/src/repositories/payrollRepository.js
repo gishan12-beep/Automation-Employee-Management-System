@@ -260,14 +260,22 @@ export const getPayrollByEmployee = async (employeeId, month, year) => {
 
 // ✅ Get payroll summary for month/year
 export const getPayrollSummary = async (month, year) => {
+    // Join with salary_configurations to get the salary_type active at the end of that month
     const [rows] = await pool.query(
-        `SELECT pr.*, e.first_name, e.last_name, d.name as department
+        `SELECT pr.*, e.first_name, e.last_name, d.name as department, s.salary_type
      FROM payroll_runs pr
      JOIN employee e ON pr.employee_id = e.employee_id
      LEFT JOIN departments d ON e.department_id = d.id
+     LEFT JOIN salary_configurations s ON s.employee_id = e.employee_id
+       AND s.effective_date = (
+         SELECT MAX(s2.effective_date)
+         FROM salary_configurations s2
+         WHERE s2.employee_id = e.employee_id
+           AND s2.effective_date <= LAST_DAY(STR_TO_DATE(CONCAT(?, '-', ?, '-01'), '%Y-%m-%d'))
+       )
      WHERE pr.month = ? AND pr.year = ?
      ORDER BY d.name, e.last_name`,
-        [month, year]
+        [year, month, month, year]
     );
     return rows;
 };

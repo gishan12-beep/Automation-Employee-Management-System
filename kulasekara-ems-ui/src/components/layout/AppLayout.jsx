@@ -20,7 +20,6 @@ function AppLayout({ children }) {
       { name: "Leave Requests", path: "/manager/leaves" },
       { name: "Final Settlement", path: "/manager/settlement" },
       { name: "Reports", path: "/manager/reports" },
-      { name: "Settings", path: "/manager/settings" },
     ],
     EMPLOYEE: [
       { name: "Dashboard", path: "/employee/dashboard" },
@@ -34,8 +33,6 @@ function AppLayout({ children }) {
       { name: "Dashboard", path: "/accountant/dashboard" },
       { name: "Payroll", path: "/accountant/payroll" },
       { name: "Payroll Summary", path: "/accountant/payroll-summary" },
-      { name: "EPF/ETF", path: "/accountant/epf-etf" },
-      { name: "Bank Withdrawals", path: "/accountant/withdrawals" },
     ],
   };
 

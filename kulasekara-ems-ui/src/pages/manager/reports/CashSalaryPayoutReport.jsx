@@ -1,7 +1,9 @@
 // src/pages/manager/reports/CashSalaryPayoutReport.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
+import { ArrowLeft } from "lucide-react";
+import { getCashPayoutReportApi } from "../../../services/reportService";
 
 const formatLKR = (n) =>
   new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(Number(n || 0));
@@ -12,15 +14,46 @@ export default function CashSalaryPayoutReport() {
   const [paidBy, setPaidBy] = useState("ALL"); // ALL | Manager | Bank Accountant
   const [q, setQ] = useState("");
 
-  const data = useMemo(() => makeDummyCashData(month), [month]);
+  const [cashData, setCashData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    fetchCashPayouts();
+  }, [month]);
+
+  const fetchCashPayouts = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [yearStr, monthStr] = month.split("-");
+      const data = await getCashPayoutReportApi(parseInt(monthStr, 10), parseInt(yearStr, 10));
+      setCashData(data);
+    } catch (err) {
+      console.error("Failed to fetch cash payout report:", err);
+      setError("Failed to load cash payout data.");
+      setCashData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const rows = useMemo(() => {
-    let list = data.payouts.filter((p) => p.method === "CASH");
+    let list = cashData.map(item => ({
+      id: item.payroll_id,
+      employeeId: item.employee_id,
+      employeeName: `${item.first_name} ${item.last_name}`,
+      salaryType: item.department || "N/A", // Reusing department as salary type proxy if missing
+      netPay: Number(item.net_pay || 0),
+      status: item.status,
+      paidOn: item.generated_at ? new Date(item.generated_at).toLocaleDateString() : "",
+      paidBy: "System",
+      voucherNo: `VCH-${item.payroll_id}`
+    }));
 
     if (status !== "ALL") list = list.filter((p) => p.status === status);
-    if (paidBy !== "ALL") list = list.filter((p) => (p.paidBy || "") === paidBy);
-
+    
     if (q.trim()) {
       const s = q.trim().toLowerCase();
       list = list.filter(
@@ -32,7 +65,7 @@ export default function CashSalaryPayoutReport() {
     }
 
     return list;
-  }, [data, status, paidBy, q]);
+  }, [cashData, status, q]);
 
   const totals = useMemo(() => {
     const paid = rows.filter((r) => r.status === "PAID").reduce((s, r) => s + r.netPay, 0);
@@ -159,8 +192,10 @@ export default function CashSalaryPayoutReport() {
                     <th style={styles.th}>Actions</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {rows.map((p) => (
+                <tbody style={loading ? { opacity: 0.5 } : {}}>
+                  {loading && rows.length === 0 ? (
+                    <tr><td colSpan={8} style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>Fetching cash payout data...</td></tr>
+                  ) : rows.map((p) => (
                     <tr key={p.id}>
                       <td style={styles.td}>
                         <div style={{ fontWeight: 900 }}>{p.employeeName}</div>
@@ -217,61 +252,6 @@ function getMonthKey(d) {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   return `${yyyy}-${mm}`;
-}
-
-function makeDummyCashData(monthKey) {
-  const payouts = [
-    {
-      id: "P1",
-      employeeId: "EMP001",
-      employeeName: "Kamal Perera",
-      salaryType: "Daily Wage",
-      netPay: 28500,
-      method: "CASH",
-      status: "PENDING",
-      paidOn: "",
-      paidBy: "",
-      voucherNo: "",
-    },
-    {
-      id: "P3",
-      employeeId: "EMP003",
-      employeeName: "Saman Jay",
-      salaryType: "Daily Wage",
-      netPay: 31200,
-      method: "CASH",
-      status: "PAID",
-      paidOn: `${monthKey}-28`,
-      paidBy: "Bank Accountant",
-      voucherNo: "VCH-0198",
-    },
-    {
-      id: "P4",
-      employeeId: "EMP004",
-      employeeName: "Chamari Silva",
-      salaryType: "Daily Wage",
-      netPay: 29500,
-      method: "CASH",
-      status: "PAID",
-      paidOn: `${monthKey}-28`,
-      paidBy: "Bank Accountant",
-      voucherNo: "VCH-0199",
-    },
-    {
-      id: "P5",
-      employeeId: "EMP005",
-      employeeName: "Sunil Fernando",
-      salaryType: "Monthly",
-      netPay: 55000,
-      method: "CASH",
-      status: "PAID",
-      paidOn: `${monthKey}-26`,
-      paidBy: "Manager",
-      voucherNo: "VCH-0180",
-    },
-  ];
-
-  return { payouts };
 }
 
 const styles = {

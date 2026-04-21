@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 
 /**
- * ✅ EXISTING requireAuth (UNCHANGED)
+ * EXISTING requireAuth (UNCHANGED)
  */
 export const requireAuth = (req, res, next) => {
   try {
@@ -19,7 +19,7 @@ export const requireAuth = (req, res, next) => {
 };
 
 /**
- * ✅ NEW: Role-based access control
+ *  NEW: Role-based access control
  * Usage: requireRole("MANAGER") or requireRole("MANAGER","ACCOUNTANT")
  */
 export const requireRole = (...allowedRoles) => {

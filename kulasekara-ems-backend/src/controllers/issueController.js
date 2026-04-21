@@ -36,11 +36,33 @@ export const getMyIssues = async (req, res) => {
 // Employee reports an issue
 export const reportIssue = async (req, res) => {
     const { employee_id } = req.user;
-    const { title, category, description, priority } = req.body;
+    const { type, description } = req.body;
     try {
-        const id = await issueRepo.createIssue({ employee_id, title, category, description, priority });
+        const id = await issueRepo.createIssue({ employee_id, type, description });
         res.status(201).json({ message: "Issue reported successfully", id });
     } catch (err) {
         res.status(500).json({ message: "Failed to report issue", error: err.message });
+    }
+};
+export const getIssueById = async (req, res) => {
+    const { id } = req.params;
+
+    try {
+        const issue = await issueRepo.getIssueById(id);
+        if (!issue) return res.status(404).json({ message: "Issue not found" });
+        res.status(200).json(issue);
+    } catch (err) {
+        res.status(500).json({ message: "Failed to fetch issue", error: err.message });
+    }
+};
+
+// Manager deletes an issue
+export const deleteIssue = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await issueRepo.deleteIssue(id);
+        res.json({ message: "Issue deleted successfully" });
+    } catch (err) {
+        res.status(500).json({ message: "Failed to delete issue", error: err.message });
     }
 };

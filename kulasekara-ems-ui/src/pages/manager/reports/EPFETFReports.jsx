@@ -1,7 +1,8 @@
 // src/pages/manager/reports/EPFETFReports.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
+import { getEPFETFReportApi } from "../../../services/reportService";
 
 const formatLKR = (n) =>
   new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(Number(n || 0));
@@ -10,11 +11,42 @@ export default function EPFETFReports() {
   const [month, setMonth] = useState(getMonthKey(new Date()));
   const [q, setQ] = useState("");
 
-  const data = useMemo(() => makeDummyContrib(month), [month]);
+  const [reportData, setReportData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [yearStr, monthStr] = month.split("-");
+      const data = await getEPFETFReportApi(parseInt(monthStr, 10), parseInt(yearStr, 10));
+      setReportData(data);
+    } catch (err) {
+      console.error("Failed to fetch EPF/ETF report:", err);
+      setError("Failed to load statutory report data.");
+      setReportData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [month]);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
   const rows = useMemo(() => {
-    let list = [...data.rows];
+    const dataArray = Array.isArray(reportData) ? reportData : [];
+    let list = dataArray.map(item => ({
+      id: item.payroll_id,
+      employeeId: item.employee_id,
+      employeeName: `${item.first_name} ${item.last_name}`,
+      employeeEPF: Number(item.epf_employee || 0),
+      employerEPF: Number(item.epf_employer || 0),
+      etf: Number(item.etf_employer || 0)
+    }));
+
     if (q.trim()) {
       const s = q.trim().toLowerCase();
       list = list.filter(
@@ -24,7 +56,7 @@ export default function EPFETFReports() {
       );
     }
     return list;
-  }, [data, q]);
+  }, [reportData, q]);
 
   const kpis = useMemo(() => {
     const empEpf = rows.reduce((s, r) => s + r.employeeEPF, 0);
@@ -102,6 +134,12 @@ export default function EPFETFReports() {
             </div>
           </div>
 
+          {error && (
+            <div style={{ padding: "16px", background: "#fef2f2", color: "#b91c1c", borderRadius: "12px", marginBottom: "24px", fontSize: "14px", border: "1px solid #fee2e2" }}>
+              {error}
+            </div>
+          )}
+
           <div style={styles.kpiGrid}>
             <KpiCard title="Employees" value={kpis.employees} hint={`Month: ${month}`} />
             <KpiCard title="Employee EPF Total" value={formatLKR(kpis.empEpf)} hint="Employee contribution" />
@@ -112,6 +150,7 @@ export default function EPFETFReports() {
 
           <div style={styles.panel}>
             <div style={styles.panelTitle}>Employee-wise EPF/ETF</div>
+            <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 700, marginBottom: 10 }}>{loading ? "Loading..." : `${rows.length} records`}</div>
             <div style={styles.tableWrap}>
               <table style={styles.table}>
                 <thead>
@@ -123,8 +162,11 @@ export default function EPFETFReports() {
                     <th style={styles.thRight}>Total</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {rows.map((r) => {
+                <tbody style={loading ? { opacity: 0.5 } : {}}>
+                  {loading && rows.length === 0 ? (
+                    <tr><td colSpan={5} style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>Fetching statutory data...</td></tr>
+                  ) : (
+                    rows.map((r) => {
                     const total = r.employeeEPF + r.employerEPF + r.etf;
                     return (
                       <tr key={r.id}>
@@ -138,7 +180,7 @@ export default function EPFETFReports() {
                         <td style={styles.tdRight}>{formatLKR(total)}</td>
                       </tr>
                     );
-                  })}
+                  }))}
                   {rows.length === 0 && (
                     <tr>
                       <td style={styles.td} colSpan={5}>
@@ -170,15 +212,6 @@ function getMonthKey(d) {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   return `${yyyy}-${mm}`;
-}
-
-function makeDummyContrib(monthKey) {
-  const rows = [
-    { id: "C1", employeeId: "EMP002", employeeName: "Nimal Silva", employeeEPF: 5600, employerEPF: 8400, etf: 2100 },
-    { id: "C2", employeeId: "EMP006", employeeName: "Ruwan Perera", employeeEPF: 4200, employerEPF: 6300, etf: 1575 },
-    { id: "C3", employeeId: "EMP007", employeeName: "Shanika Jay", employeeEPF: 3800, employerEPF: 5700, etf: 1425 },
-  ];
-  return { month: monthKey, rows };
 }
 
 const styles = {

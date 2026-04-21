@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
-import { leaveService } from "../../../services/leaveService";
+import { getLeaveReportApi } from "../../../services/reportService";
 import { 
-  Calendar, 
   Search, 
   Filter, 
   Clock, 
   CheckCircle2, 
-  XCircle,
-  FileText
+  XCircle
 } from "lucide-react";
 
 export default function LeaveReports() {
@@ -24,10 +22,10 @@ export default function LeaveReports() {
   const fetchLeaves = async () => {
     setLoading(true);
     try {
-      const data = await leaveService.fetchLeaveRequests();
+      const data = await getLeaveReportApi();
       setLeaves(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Failed to fetch leaves:", err);
+      console.error("Failed to fetch leaves report:", err);
     } finally {
       setLoading(false);
     }

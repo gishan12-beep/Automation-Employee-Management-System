@@ -112,17 +112,24 @@ router.post("/reset-password", async (req, res) => {
       return res.status(400).json({ message: "Reset link expired or already used." });
     }
 
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    const hashedPassword = await bcrypt.hash(String(newPassword), 10);
 
+    // ✅ Update user and RESET ALL FLAGS
     await pool.query(
-      "UPDATE user SET password_hash = ? WHERE user_id = ?",
+      `UPDATE user 
+       SET password_hash = ?, 
+           must_change_password = 0, 
+           temp_password_issued_at = NULL 
+       WHERE user_id = ?`,
       [hashedPassword, t.user_id]
     );
 
+    // Mark token as used
     await pool.query(
       "UPDATE password_reset_tokens SET used = 1 WHERE id = ?",
       [t.id]
     );
+
 
     return res.json({ message: "Password updated successfully." });
   } catch (err) {

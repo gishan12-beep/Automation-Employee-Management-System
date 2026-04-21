@@ -4,6 +4,7 @@ import {
     getLeaveRequestsByEmployee,
     createLeaveRequest,
     getLeaveTypes,
+    deleteLeaveRequest,
 } from "../repositories/leaveRepository.js";
 
 // Fetch leave types
@@ -14,6 +15,18 @@ export const fetchLeaveTypes = async (req, res) => {
     } catch (err) {
         console.error("Error fetching leave types:", err);
         res.status(500).json({ error: "Failed to fetch leave types" });
+    }
+};
+
+// Manager deletes a leave request
+export const deleteLeave = async (req, res) => {
+    const { id } = req.params;
+    try {
+        await deleteLeaveRequest(id);
+        res.json({ message: "Leave request deleted successfully" });
+    } catch (err) {
+        console.error("Error deleting leave request:", err);
+        res.status(500).json({ error: "Failed to delete leave request" });
     }
 };
 

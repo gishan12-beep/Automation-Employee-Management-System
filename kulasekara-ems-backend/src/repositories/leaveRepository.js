@@ -48,3 +48,7 @@ export const getLeaveTypes = async () => {
     const [rows] = await pool.query("SELECT * FROM leave_types ORDER BY type_name ASC");
     return rows;
 };
+
+export const deleteLeaveRequest = async (id) => {
+    await pool.query("DELETE FROM leave_requests WHERE leave_id = ?", [id]);
+};

@@ -1,7 +1,9 @@
 // src/pages/manager/reports/CashSummaryReport.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
+import { ArrowLeft } from "lucide-react";
+import { getCashPayoutReportApi } from "../../../services/reportService";
 
 const formatLKR = (n) =>
   new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(Number(n || 0));
@@ -10,21 +12,43 @@ export default function CashSummaryReport() {
   const [month, setMonth] = useState(getMonthKey(new Date()));
   const [note, setNote] = useState("");
 
-  const data = useMemo(() => makeDummyCashData(month), [month]);
+  const [cashData, setCashData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    fetchCashSummary();
+  }, [month]);
+
+  const fetchCashSummary = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [yearStr, monthStr] = month.split("-");
+      const res = await getCashPayoutReportApi(parseInt(monthStr, 10), parseInt(yearStr, 10));
+      setCashData(res);
+    } catch (err) {
+      console.error("Failed to fetch cash summary report:", err);
+      setError("Failed to load cash data.");
+      setCashData([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const kpis = useMemo(() => {
-    const cashWithdrawn = data.withdrawals.reduce((s, w) => s + w.amount, 0);
-    const cashPaid = data.payouts
-      .filter((p) => p.method === "CASH" && p.status === "PAID")
-      .reduce((s, p) => s + p.netPay, 0);
-    const cashPending = data.payouts
-      .filter((p) => p.method === "CASH" && p.status !== "PAID")
-      .reduce((s, p) => s + p.netPay, 0);
+    const cashWithdrawn = 0; // No withdrawal table yet
+    const cashPaid = cashData
+      .filter((p) => p.status === "PAID")
+      .reduce((s, p) => s + Number(p.net_pay || 0), 0);
+    const cashPending = cashData
+      .filter((p) => p.status !== "PAID")
+      .reduce((s, p) => s + Number(p.net_pay || 0), 0);
 
     const diff = cashWithdrawn - cashPaid;
     return { cashWithdrawn, cashPaid, cashPending, diff };
-  }, [data]);
+  }, [cashData]);
 
   const risk = kpis.diff !== 0;
 
@@ -116,19 +140,9 @@ export default function CashSummaryReport() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.withdrawals.map((w) => (
-                      <tr key={w.id}>
-                        <td style={styles.td}>{w.date}</td>
-                        <td style={styles.td}>{w.bankRef}</td>
-                        <td style={styles.tdRight}>{formatLKR(w.amount)}</td>
-                        <td style={styles.td}>{w.withdrawnBy}</td>
-                      </tr>
-                    ))}
-                    {data.withdrawals.length === 0 && (
-                      <tr>
-                        <td style={styles.td} colSpan={4}>No withdrawals for this month.</td>
-                      </tr>
-                    )}
+                    <tr>
+                      <td style={styles.td} colSpan={4}>No withdrawals recorded in system.</td>
+                    </tr>
                   </tbody>
                 </table>
               </div>
@@ -147,15 +161,14 @@ export default function CashSummaryReport() {
                     </tr>
                   </thead>
                   <tbody>
-                    {data.payouts
-                      .filter((p) => p.method === "CASH")
+                    {cashData
                       .map((p) => (
-                        <tr key={p.id}>
+                        <tr key={p.payroll_id}>
                           <td style={styles.td}>
-                            <div style={{ fontWeight: 900 }}>{p.employeeName}</div>
-                            <div style={{ opacity: 0.7, fontSize: 12 }}>{p.employeeId}</div>
+                            <div style={{ fontWeight: 900 }}>{p.first_name} {p.last_name}</div>
+                            <div style={{ opacity: 0.7, fontSize: 12 }}>{p.employee_id}</div>
                           </td>
-                          <td style={styles.tdRight}>{formatLKR(p.netPay)}</td>
+                          <td style={styles.tdRight}>{formatLKR(p.net_pay)}</td>
                           <td style={styles.td}>
                             {p.status === "PAID" ? (
                               <span style={{ ...styles.badge, ...styles.badgePaid }}>Paid</span>
@@ -163,12 +176,12 @@ export default function CashSummaryReport() {
                               <span style={{ ...styles.badge, ...styles.badgePending }}>Pending</span>
                             )}
                           </td>
-                          <td style={styles.td}>{p.voucherNo || "-"}</td>
+                          <td style={styles.td}>{p.payroll_id || "-"}</td>
                         </tr>
                       ))}
-                    {data.payouts.filter((p) => p.method === "CASH").length === 0 && (
+                    {cashData.length === 0 && (
                       <tr>
-                        <td style={styles.td} colSpan={4}>No cash payments found.</td>
+                        <td style={styles.td} colSpan={4}>{loading ? "Loading..." : "No cash payments found."}</td>
                       </tr>
                     )}
                   </tbody>
@@ -205,43 +218,6 @@ function getMonthKey(d) {
   return `${yyyy}-${mm}`;
 }
 
-function makeDummyCashData(monthKey) {
-  const payouts = [
-    {
-      id: "P1",
-      employeeId: "EMP001",
-      employeeName: "Kamal Perera",
-      netPay: 28500,
-      method: "CASH",
-      status: "PENDING",
-      voucherNo: "",
-    },
-    {
-      id: "P3",
-      employeeId: "EMP003",
-      employeeName: "Saman Jay",
-      netPay: 31200,
-      method: "CASH",
-      status: "PAID",
-      voucherNo: "VCH-0198",
-    },
-    {
-      id: "P4",
-      employeeId: "EMP004",
-      employeeName: "Chamari Silva",
-      netPay: 29500,
-      method: "CASH",
-      status: "PAID",
-      voucherNo: "VCH-0199",
-    },
-  ];
-
-  const withdrawals = [
-    { id: "W1", date: `${monthKey}-24`, bankRef: "BNK-REF-8123", amount: 100000, withdrawnBy: "Manager" },
-    { id: "W2", date: `${monthKey}-28`, bankRef: "BNK-REF-8191", amount: 20000, withdrawnBy: "Manager" },
-  ];
-
-  return { payouts, withdrawals };
 }
 
 const styles = {

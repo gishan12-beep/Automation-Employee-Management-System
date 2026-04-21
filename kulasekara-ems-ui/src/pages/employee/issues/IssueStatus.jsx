@@ -1,62 +1,66 @@
-import React, { useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useEffect, useState } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
+import { getMyIssuesApi, createIssueApi } from "../../../services/issueService";
 
 export default function IssueStatus() {
-  const employeeId = localStorage.getItem("employee_id") || "EMP001";
+  const [issues, setIssues] = useState([]);
   const [selected, setSelected] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth < 900);
   const [showModal, setShowModal] = useState(false);
   const [msg, setMsg] = useState({ text: "", type: "" });
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     type: "PAYROLL",
     description: "",
   });
 
-  // ✅ Responsive watcher (no CSS media queries since inline)
   useEffect(() => {
+    fetchIssues();
     const onResize = () => setIsMobile(window.innerWidth < 900);
     window.addEventListener("resize", onResize);
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
-  const issues = useMemo(() => {
-    const all = JSON.parse(localStorage.getItem("issues") || "[]");
-    return all
-      .filter((i) => i.employee_id === employeeId)
-      .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  }, [employeeId, refreshTrigger]);
+  const fetchIssues = async () => {
+    setLoading(true);
+    try {
+      const data = await getMyIssuesApi();
+      setIssues(data || []);
+    } catch (err) {
+      console.error("Failed to fetch issues:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const setField = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     if (!form.description.trim()) {
       setMsg({ text: "Description is required.", type: "error" });
       return;
     }
 
-    const existing = JSON.parse(localStorage.getItem("issues") || "[]");
-    const payload = {
-      issue_id: Math.floor(1000 + Math.random() * 9000),
-      employee_id: employeeId,
-      type: form.type,
-      description: form.description.trim(),
-      status: "OPEN",
-      created_at: new Date().toISOString(),
-    };
+    try {
+      setMsg({ text: "Submitting...", type: "info" });
+      await createIssueApi({
+        type: form.type,
+        description: form.description.trim(),
+      });
 
-    localStorage.setItem("issues", JSON.stringify([payload, ...existing]));
-    setMsg({ text: "Issue submitted successfully.", type: "success" });
-    setRefreshTrigger((p) => p + 1);
+      setMsg({ text: "Issue reported successfully.", type: "success" });
+      fetchIssues();
 
-    setTimeout(() => {
-      setShowModal(false);
-      setForm({ type: "PAYROLL", description: "" });
-      setMsg({ text: "", type: "" });
-    }, 1500);
+      setTimeout(() => {
+        setShowModal(false);
+        setForm({ type: "PAYROLL", description: "" });
+        setMsg({ text: "", type: "" });
+      }, 1500);
+    } catch (err) {
+      setMsg({ text: err.response?.data?.message || "Failed to report issue.", type: "error" });
+    }
   };
 
   return (
@@ -111,32 +115,38 @@ export default function IssueStatus() {
                     </tr>
                   </thead>
                   <tbody>
-                    {issues.length === 0 && (
+                    {loading ? (
+                      <tr>
+                        <td colSpan="4" className="empty-state">
+                          Loading issues...
+                        </td>
+                      </tr>
+                    ) : issues.length === 0 ? (
                       <tr>
                         <td colSpan="4" className="empty-state">
                           No issues found.
                         </td>
                       </tr>
+                    ) : (
+                      issues.map((issue) => (
+                        <tr
+                          key={issue.issue_id}
+                          onClick={() => setSelected(issue)}
+                          className={selected?.issue_id === issue.issue_id ? "selected-row" : ""}
+                        >
+                          <td className="id-cell">#{issue.issue_id}</td>
+                          <td className="type-cell">{issue.type}</td>
+                          <td>
+                            <span className={`badge ${issue.status === "RESOLVED" ? "badge-resolved" : "badge-pending"}`}>
+                              {issue.status}
+                            </span>
+                          </td>
+                          <td className="date-cell">
+                            {new Date(issue.created_at).toLocaleDateString()}
+                          </td>
+                        </tr>
+                      ))
                     )}
-
-                    {issues.map((issue) => (
-                      <tr
-                        key={issue.issue_id}
-                        onClick={() => setSelected(issue)}
-                        className={selected?.issue_id === issue.issue_id ? "selected-row" : ""}
-                      >
-                        <td className="id-cell">#{issue.issue_id}</td>
-                        <td className="type-cell">{issue.type}</td>
-                        <td>
-                          <span className={`badge ${issue.status === "RESOLVED" ? "badge-resolved" : "badge-pending"}`}>
-                            {issue.status}
-                          </span>
-                        </td>
-                        <td className="date-cell">
-                          {new Date(issue.created_at).toLocaleDateString()}
-                        </td>
-                      </tr>
-                    ))}
                   </tbody>
                 </table>
               </div>
@@ -155,7 +165,7 @@ export default function IssueStatus() {
 
                   <div className="kv-grid">
                     <div className="kv-item">
-                      <span className="kv-label">Issue ID</span>
+                      <span className="kv-label">ID</span>
                       <span className="kv-value">#{selected.issue_id}</span>
                     </div>
                     <div className="kv-item">
@@ -208,11 +218,7 @@ export default function IssueStatus() {
               <div className="modal-body">
                 <form onSubmit={submit}>
                   <div className="grid">
-                    <div>
-                      <label className="label">Employee ID</label>
-                      <input value={employeeId} disabled className="input" style={{ background: "rgba(0,0,0,0.03)" }} />
-                    </div>
-                    <div>
+                    <div style={{ gridColumn: "span 2" }}>
                       <label className="label">Issue Type</label>
                       <select
                         value={form.type}

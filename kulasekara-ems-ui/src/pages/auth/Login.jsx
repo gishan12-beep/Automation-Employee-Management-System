@@ -1,11 +1,13 @@
 // src/pages/auth/Login.jsx
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { login as loginApi } from "../../services/authService";
 
 function Login() {
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState("");
   const [hoveredButton, setHoveredButton] = useState(false);
@@ -213,20 +215,35 @@ function Login() {
                 </svg>
                 Password
               </label>
-              <input
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                onFocus={() => setFocusedInput("password")}
-                onBlur={() => setFocusedInput("")}
-                style={{
-                  ...styles.input,
-                  ...(focusedInput === "password" ? styles.inputFocused : {}),
-                }}
-                autoComplete="current-password"
-                required
-              />
+              <div style={styles.passwordWrapper}>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setFocusedInput("password")}
+                  onBlur={() => setFocusedInput("")}
+                  style={{
+                    ...styles.input,
+                    ...(focusedInput === "password" ? styles.inputFocused : {}),
+                    paddingRight: "48px",
+                  }}
+                  autoComplete="current-password"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  style={{
+                    ...styles.eyeButton,
+                    color: focusedInput === "password" ? "#4a7c4e" : "#9ca3af",
+                  }}
+                  tabIndex="-1"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
             </div>
 
             <div style={styles.forgotWrap}>
@@ -459,6 +476,25 @@ const styles = {
   },
   inputGroup: {
     marginBottom: "22px",
+  },
+  passwordWrapper: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+  },
+  eyeButton: {
+    position: "absolute",
+    right: "14px",
+    background: "none",
+    border: "none",
+    padding: "4px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "all 0.2s ease",
+    borderRadius: "8px",
+    zIndex: 3,
   },
   label: {
     display: "flex",

@@ -1,14 +1,11 @@
 import React, { useState, useEffect } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
-import { getIssuesApi } from "../../../services/issueService";
+import { getIssueReportApi } from "../../../services/reportService";
 import { 
-  AlertCircle, 
   Search, 
   Filter, 
   Clock, 
-  CheckCircle2, 
-  AlertTriangle,
-  MessageSquare
+  CheckCircle2
 } from "lucide-react";
 
 export default function IssueReports() {
@@ -24,20 +21,27 @@ export default function IssueReports() {
   const fetchIssues = async () => {
     setLoading(true);
     try {
-      const data = await getIssuesApi();
+      const data = await getIssueReportApi();
       setIssues(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.error("Failed to fetch issues:", err);
+      console.error("Failed to fetch issues report:", err);
     } finally {
       setLoading(false);
     }
   };
 
   const filteredIssues = issues.filter(issue => {
+    if (!issue) return false;
+    
+    const searchLow = (searchTerm || "").toLowerCase();
+    const title = (issue.title || "").toLowerCase();
+    const empId = (issue.employee_id || "").toLowerCase();
+    const fullName = `${issue.first_name || ""} ${issue.last_name || ""}`.toLowerCase();
+
     const matchesSearch = 
-      issue.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      issue.employee_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (issue.first_name + " " + issue.last_name).toLowerCase().includes(searchTerm.toLowerCase());
+      title.includes(searchLow) ||
+      empId.includes(searchLow) ||
+      fullName.includes(searchLow);
     
     const matchesStatus = statusFilter === "ALL" || issue.status === statusFilter;
     
@@ -122,11 +126,11 @@ export default function IssueReports() {
                   <tr><td colSpan="6" style={styles.emptyTd}>No issues found.</td></tr>
                 ) : (
                   filteredIssues.map((issue) => (
-                    <tr key={issue.id} className="table-row">
+                    <tr key={issue.issue_id} className="table-row">
                       <td style={styles.td}>
                         <div style={styles.issueInfo}>
-                          <span style={styles.issueTitle}>{issue.title}</span>
-                          <span style={styles.issueDesc}>{issue.description?.substring(0, 60)}...</span>
+                          <span style={styles.issueTitle}>{issue.description?.substring(0, 30)}...</span>
+                          <span style={styles.issueDesc}>{issue.description?.substring(0, 100)}...</span>
                         </div>
                       </td>
                       <td style={styles.td}>
@@ -135,9 +139,9 @@ export default function IssueReports() {
                           <span style={styles.empId}>{issue.employee_id}</span>
                         </div>
                       </td>
-                      <td style={styles.td}>{issue.category}</td>
+                      <td style={styles.td}>{issue.type}</td>
                       <td style={styles.td}>
-                        <PriorityBadge priority={issue.priority} />
+                        <PriorityBadge priority={issue.priority || "MEDIUM"} />
                       </td>
                       <td style={styles.td}>
                         <StatusBadge status={issue.status} />

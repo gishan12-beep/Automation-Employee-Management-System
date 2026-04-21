@@ -10,6 +10,7 @@ import payrollRoutes from "./routes/payrollRoutes.js";
 import leaveRoutes from "./routes/leaveRoutes.js";
 import workLogRoutes from "./routes/workLogRoutes.js";
 import issueRoutes from "./routes/issueRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
 
 dotenv.config();
 
@@ -29,5 +30,6 @@ app.use("/api/payroll", payrollRoutes);
 app.use("/api/manager", leaveRoutes);
 app.use("/api/manager", workLogRoutes);
 app.use("/api", issueRoutes);
+app.use("/api/manager", reportRoutes);
 
 export default app;

@@ -16,8 +16,9 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(false);
   const [data, setData] = useState({
     employees: 0,
+    monthly: 0,
+    daily: 0,
     totalNet: 0,
-    totalEpfEtf: 0,
     month: "",
     year: ""
   });
@@ -31,11 +32,16 @@ export default function Dashboard() {
         const res = await getPayrollSummaryApi({ month: monthStr });
 
         const summary = res.summary || {};
+        const rows = res.rows || [];
+        const monthly = rows.filter(r => r.salaryType === "MONTHLY").length;
+        const daily = rows.filter(r => r.salaryType === "DAILY").length;
 
         setData({
-          employees: (res.rows || []).length,
+          employees: rows.length,
+          monthly,
+          daily,
           totalNet: summary.totalNet || 0,
-          totalEpfEtf: summary.totalEpfEtf || 0,
+          totalNet: summary.totalNet || 0,
           month: now.toLocaleString('default', { month: 'short' }),
           year: now.getFullYear()
         });
@@ -50,9 +56,8 @@ export default function Dashboard() {
 
   const cards = useMemo(() => {
     return [
-      { label: "Employees", value: data.employees, hint: "Active employees" },
+      { label: "Employees", value: `${data.monthly}M | ${data.daily}D`, hint: `Total: ${data.employees}` },
       { label: "Total Payroll (Net)", value: formatLKR(data.totalNet), hint: `${data.month} ${data.year}` },
-      { label: "EPF/ETF Total", value: formatLKR(data.totalEpfEtf), hint: "Emp + Er contrib." },
       { label: "Pending Actions", value: "—", hint: "Awaiting review" },
     ];
   }, [data]);
@@ -64,7 +69,7 @@ export default function Dashboard() {
           <div>
             <h2 style={styles.title}>Accountant Dashboard</h2>
             <p style={styles.subtitle}>
-              Overview of payroll, EPF/ETF, and audit status.
+              Overview of payroll and audit status.
             </p>
           </div>
 
@@ -74,9 +79,6 @@ export default function Dashboard() {
             </button>
             <button style={styles.btnSecondary} onClick={() => navigate("/accountant/payroll-summary")}>
               Payroll Management
-            </button>
-            <button style={styles.btnSecondary} onClick={() => navigate("/accountant/epf-etf")}>
-              EPF/ETF Reports
             </button>
           </div>
         </div>
@@ -110,11 +112,6 @@ export default function Dashboard() {
                 title="Payroll Summary"
                 desc="View monthly payroll totals & breakdown."
                 onClick={() => navigate("/accountant/payroll-summary")}
-              />
-              <ActionCard
-                title="EPF / ETF"
-                desc="Manage contributions and generate reports."
-                onClick={() => navigate("/accountant/epf-etf")}
               />
             </div>
           </div>
@@ -169,7 +166,7 @@ const styles = {
 
   cardGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(5, minmax(160px, 1fr))",
+    gridTemplateColumns: "repeat(3, minmax(160px, 1fr))",
     gap: 12,
     marginTop: 10,
     marginBottom: 14,
@@ -207,7 +204,7 @@ const styles = {
   actionGrid: {
     padding: 14,
     display: "grid",
-    gridTemplateColumns: "repeat(3, minmax(160px, 1fr))",
+    gridTemplateColumns: "repeat(2, minmax(160px, 1fr))",
     gap: 12,
   },
   actionCard: {

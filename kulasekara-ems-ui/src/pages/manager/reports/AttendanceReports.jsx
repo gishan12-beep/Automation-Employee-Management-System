@@ -1,23 +1,20 @@
 // src/pages/manager/reports/AttendanceReports.jsx
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import { 
   ArrowLeft, 
-  Download, 
   Printer, 
   Search, 
   Calendar, 
   Users, 
-  CheckCircle2, 
-  XCircle, 
   Clock, 
-  TrendingUp, 
   BarChart3,
   UserCheck,
   UserX,
   History
 } from "lucide-react";
+import { getAttendanceReportApi } from "../../../services/reportService";
 
 export default function AttendanceReports() {
   const [month, setMonth] = useState(getMonthKey(new Date()));
@@ -25,10 +22,43 @@ export default function AttendanceReports() {
   const [q, setQ] = useState("");
   const navigate = useNavigate();
 
-  const data = useMemo(() => makeDummyAttendance(month), [month]);
+  const [attendanceData, setAttendanceData] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchAttendance = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [yearStr, monthStr] = month.split("-");
+      const data = await getAttendanceReportApi(parseInt(monthStr, 10), parseInt(yearStr, 10));
+      setAttendanceData(data);
+    } catch (err) {
+      console.error("Failed to fetch attendance report:", err);
+      setError("Failed to load attendance data.");
+      setAttendanceData([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [month]);
+
+  useEffect(() => {
+    fetchAttendance();
+  }, [fetchAttendance]);
 
   const rows = useMemo(() => {
-    let list = [...data.rows];
+    let list = attendanceData.map(item => ({
+      id: item.employee_id,
+      employeeId: item.employee_id,
+      employeeName: `${item.first_name} ${item.last_name}`,
+      employeeType: item.employee_type || "N/A",
+      presentDays: Number(item.present_days || 0),
+      absentDays: Number(item.absent_days || 0),
+      lateDays: Number(item.late_days || 0),
+      workHours: Number(item.present_days || 0) * 8, // Assuming 8h per present day for summary
+      overtimeHours: Number(item.total_ot_hours || 0)
+    }));
+
     if (type !== "ALL") list = list.filter((r) => r.employeeType === type);
     if (q.trim()) {
       const s = q.trim().toLowerCase();
@@ -39,7 +69,7 @@ export default function AttendanceReports() {
       );
     }
     return list;
-  }, [data, type, q]);
+  }, [attendanceData, type, q]);
 
   const kpis = useMemo(() => {
     const totalEmp = rows.length;
@@ -142,6 +172,12 @@ export default function AttendanceReports() {
             </div>
           </div>
 
+          {error && (
+            <div style={{ padding: "16px", background: "#fef2f2", color: "#b91c1c", borderRadius: "12px", marginBottom: "24px", fontSize: "14px", border: "1px solid #fee2e2" }}>
+              {error}
+            </div>
+          )}
+
           {/* KPI grid */}
           <div style={styles.kpiGrid} className="fade-in">
             <KpiCard icon={<Users size={18} />} title="Staff Count" value={kpis.totalEmp} hint="Active in filters" />
@@ -156,7 +192,7 @@ export default function AttendanceReports() {
           <div style={styles.listCard} className="fade-in">
             <div style={styles.listHeader}>
               <h3 style={styles.listTitle}>Workforce Attendance Listing</h3>
-              <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 700 }}>{rows.length} employees</div>
+              <div style={{ fontSize: "12px", color: "#64748b", fontWeight: 700 }}>{loading ? "Loading..." : `${rows.length} employees`}</div>
             </div>
             <div style={styles.tableWrapper}>
               <table style={styles.table}>
@@ -171,8 +207,10 @@ export default function AttendanceReports() {
                     <th style={styles.thRight}>OT Hrs</th>
                   </tr>
                 </thead>
-                <tbody>
-                  {rows.map((r) => (
+                <tbody style={loading ? { opacity: 0.5 } : {}}>
+                  {loading && rows.length === 0 ? (
+                    <tr><td colSpan={7} style={{ textAlign: "center", padding: "40px", color: "#94a3b8" }}>Fetching attendance data...</td></tr>
+                  ) : rows.map((r) => (
                     <tr key={r.id} className="table-row">
                       <td style={styles.td}>
                         <div style={{ fontSize: "14px", fontWeight: 700, color: "#1e293b" }}>{r.employeeName}</div>
@@ -220,15 +258,6 @@ function getMonthKey(d) {
   const yyyy = d.getFullYear();
   const mm = String(d.getMonth() + 1).padStart(2, "0");
   return `${yyyy}-${mm}`;
-}
-
-function makeDummyAttendance(monthKey) {
-  const rows = [
-    { id: "AT1", employeeId: "EMP001", employeeName: "Kamal Perera", employeeType: "Daily Wage", presentDays: 22, absentDays: 2, lateDays: 3, workHours: 176, overtimeHours: 8 },
-    { id: "AT2", employeeId: "EMP002", employeeName: "Nimal Silva", employeeType: "Permanent", presentDays: 24, absentDays: 0, lateDays: 0, workHours: 192, overtimeHours: 0 },
-    { id: "AT3", employeeId: "EMP003", employeeName: "Chamari Silva", employeeType: "Daily Wage", presentDays: 20, absentDays: 4, lateDays: 1, workHours: 160, overtimeHours: 6 },
-  ];
-  return { month: monthKey, rows };
 }
 
 const styles = {

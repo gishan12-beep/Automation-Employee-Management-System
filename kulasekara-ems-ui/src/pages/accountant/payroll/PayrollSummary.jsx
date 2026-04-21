@@ -23,7 +23,6 @@ export default function PayrollSummary() {
   const [month, setMonth] = useState(monthValue());
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("ALL"); // ALL | SAVED | PENDING
-  const [activeTab, setActiveTab] = useState("MONTHLY"); // "MONTHLY" | "OTHER"
   const [loading, setLoading] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [toast, setToast] = useState("");
@@ -119,10 +118,6 @@ export default function PayrollSummary() {
 
     return rows
       .filter((r) => {
-        if (activeTab === "MONTHLY") return r.salaryType === "MONTHLY";
-        return r.salaryType !== "MONTHLY";
-      })
-      .filter((r) => {
         if (status === "SAVED") return r.isFinalized === true;
         if (status === "PENDING") return r.isFinalized === false;
         return true;
@@ -135,7 +130,10 @@ export default function PayrollSummary() {
           String(r.department || "").toLowerCase().includes(keyword)
         );
       });
-  }, [rows, q, status, activeTab]);
+  }, [rows, q, status]);
+
+  const monthlyRows = useMemo(() => filteredRows.filter(r => r.salaryType === "MONTHLY"), [filteredRows]);
+  const dailyRows = useMemo(() => filteredRows.filter(r => r.salaryType === "DAILY"), [filteredRows]);
 
   const kpis = useMemo(() => {
     // Only count rows that actually have payroll data (gross is not "-")
@@ -265,89 +263,26 @@ export default function PayrollSummary() {
           </div>
 
           <div className="card">
-            <div className="cardTitle">Payroll List</div>
+            <div className="cardTitle">Payroll Overview</div>
 
-            <div className="tabContainer">
-              <button
-                className={`tabBtn ${activeTab === "MONTHLY" ? "active" : ""}`}
-                onClick={() => setActiveTab("MONTHLY")}
-              >
-                Monthly Employees
-              </button>
-              <button
-                className={`tabBtn ${activeTab === "OTHER" ? "active" : ""}`}
-                onClick={() => setActiveTab("OTHER")}
-              >
-                Daily / Other Employees
-              </button>
+            <div className="sectionHeader" style={{ padding: "0 0 10px 0", borderBottom: "1px solid rgba(0,0,0,0.05)", marginBottom: 16 }}>
+              <h3 style={{ margin: 0, fontSize: 13, fontWeight: 800, color: "#4a7c4e", textTransform: "uppercase" }}>Monthly Employees</h3>
             </div>
-
             {loading ? (
               <div className="muted">Loading payroll summary...</div>
-            ) : filteredRows.length === 0 ? (
-              <div className="muted">No active employees found in the system.</div>
+            ) : monthlyRows.length === 0 ? (
+              <div className="muted" style={{ padding: "20px 0" }}>No monthly employees found for this month / filter.</div>
             ) : (
-              <div className="tableWrap">
-                <table className="table">
-                  <thead>
-                    <tr>
-                      <th>Employee</th>
-                      <th>Department</th>
-                      <th className="right">Gross (LKR)</th>
-                      <th className="right">Deductions (LKR)</th>
-                      <th className="right">Net (LKR)</th>
-                      <th>Status</th>
-                      <th className="right">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredRows.map((r) => (
-                      <tr key={r.employeeId}>
-                        <td>
-                          <div className="empCell">
-                            <div className="avatar">{String(r.name || "E").charAt(0).toUpperCase()}</div>
-                            <div>
-                              <div className="empName">{r.name}</div>
-                              <div className="muted empId">{r.employeeId}</div>
-                            </div>
-                          </div>
-                        </td>
-                        <td>{r.department || "-"}</td>
-                        <td className="right">{fmt(r.gross)}</td>
-                        <td className="right">{fmt(r.deductions)}</td>
-                        <td className="right strong">{fmt(r.net)}</td>
-                        <td>
-                          <span className={`badge ${r.status === "READY" ? "ok" : r.status === "PENDING" ? "warn" : "info"}`}>
-                            {r.status === "PENDING" ? "Pending Approval" : r.status === "READY" ? "Ready" : r.status}
-                          </span>
-                        </td>
-                        <td className="right">
-                          <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
-                            {r.status === "PENDING" && (
-                              <button
-                                className="btn btn-small btn-primary"
-                                onClick={() => handleApprove(r.payrollId)}
-                                disabled={processing}
-                              >
-                                {processing ? "..." : "Approve"}
-                              </button>
-                            )}
-                            <button
-                              className="btn btn-small"
-                              onClick={() => openBuilder(r.employeeId)}
-                              disabled={r.status === "NO_RECORD" || r.status === "NOT_READY"} // Adjusted for potential missing records
-                              title={r.payrollId ? "" : "Generate payroll first"}
-                              style={{ opacity: r.payrollId ? 1 : 0.5 }}
-                            >
-                              {r.isFinalized ? "Edit / Rebuild" : "Adjust"}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+              <PayrollTable rows={monthlyRows} processing={processing} onApprove={handleApprove} openBuilder={openBuilder} />
+            )}
+
+            <div className="sectionHeader" style={{ padding: "20px 0 10px 0", borderBottom: "1px solid rgba(0,0,0,0.05)", marginBottom: 16, marginTop: 20 }}>
+              <h3 style={{ margin: 0, fontSize: 13, fontWeight: 800, color: "#b45309", textTransform: "uppercase" }}>Daily Employees</h3>
+            </div>
+            {loading ? null : dailyRows.length === 0 ? (
+              <div className="muted" style={{ padding: "20px 0" }}>No daily employees found for this month / filter.</div>
+            ) : (
+              <PayrollTable rows={dailyRows} processing={processing} onApprove={handleApprove} openBuilder={openBuilder} />
             )}
           </div>
 
@@ -484,4 +419,68 @@ export default function PayrollSummary() {
   );
 }
 
-
+function PayrollTable({ rows, processing, onApprove, openBuilder }) {
+  return (
+    <div className="tableWrap">
+      <table className="table">
+        <thead>
+          <tr>
+            <th>Employee</th>
+            <th>Department</th>
+            <th className="right">Gross (LKR)</th>
+            <th className="right">Deductions (LKR)</th>
+            <th className="right">Net (LKR)</th>
+            <th>Status</th>
+            <th className="right">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r) => (
+            <tr key={r.employeeId}>
+              <td>
+                <div className="empCell">
+                  <div className="avatar">{String(r.name || "E").charAt(0).toUpperCase()}</div>
+                  <div>
+                    <div className="empName">{r.name}</div>
+                    <div className="muted empId">{r.employeeId}</div>
+                  </div>
+                </div>
+              </td>
+              <td>{r.department || "-"}</td>
+              <td className="right">{fmt(r.gross)}</td>
+              <td className="right">{fmt(r.deductions)}</td>
+              <td className="right strong">{fmt(r.net)}</td>
+              <td>
+                <span className={`badge ${r.status === "READY" ? "ok" : r.status === "PENDING" ? "warn" : "info"}`}>
+                  {r.status === "PENDING" ? "Pending Approval" : r.status === "READY" ? "Ready" : r.status}
+                </span>
+              </td>
+              <td className="right">
+                <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end" }}>
+                  {r.status === "PENDING" && (
+                    <button
+                      className="btn btn-small btn-primary"
+                      onClick={() => onApprove(r.payrollId)}
+                      disabled={processing}
+                    >
+                      {processing ? "..." : "Approve"}
+                    </button>
+                  )}
+                  <button
+                    className="btn btn-small"
+                    onClick={() => openBuilder(r.employeeId)}
+                    disabled={r.status === "NO_RECORD" || r.status === "NOT_READY"}
+                    title={r.payrollId ? "" : "Generate payroll first"}
+                    style={{ opacity: r.payrollId ? 1 : 0.5 }}
+                  >
+                    {r.isFinalized ? "Edit / Rebuild" : "Adjust"}
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}

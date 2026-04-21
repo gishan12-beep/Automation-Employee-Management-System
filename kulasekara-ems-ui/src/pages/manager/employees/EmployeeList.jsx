@@ -14,19 +14,13 @@ import {
   Plus, 
   Mail, 
   Phone, 
-  MapPin, 
   Calendar, 
   Edit3, 
   Eye, 
   Trash2, 
   MoreVertical,
   Briefcase,
-  User,
-  ShieldCheck,
-  ChevronRight,
-  Filter,
-  X,
-  Info
+  ShieldCheck
 } from "lucide-react";
 
 /**
@@ -62,6 +56,9 @@ function EmployeeManagement() {
 
   // Dropdown state
   const [menuOpenId, setMenuOpenId] = useState(null);
+
+  // Validation errors
+  const [errors, setErrors] = useState({});
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -142,6 +139,7 @@ function EmployeeManagement() {
     setFormData({ ...emp });
     setIsEditMode(edit);
     setIsModalOpen(true);
+    setErrors({});
   };
 
   const openAddModal = () => {
@@ -165,21 +163,114 @@ function EmployeeManagement() {
     setFormData(initial);
     setIsEditMode(true);
     setIsModalOpen(true);
+    setErrors({});
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
     setIsEditMode(false);
     setFormData({});
+    setErrors({});
+  };
+
+  const validateField = (name, value) => {
+    let error = "";
+    const val = String(value || "").trim();
+
+    switch (name) {
+      case "employee_id":
+        if (!val) error = "Employee ID is required";
+        break;
+      case "department_id":
+        if (!val) error = "Department is required";
+        break;
+      case "first_name":
+        if (!val) error = "First name is required";
+        break;
+      case "last_name":
+        if (!val) error = "Last name is required";
+        break;
+      case "nic":
+        if (!val) {
+          error = "NIC is required";
+        } else if (!/^([0-9]{9}[x|X|v|V]|[0-9]{12})$/.test(val)) {
+          error = "Invalid NIC format (9 digits + V/X or 12 digits)";
+        }
+        break;
+      case "email":
+        if (!val) {
+          error = "Email is required";
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)) {
+          error = "Invalid email address";
+        }
+        break;
+      case "phone":
+        if (!val) {
+          error = "Phone is required";
+        } else if (!/^0[0-9]{9}$/.test(val)) {
+          error = "Invalid phone (e.g., 0771234567)";
+        }
+        break;
+      case "salary_type":
+        if (!val) error = "Salary type is required";
+        break;
+      case "basic_rate":
+        if (formData.salary_type === "MONTHLY") {
+          if (!val || Number(val) <= 0) error = "Basic rate must be greater than 0";
+        }
+        break;
+      case "effective_date":
+        if (!val) error = "Effective date is required";
+        break;
+      default:
+        break;
+    }
+
+    setErrors((prev) => ({ ...prev, [name]: error }));
+    return error;
+  };
+
+  const validateForm = () => {
+    const newErrors = {};
+    const fields = [
+      "employee_id",
+      "department_id",
+      "first_name",
+      "last_name",
+      "nic",
+      "email",
+      "phone",
+      "salary_type",
+      "effective_date"
+    ];
+
+    if (formData.salary_type === "MONTHLY") {
+      fields.push("basic_rate");
+    }
+
+    fields.forEach((f) => {
+      const err = validateField(f, formData[f]);
+      if (err) newErrors[f] = err;
+    });
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
+    let finalValue = value;
+    
     if (type === "checkbox") {
-      setFormData((p) => ({ ...p, [name]: checked ? 1 : 0 }));
-      return;
+      finalValue = checked ? 1 : 0;
     }
-    setFormData((p) => ({ ...p, [name]: value }));
+    
+    setFormData((p) => ({ ...p, [name]: finalValue }));
+    
+    // Clear error on change
+    if (errors[name]) {
+      validateField(name, finalValue);
+    }
   };
 
   const closeCreds = () => {
@@ -197,24 +288,9 @@ function EmployeeManagement() {
   const handleSave = async () => {
     const isExisting = employees.some((emp) => String(emp.employee_id) === String(formData.employee_id));
 
-    // Validation is only required for new employees
-    if (!isExisting) {
-      if (!String(formData.employee_id || "").trim()) return alert("Please fill Employee ID.");
-      if (!String(formData.department_id || "").trim()) return alert("Please select Department.");
-      if (!formData.first_name?.trim()) return alert("Please fill First Name.");
-      if (!formData.last_name?.trim()) return alert("Please fill Last Name.");
-
-      const nicRegex = /^([0-9]{9}[x|X|v|V]|[0-9]{12})$/;
-      const phoneRegex = /^0[0-9]{9}$/;
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-      if (!formData.nic?.trim() || !nicRegex.test(formData.nic.trim())) return alert("Invalid NIC format.");
-      if (!formData.email?.trim() || !emailRegex.test(formData.email.trim())) return alert("Invalid Email address.");
-      if (!formData.phone?.trim() || !phoneRegex.test(formData.phone.trim())) return alert("Invalid Phone number.");
-
-      if (!String(formData.salary_type || "").trim()) return alert("Please select Salary Type.");
-      if (formData.salary_type === "MONTHLY" && (Number(formData.basic_rate) <= 0 || !formData.basic_rate)) return alert("Invalid Basic Rate.");
-      if (!String(formData.effective_date || "").trim()) return alert("Please select Effective Date.");
+    // Perform full form validation
+    if (!validateForm()) {
+      return;
     }
 
     if (isExisting) {
@@ -515,18 +591,112 @@ function EmployeeManagement() {
                 </div>
 
                 <div style={styles.formGrid}>
-                  <div><label style={styles.label}>EMPLOYEE ID</label>{isEditMode ? <input name="employee_id" value={formData.employee_id || ""} onChange={handleChange} style={styles.input} /> : <div style={styles.readValue}>{formData.employee_id || "-"}</div>}</div>
-                  <div><label style={styles.label}>DEPARTMENT</label>{isEditMode ? <select name="department_id" value={formData.department_id ?? ""} onChange={handleChange} style={styles.select}>{(departments || []).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}</select> : <div style={styles.readValue}>{getDeptName(formData.department_id)}</div>}</div>
-                  <div><label style={styles.label}>FIRST NAME</label>{isEditMode ? <input name="first_name" value={formData.first_name || ""} onChange={handleChange} style={styles.input} /> : <div style={styles.readValue}>{formData.first_name || "-"}</div>}</div>
-                  <div><label style={styles.label}>LAST NAME</label>{isEditMode ? <input name="last_name" value={formData.last_name || ""} onChange={handleChange} style={styles.input} /> : <div style={styles.readValue}>{formData.last_name || "-"}</div>}</div>
-                  <div><label style={styles.label}>NIC</label>{isEditMode ? <input name="nic" value={formData.nic || ""} onChange={handleChange} style={styles.input} /> : <div style={styles.readValue}>{formData.nic || "-"}</div>}</div>
-                  <div><label style={styles.label}>EMAIL</label>{isEditMode ? <input name="email" value={formData.email || ""} onChange={handleChange} style={styles.input} /> : <div style={styles.readValue}>{formData.email || "-"}</div>}</div>
-                  <div><label style={styles.label}>PHONE</label>{isEditMode ? <input name="phone" value={formData.phone || ""} onChange={handleChange} style={styles.input} /> : <div style={styles.readValue}>{formData.phone || "-"}</div>}</div>
+                  <div>
+                    <label style={styles.label}>EMPLOYEE ID</label>
+                    {isEditMode ? (
+                      <>
+                        <input name="employee_id" value={formData.employee_id || ""} onChange={handleChange} onBlur={(e) => validateField("employee_id", e.target.value)} style={{ ...styles.input, ...(errors.employee_id ? styles.inputError : {}) }} />
+                        {errors.employee_id && <div style={styles.errorText}>{errors.employee_id}</div>}
+                      </>
+                    ) : (
+                      <div style={styles.readValue}>{formData.employee_id || "-"}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label style={styles.label}>DEPARTMENT</label>
+                    {isEditMode ? (
+                      <>
+                        <select name="department_id" value={formData.department_id ?? ""} onChange={handleChange} onBlur={(e) => validateField("department_id", e.target.value)} style={{ ...styles.select, ...(errors.department_id ? styles.inputError : {}) }}>
+                          {(departments || []).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+                        </select>
+                        {errors.department_id && <div style={styles.errorText}>{errors.department_id}</div>}
+                      </>
+                    ) : (
+                      <div style={styles.readValue}>{getDeptName(formData.department_id)}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label style={styles.label}>FIRST NAME</label>
+                    {isEditMode ? (
+                      <>
+                        <input name="first_name" value={formData.first_name || ""} onChange={handleChange} onBlur={(e) => validateField("first_name", e.target.value)} style={{ ...styles.input, ...(errors.first_name ? styles.inputError : {}) }} />
+                        {errors.first_name && <div style={styles.errorText}>{errors.first_name}</div>}
+                      </>
+                    ) : (
+                      <div style={styles.readValue}>{formData.first_name || "-"}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label style={styles.label}>LAST NAME</label>
+                    {isEditMode ? (
+                      <>
+                        <input name="last_name" value={formData.last_name || ""} onChange={handleChange} onBlur={(e) => validateField("last_name", e.target.value)} style={{ ...styles.input, ...(errors.last_name ? styles.inputError : {}) }} />
+                        {errors.last_name && <div style={styles.errorText}>{errors.last_name}</div>}
+                      </>
+                    ) : (
+                      <div style={styles.readValue}>{formData.last_name || "-"}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label style={styles.label}>NIC</label>
+                    {isEditMode ? (
+                      <>
+                        <input name="nic" value={formData.nic || ""} onChange={handleChange} onBlur={(e) => validateField("nic", e.target.value)} style={{ ...styles.input, ...(errors.nic ? styles.inputError : {}) }} />
+                        {errors.nic && <div style={styles.errorText}>{errors.nic}</div>}
+                      </>
+                    ) : (
+                      <div style={styles.readValue}>{formData.nic || "-"}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label style={styles.label}>EMAIL</label>
+                    {isEditMode ? (
+                      <>
+                        <input name="email" value={formData.email || ""} onChange={handleChange} onBlur={(e) => validateField("email", e.target.value)} style={{ ...styles.input, ...(errors.email ? styles.inputError : {}) }} />
+                        {errors.email && <div style={styles.errorText}>{errors.email}</div>}
+                      </>
+                    ) : (
+                      <div style={styles.readValue}>{formData.email || "-"}</div>
+                    )}
+                  </div>
+                  <div>
+                    <label style={styles.label}>PHONE</label>
+                    {isEditMode ? (
+                      <>
+                        <input name="phone" value={formData.phone || ""} onChange={handleChange} onBlur={(e) => validateField("phone", e.target.value)} style={{ ...styles.input, ...(errors.phone ? styles.inputError : {}) }} />
+                        {errors.phone && <div style={styles.errorText}>{errors.phone}</div>}
+                      </>
+                    ) : (
+                      <div style={styles.readValue}>{formData.phone || "-"}</div>
+                    )}
+                  </div>
                   <div><label style={styles.label}>STATUS</label>{isEditMode ? <select name="status" value={formData.status || "ACTIVE"} onChange={handleChange} style={styles.select}><option value="ACTIVE">ACTIVE</option><option value="INACTIVE">INACTIVE</option><option value="RESIGNED">RESIGNED</option><option value="TERMINATED">TERMINATED</option></select> : <div style={styles.readValue}>{formData.status || "-"}</div>}</div>
                   <div><label style={styles.label}>SALARY TYPE</label>{isEditMode ? <select name="salary_type" value={formData.salary_type || "MONTHLY"} onChange={handleChange} style={styles.select}><option value="MONTHLY">MONTHLY</option><option value="DAILY">DAILY</option></select> : <div style={styles.readValue}>{formData.salary_type || "-"}</div>}</div>
-                  {formData.salary_type === "MONTHLY" && (<div><label style={styles.label}>BASIC RATE</label>{isEditMode ? <input name="basic_rate" value={formData.basic_rate ?? ""} onChange={handleChange} style={styles.input} placeholder="e.g., 75000" /> : <div style={styles.readValue}>{moneyText(formData.basic_rate)}</div>}</div>)}
+                  {formData.salary_type === "MONTHLY" && (
+                    <div>
+                      <label style={styles.label}>BASIC RATE</label>
+                      {isEditMode ? (
+                        <>
+                          <input name="basic_rate" value={formData.basic_rate ?? ""} onChange={handleChange} onBlur={(e) => validateField("basic_rate", e.target.value)} style={{ ...styles.input, ...(errors.basic_rate ? styles.inputError : {}) }} placeholder="e.g., 75000" />
+                          {errors.basic_rate && <div style={styles.errorText}>{errors.basic_rate}</div>}
+                        </>
+                      ) : (
+                        <div style={styles.readValue}>{moneyText(formData.basic_rate)}</div>
+                      )}
+                    </div>
+                  )}
                   <div><label style={styles.label}>EPF/ETF ELIGIBLE</label>{isEditMode ? <select name="is_epf_eligible" value={String(formData.is_epf_eligible ?? 1)} onChange={(e) => setFormData((p) => ({ ...p, is_epf_eligible: Number(e.target.value) }))} style={styles.select}><option value="1">YES</option><option value="0">NO</option></select> : <div style={styles.readValue}>{Number(formData.is_epf_eligible) === 1 ? "YES" : "NO"}</div>}</div>
-                  <div><label style={styles.label}>EFFECTIVE DATE</label>{isEditMode ? <input type="date" name="effective_date" value={formData.effective_date || ""} onChange={handleChange} style={styles.input} /> : <div style={styles.readValue}>{formData.effective_date || "-"}</div>}</div>
+                  <div>
+                    <label style={styles.label}>EFFECTIVE DATE</label>
+                    {isEditMode ? (
+                      <>
+                        <input type="date" name="effective_date" value={formData.effective_date || ""} onChange={handleChange} onBlur={(e) => validateField("effective_date", e.target.value)} style={{ ...styles.input, ...(errors.effective_date ? styles.inputError : {}) }} />
+                        {errors.effective_date && <div style={styles.errorText}>{errors.effective_date}</div>}
+                      </>
+                    ) : (
+                      <div style={styles.readValue}>{formData.effective_date || "-"}</div>
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -693,8 +863,10 @@ const styles = {
   modalSub: { fontSize: "14px", color: "#64748b", marginTop: "4px", fontWeight: 500 },
   formGrid: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "20px" },
   label: { display: "block", fontSize: "11px", fontWeight: 800, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", marginBottom: "8px", marginLeft: "4px" },
-  input: { width: "100%", padding: "12px 16px", borderRadius: "14px", border: "1px solid #e2e8f0", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#fff", outline: "none", transition: "border-color 0.2s" },
-  select: { width: "100%", padding: "12px 16px", borderRadius: "14px", border: "1px solid #e2e8f0", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#fff", outline: "none", cursor: "pointer", transition: "border-color 0.2s" },
+  input: { width: "100%", padding: "12px 16px", borderRadius: "14px", border: "1px solid #e2e8f0", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#fff", outline: "none", transition: "all 0.2s" },
+  inputError: { borderColor: "#ef4444", background: "#fff5f5" },
+  errorText: { color: "#ef4444", fontSize: "11px", fontWeight: 700, marginTop: "4px", marginLeft: "4px" },
+  select: { width: "100%", padding: "12px 16px", borderRadius: "14px", border: "1px solid #e2e8f0", fontSize: "14px", fontWeight: 600, color: "#1e293b", background: "#fff", outline: "none", cursor: "pointer", transition: "all 0.2s" },
   readValue: { padding: "12px 16px", borderRadius: "14px", border: "1px solid rgba(0,0,0,0.03)", background: "rgba(248, 250, 252, 0.5)", color: "#475569", fontWeight: 700, fontSize: "14px" },
   modalActions: { padding: "24px 32px", borderTop: "1px solid rgba(0,0,0,0.05)", display: "flex", justifyContent: "flex-end", gap: "12px", background: "rgba(248, 250, 252, 0.5)" },
   removeModal: { width: "min(500px, 100%)", background: "#fff", borderRadius: "32px", overflow: "hidden", boxShadow: "0 25px 50px rgba(0,0,0,0.15)" },

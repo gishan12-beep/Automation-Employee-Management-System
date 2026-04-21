@@ -13,7 +13,6 @@ import AttendanceList from "../pages/manager/attendance/AttendanceList";
 import ProcessPayroll from "../pages/manager/payroll/ProcessPayroll";
 import IssueList from "../pages/manager/issues/IssueList";
 import IssueDetail from "../pages/manager/issues/IssueDetail";
-import ManagerSettings from "../pages/manager/settings/ManagerSettings";
 import SettlementCalculator from "../pages/manager/Settlement/SettlementCalculator";
 import SettlementSummary from "../pages/manager/Settlement/SettlementSummary";
 import ReportsDashboard from "../pages/manager/reports/ReportsDashboard";
@@ -59,7 +58,6 @@ function AppRoutes() {
       <Route path="/manager/employees" element={<PrivateRoute allowedRoles={["MANAGER"]}><EmployeeList /></PrivateRoute>} />
       <Route path="/manager/attendance" element={<PrivateRoute allowedRoles={["MANAGER"]}><AttendanceList /></PrivateRoute>} />
       <Route path="/manager/payroll" element={<PrivateRoute allowedRoles={["MANAGER"]}><ProcessPayroll /></PrivateRoute>} />
-      <Route path="/manager/settings" element={<PrivateRoute allowedRoles={["MANAGER"]}><ManagerSettings /></PrivateRoute>} />
       <Route path="/manager/reports" element={<PrivateRoute allowedRoles={["MANAGER"]}><ReportsDashboard /></PrivateRoute>} />
 
       <Route path="/manager/reports/payroll" element={<PrivateRoute allowedRoles={["MANAGER"]}><PayrollReports /></PrivateRoute>} />

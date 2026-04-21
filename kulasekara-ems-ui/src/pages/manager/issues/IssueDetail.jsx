@@ -1,63 +1,7 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
-
-const STORAGE_KEY = "kulasekara_manager_issues_v3";
-
-// initial seed (matches IssueList.jsx)
-const seedIssues = [
-  {
-    issue_id: "ISS20260121-8F3K2",
-    employee_id: "EMP001",
-    employeeName: "Kasun Perera",
-    category: "ATTENDANCE",
-    subject: "Attendance not counted for 2026-01-20",
-    description: "I checked in at 08:05 but system shows absent. Please verify.",
-    status: "OPEN",
-    raised_date: "2026-01-21T09:12:00",
-    manager_note: "",
-  },
-  {
-    issue_id: "ISS20260119-1KZ9P",
-    employee_id: "EMP014",
-    employeeName: "Nimal Silva",
-    category: "PAYROLL",
-    subject: "Salary deduction unclear",
-    description: "My salary slip shows deduction but I don't know the reason.",
-    status: "IN_PROGRESS",
-    raised_date: "2026-01-19T14:40:00",
-    manager_note: "Checking overtime/attendance records with accountant.",
-  },
-  {
-    issue_id: "ISS20260115-QQ2X7",
-    employee_id: "EMP020",
-    employeeName: "Sahan Jayasinghe",
-    category: "OVERTIME",
-    subject: "Overtime hours missing",
-    description: "Overtime from 2026-01-12 (2h) not included in payroll.",
-    status: "RESOLVED",
-    raised_date: "2026-01-15T10:20:00",
-    manager_note: "Verified OT sheet and updated payroll record.",
-  },
-];
-
-function loadIssues() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(seedIssues));
-      return seedIssues;
-    }
-    const parsed = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed : [];
-  } catch {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(seedIssues));
-    return seedIssues;
-  }
-}
-function saveIssues(items) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
-}
+import { getIssueByIdApi, resolveIssueApi } from "../../../services/issueService";
 
 function badgeStyle(type) {
   const base = {
@@ -72,14 +16,10 @@ function badgeStyle(type) {
     whiteSpace: "nowrap",
   };
 
-  if (["ATTENDANCE", "OVERTIME", "PAYROLL", "OTHER"].includes(type)) {
+  if (["ATTENDANCE", "PAYROLL", "OTHER"].includes(type)) {
     return { ...base, background: "#f8fafc", color: "#0f172a" };
   }
-  if (type === "LEAVE_REQUEST") {
-    return { ...base, background: "#fef3c7", color: "#92400e" };
-  }
   if (type === "OPEN") return { ...base, background: "#fff1f2", color: "#9f1239" };
-  if (type === "IN_PROGRESS") return { ...base, background: "#eff6ff", color: "#1d4ed8" };
   if (type === "RESOLVED") return { ...base, background: "#ecfdf5", color: "#047857" };
   if (type === "APPROVED") return { ...base, background: "#d1fae5", color: "#065f46" };
   if (type === "REJECTED") return { ...base, background: "#fee2e2", color: "#991b1b" };
@@ -90,65 +30,45 @@ export default function IssueDetail() {
   const { issueId } = useParams();
   const navigate = useNavigate();
 
-  const [issues, setIssues] = useState(() => loadIssues());
-  const issue = useMemo(() => issues.find((i) => i.issue_id === issueId), [issues, issueId]);
-
+  const [issue, setIssue] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [editStatus, setEditStatus] = useState("OPEN");
-  const [remark, setRemark] = useState("");
+  const [reply, setReply] = useState("");
   const [savedToast, setSavedToast] = useState(false);
 
-  const isLeaveRequest = issue?.category === "LEAVE_REQUEST";
-
   useEffect(() => {
-    if (!issue) return;
-    setEditStatus(issue.status || "OPEN");
-    setRemark(issue.manager_note || "");
-  }, [issue]);
+    fetchIssue();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [issueId]);
 
-  function save() {
-    if (!issue) return;
-
-    const next = issues.map((it) =>
-      it.issue_id === issue.issue_id
-        ? { ...it, status: editStatus, manager_note: remark }
-        : it
-    );
-
-    setIssues(next);
-    saveIssues(next);
-
-    setSavedToast(true);
-    setTimeout(() => setSavedToast(false), 1200);
-  }
-
-  function quickAction(action) {
-    if (!issue) return;
-
-    let newStatus = editStatus;
-    let newRemark = remark;
-
-    if (action === "APPROVE") {
-      newStatus = "APPROVED";
-      newRemark = remark || "Leave request approved.";
-    } else if (action === "REJECT") {
-      newStatus = "REJECTED";
-      newRemark = remark || "Leave request rejected.";
+  const fetchIssue = async () => {
+    setLoading(true);
+    try {
+      const data = await getIssueByIdApi(issueId);
+      setIssue(data);
+      setEditStatus(data?.status || "OPEN");
+      setReply(data?.reply || "");
+    } catch (err) {
+      console.error("Failed to fetch issue:", err);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const next = issues.map((it) =>
-      it.issue_id === issue.issue_id
-        ? { ...it, status: newStatus, manager_note: newRemark }
-        : it
-    );
+  async function save() {
+    if (!issue) return;
 
-    setIssues(next);
-    saveIssues(next);
-    setEditStatus(newStatus);
-    setRemark(newRemark);
-
-    setSavedToast(true);
-    setTimeout(() => setSavedToast(false), 1200);
+    try {
+      await resolveIssueApi(issueId, { status: editStatus, reply });
+      setSavedToast(true);
+      fetchIssue();
+      setTimeout(() => setSavedToast(false), 1200);
+    } catch (err) {
+      console.error("Failed to save issue:", err);
+      alert("Failed to update status.");
+    }
   }
+
 
   return (
     <AppLayout>
@@ -177,11 +97,9 @@ export default function IssueDetail() {
         <div style={styles.container}>
           <div style={styles.topRow}>
             <div>
-              <div style={styles.title}>{isLeaveRequest ? "Leave Request Review" : "Issue Review"}</div>
+              <div style={styles.title}>Issue Review</div>
               <div style={styles.subTitle}>
-                {isLeaveRequest
-                  ? "Review the leave request and approve or reject with remarks."
-                  : "Review the issue and add a manager remark for tracking."}
+                Review the issue and update the status for tracking.
               </div>
             </div>
 
@@ -189,13 +107,17 @@ export default function IssueDetail() {
               <button style={styles.secondaryBtn} onClick={() => navigate(-1)}>
                 ← Back
               </button>
-              <button style={styles.primaryBtn} onClick={save} disabled={!issue}>
+              <button style={styles.primaryBtn} onClick={save} disabled={!issue || loading}>
                 Save
               </button>
             </div>
           </div>
 
-          {!issue ? (
+          {loading ? (
+            <div style={styles.card}>
+              <div style={{ fontWeight: 1000, fontSize: 16 }}>Loading issue details...</div>
+            </div>
+          ) : !issue ? (
             <div style={styles.card}>
               <div style={{ fontWeight: 1000, fontSize: 16 }}>Issue not found</div>
               <div style={{ marginTop: 6, color: "#64748b", fontSize: 13 }}>
@@ -211,70 +133,39 @@ export default function IssueDetail() {
             <>
               <div style={styles.grid}>
                 <div style={styles.card}>
-                  <div style={styles.sectionTitle}>{isLeaveRequest ? "Leave Request Details" : "Issue Summary"}</div>
+                  <div style={styles.sectionTitle}>Issue Summary</div>
 
                   <div style={styles.row}>
-                    <div style={styles.label}>Issue ID</div>
-                    <div style={styles.valueMono}>{issue.issue_id}</div>
+                    <div style={styles.label}>ID</div>
+                    <div style={styles.valueMono}>#{issue.issue_id}</div>
                   </div>
 
                   <div style={styles.row}>
                     <div style={styles.label}>Employee</div>
                     <div style={styles.value}>
-                      {issue.employeeName} <span style={{ color: "#94a3b8" }}>({issue.employee_id})</span>
+                      {issue.first_name} {issue.last_name} <span style={{ color: "#94a3b8" }}>({issue.employee_id})</span>
                     </div>
                   </div>
 
                   <div style={styles.row}>
-                    <div style={styles.label}>Category</div>
+                    <div style={styles.label}>Type</div>
                     <div style={styles.value}>
-                      <span style={badgeStyle(issue.category)}>{issue.category.replace("_", " ")}</span>
+                      <span style={badgeStyle(issue.type)}>{String(issue.type || "").replace("_", " ")}</span>
                     </div>
                   </div>
 
                   <div style={styles.row}>
                     <div style={styles.label}>Status</div>
                     <div style={styles.value}>
-                      <span style={badgeStyle(issue.status)}>{issue.status.replace("_", " ")}</span>
+                      <span style={badgeStyle(issue.status)}>{String(issue.status || "").replace("_", " ")}</span>
                     </div>
                   </div>
 
                   <div style={styles.row}>
                     <div style={styles.label}>Raised</div>
                     <div style={styles.value}>
-                      {issue.raised_date ? new Date(issue.raised_date).toLocaleString() : "-"}
+                      {issue.created_at ? new Date(issue.created_at).toLocaleString() : "-"}
                     </div>
-                  </div>
-
-                  {isLeaveRequest && (
-                    <>
-                      <div style={styles.row}>
-                        <div style={styles.label}>Leave Type</div>
-                        <div style={styles.value}>{issue.leaveType || "-"}</div>
-                      </div>
-
-                      <div style={styles.row}>
-                        <div style={styles.label}>Start Date</div>
-                        <div style={styles.value}>{issue.leaveStartDate || "-"}</div>
-                      </div>
-
-                      <div style={styles.row}>
-                        <div style={styles.label}>End Date</div>
-                        <div style={styles.value}>{issue.leaveEndDate || "-"}</div>
-                      </div>
-
-                      <div style={styles.row}>
-                        <div style={styles.label}>Total Days</div>
-                        <div style={styles.value}>
-                          {issue.leaveDays || 0} day{issue.leaveDays > 1 ? "s" : ""}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  <div style={styles.block}>
-                    <div style={styles.label}>Subject</div>
-                    <div style={styles.subject}>{issue.subject}</div>
                   </div>
 
                   <div style={styles.block}>
@@ -286,37 +177,14 @@ export default function IssueDetail() {
                 <div style={styles.card}>
                   <div style={styles.sectionTitle}>Manager Review</div>
 
-                  {isLeaveRequest && (
-                    <div style={styles.quickActions}>
-                      <button
-                        style={styles.approveBtn}
-                        onClick={() => quickAction("APPROVE")}
-                        disabled={issue.status === "APPROVED"}
-                      >
-                        ✓ Approve Leave
-                      </button>
-                      <button
-                        style={styles.rejectBtn}
-                        onClick={() => quickAction("REJECT")}
-                        disabled={issue.status === "REJECTED"}
-                      >
-                        ✕ Reject Leave
-                      </button>
-                    </div>
-                  )}
-
                   <div style={styles.block}>
                     <div style={styles.label}>Update Status</div>
                     <select value={editStatus} onChange={(e) => setEditStatus(e.target.value)} style={styles.select}>
                       <option value="OPEN">OPEN</option>
                       <option value="IN_PROGRESS">IN PROGRESS</option>
                       <option value="RESOLVED">RESOLVED</option>
-                      {isLeaveRequest && (
-                        <>
-                          <option value="APPROVED">APPROVED</option>
-                          <option value="REJECTED">REJECTED</option>
-                        </>
-                      )}
+                      <option value="APPROVED">APPROVED</option>
+                      <option value="REJECTED">REJECTED</option>
                     </select>
                     <div style={{ marginTop: 10 }}>
                       <span style={badgeStyle(editStatus)}>{editStatus.replace("_", " ")}</span>
@@ -324,14 +192,11 @@ export default function IssueDetail() {
                   </div>
 
                   <div style={styles.block}>
-                    <div style={styles.label}>Manager Remark</div>
+                    <div style={styles.label}>Manager Remarks / Review</div>
                     <textarea
-                      value={remark}
-                      onChange={(e) => setRemark(e.target.value)}
-                      placeholder={isLeaveRequest
-                        ? "Add approval/rejection reason or any notes..."
-                        : "Add a remark (what you checked / what action you will take)..."}
-                      rows={6}
+                      value={reply}
+                      onChange={(e) => setReply(e.target.value)}
+                      placeholder="Enter resolution details or notes..."
                       style={styles.textarea}
                     />
                   </div>
@@ -339,9 +204,7 @@ export default function IssueDetail() {
                   <div style={styles.helpBox}>
                     <div style={{ fontWeight: 1000 }}>Note</div>
                     <div style={{ marginTop: 6 }}>
-                      {isLeaveRequest
-                        ? "Keep remarks clear. Specify approval/rejection reasons for the employee to understand."
-                        : "Keep remarks short and clear for the accountant and the employee to understand."}
+                      Keep status updates accurate for the accountant and the employee to understand.
                     </div>
                   </div>
                 </div>
@@ -408,36 +271,6 @@ const styles = {
   subject: { fontSize: 16, fontWeight: 800, color: "#111827" },
   text: { fontSize: 14, color: "#374151", lineHeight: 1.6 },
 
-  quickActions: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: 12,
-    marginBottom: 20,
-  },
-
-  approveBtn: {
-    height: 44,
-    borderRadius: 12,
-    border: "1px solid rgba(4,120,87,0.3)",
-    background: "#d1fae5",
-    color: "#065f46",
-    fontWeight: 700,
-    cursor: "pointer",
-    fontSize: 14,
-    transition: "background 0.2s"
-  },
-
-  rejectBtn: {
-    height: 44,
-    borderRadius: 12,
-    border: "1px solid rgba(153,27,27,0.3)",
-    background: "#fee2e2",
-    color: "#991b1b",
-    fontWeight: 700,
-    cursor: "pointer",
-    fontSize: 14,
-    transition: "background 0.2s"
-  },
 
   select: {
     width: "100%",

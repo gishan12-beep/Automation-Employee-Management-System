@@ -2,64 +2,10 @@ import React, { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import { ListFilter } from "lucide-react";
+import { getIssuesApi } from "../../../services/issueService";
 
-const STORAGE_KEY = "kulasekara_manager_issues_v3";
-
-// initial seed (only for first load; not shown as "demo" in UI)
-const seedIssues = [
-  {
-    issue_id: "ISS20260121-8F3K2",
-    employee_id: "EMP001",
-    employeeName: "Kasun Perera",
-    category: "ATTENDANCE",
-    subject: "Attendance not counted for 2026-01-20",
-    description: "I checked in at 08:05 but system shows absent. Please verify.",
-    status: "OPEN",
-    raised_date: "2026-01-21T09:12:00",
-    manager_note: "",
-  },
-  {
-    issue_id: "ISS20260119-1KZ9P",
-    employee_id: "EMP014",
-    employeeName: "Nimal Silva",
-    category: "PAYROLL",
-    subject: "Salary deduction unclear",
-    description: "My salary slip shows deduction but I don't know the reason.",
-    status: "IN_PROGRESS",
-    raised_date: "2026-01-19T14:40:00",
-    manager_note: "Checking overtime/attendance records with accountant.",
-  },
-  {
-    issue_id: "ISS20260115-QQ2X7",
-    employee_id: "EMP020",
-    employeeName: "Sahan Jayasinghe",
-    category: "OVERTIME",
-    subject: "Overtime hours missing",
-    description: "Overtime from 2026-01-12 (2h) not included in payroll.",
-    status: "RESOLVED",
-    raised_date: "2026-01-15T10:20:00",
-    manager_note: "Verified OT sheet and updated payroll record.",
-  },
-];
-
-function loadIssues() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(seedIssues));
-      return seedIssues;
-    }
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) throw new Error("Invalid store");
-    return parsed;
-  } catch {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(seedIssues));
-    return seedIssues;
-  }
-}
-
-const STATUS = ["ALL", "OPEN", "IN_PROGRESS", "RESOLVED", "APPROVED", "REJECTED"];
-const CATEGORY = ["ALL", "ATTENDANCE", "OVERTIME", "PAYROLL", "LEAVE_REQUEST", "OTHER"];
+const STATUS = ["ALL", "OPEN", "RESOLVED", "APPROVED", "REJECTED"];
+const CATEGORY = ["ALL", "ATTENDANCE", "PAYROLL", "OTHER"];
 
 function badgeStyle(type) {
   const base = {
@@ -75,16 +21,12 @@ function badgeStyle(type) {
   };
 
   // category
-  if (["ATTENDANCE", "OVERTIME", "PAYROLL", "OTHER"].includes(type)) {
+  if (["ATTENDANCE", "PAYROLL", "OTHER"].includes(type)) {
     return { ...base, background: "#f8fafc", color: "#0f172a" };
-  }
-  if (type === "LEAVE_REQUEST") {
-    return { ...base, background: "#fef3c7", color: "#92400e" };
   }
 
   // status
   if (type === "OPEN") return { ...base, background: "#fff1f2", color: "#9f1239" };
-  if (type === "IN_PROGRESS") return { ...base, background: "#eff6ff", color: "#1d4ed8" };
   if (type === "RESOLVED") return { ...base, background: "#ecfdf5", color: "#047857" };
   if (type === "APPROVED") return { ...base, background: "#d1fae5", color: "#065f46" };
   if (type === "REJECTED") return { ...base, background: "#fee2e2", color: "#991b1b" };
@@ -94,11 +36,8 @@ function badgeStyle(type) {
 function IssuesDashboard({ issues }) {
   const stats = useMemo(() => {
     const openCount = issues.filter((i) => i.status === "OPEN").length;
-    const progCount = issues.filter((i) => i.status === "IN_PROGRESS").length;
     const resCount = issues.filter((i) => i.status === "RESOLVED").length;
-    const leaveCount = issues.filter((i) => i.category === "LEAVE_REQUEST").length;
-    const pendingLeave = issues.filter((i) => i.category === "LEAVE_REQUEST" && (i.status === "OPEN" || i.status === "IN_PROGRESS")).length;
-    return { openCount, progCount, resCount, leaveCount, pendingLeave, total: issues.length };
+    return { openCount, resCount, total: issues.length };
   }, [issues]);
 
   return (
@@ -106,19 +45,13 @@ function IssuesDashboard({ issues }) {
       <div style={styles.kpiCard}>
         <div style={styles.kpiLabel}>Open</div>
         <div style={styles.kpiValue}>{stats.openCount}</div>
-        <div style={styles.kpiHint}>Need attention</div>
+        <div style={styles.kpiHint}>Needs attention</div>
       </div>
 
       <div style={styles.kpiCard}>
-        <div style={styles.kpiLabel}>In Progress</div>
-        <div style={styles.kpiValue}>{stats.progCount}</div>
-        <div style={styles.kpiHint}>Under review</div>
-      </div>
-
-      <div style={styles.kpiCard}>
-        <div style={styles.kpiLabel}>Leave Requests</div>
-        <div style={styles.kpiValue}>{stats.pendingLeave}</div>
-        <div style={styles.kpiHint}>Pending approval</div>
+        <div style={styles.kpiLabel}>Resolved</div>
+        <div style={styles.kpiValue}>{stats.resCount}</div>
+        <div style={styles.kpiHint}>Task completed</div>
       </div>
 
       <div style={styles.kpiCard}>
@@ -132,18 +65,18 @@ function IssuesDashboard({ issues }) {
 
 export default function IssueList() {
   const navigate = useNavigate();
-  const [issues] = useState(() => loadIssues());
+  const [issues, setIssues] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const [status, setStatus] = useState("OPEN");
+  const [status, setStatus] = useState("ALL");
   const [category, setCategory] = useState("ALL");
   const [q, setQ] = useState("");
 
-  // Filter popup state
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const filterRef = useRef(null);
 
-  // Close popup on click outside
   useEffect(() => {
+    fetchIssues();
     function handleClickOutside(event) {
       if (filterRef.current && !filterRef.current.contains(event.target)) {
         setShowFilterMenu(false);
@@ -155,18 +88,30 @@ export default function IssueList() {
     };
   }, []);
 
+  const fetchIssues = async () => {
+    setLoading(true);
+    try {
+      const data = await getIssuesApi();
+      setIssues(data || []);
+    } catch (err) {
+      console.error("Failed to fetch issues:", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const filtered = useMemo(() => {
     const text = q.trim().toLowerCase();
     return issues.filter((i) => {
       const okStatus = status === "ALL" ? true : i.status === status;
-      const okCat = category === "ALL" ? true : i.category === category;
+      const okCat = category === "ALL" ? true : i.type === category;
 
       const okSearch =
         !text ||
-        i.issue_id.toLowerCase().includes(text) ||
-        i.employee_id.toLowerCase().includes(text) ||
-        (i.employeeName || "").toLowerCase().includes(text) ||
-        (i.subject || "").toLowerCase().includes(text) ||
+        String(i.issue_id || "").toLowerCase().includes(text) ||
+        String(i.employee_id || "").toLowerCase().includes(text) ||
+        (i.first_name || "").toLowerCase().includes(text) ||
+        (i.last_name || "").toLowerCase().includes(text) ||
         (i.description || "").toLowerCase().includes(text);
 
       return okStatus && okCat && okSearch;
@@ -283,7 +228,13 @@ export default function IssueList() {
                 </thead>
 
                 <tbody>
-                  {filtered.length === 0 ? (
+                  {loading ? (
+                    <tr>
+                      <td style={styles.td} colSpan={6}>
+                        Loading issues...
+                      </td>
+                    </tr>
+                  ) : filtered.length === 0 ? (
                     <tr>
                       <td style={styles.td} colSpan={6}>
                         No issues found.
@@ -300,34 +251,29 @@ export default function IssueList() {
                         <td style={styles.tdMono}>{row.issue_id}</td>
 
                         <td style={styles.td}>
-                          <div style={{ fontWeight: 900 }}>{row.employeeName}</div>
+                          <div style={{ fontWeight: 900 }}>{row.first_name} {row.last_name}</div>
                           <div style={{ fontSize: 12, color: "#64748b" }}>{row.employee_id}</div>
                         </td>
 
                         <td style={styles.td}>
-                          <span style={badgeStyle(row.category)}>{row.category.replace("_", " ")}</span>
+                          <span style={badgeStyle(row.type)}>{String(row.type || "").replace("_", " ")}</span>
                         </td>
 
                         <td style={styles.td}>
-                          <div style={{ fontWeight: 900 }}>{row.subject}</div>
-                          {row.category === "LEAVE_REQUEST" && row.leaveDays ? (
-                            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
-                              {row.leaveType} • {row.leaveDays} day{row.leaveDays > 1 ? "s" : ""} • {row.leaveStartDate} to {row.leaveEndDate}
+                          {row.description ? (
+                            <div style={{ fontSize: 13, color: "#374151" }}>
+                              {String(row.description).slice(0, 100)}
+                              {String(row.description).length > 100 ? "..." : ""}
                             </div>
-                          ) : row.description ? (
-                            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
-                              {String(row.description).slice(0, 80)}
-                              {String(row.description).length > 80 ? "..." : ""}
-                            </div>
-                          ) : null}
+                          ) : <span style={{ color: "#94a3b8" }}>No description</span>}
                         </td>
 
                         <td style={styles.td}>
-                          <span style={badgeStyle(row.status)}>{row.status.replace("_", " ")}</span>
+                          <span style={badgeStyle(row.status)}>{String(row.status || "").replace("_", " ")}</span>
                         </td>
 
                         <td style={styles.td}>
-                          {row.raised_date ? new Date(row.raised_date).toLocaleString() : "-"}
+                          {row.created_at ? new Date(row.created_at).toLocaleString() : "-"}
                         </td>
                       </tr>
                     ))

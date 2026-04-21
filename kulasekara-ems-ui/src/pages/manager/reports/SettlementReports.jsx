@@ -1,11 +1,8 @@
 import React, { useState, useEffect } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
-import { getSettlementReadyEmployeesApi } from "../../../services/managerEmployeeService";
+import { getSettlementReportApi } from "../../../services/reportService";
 import { 
-  Users, 
   Search, 
-  Filter, 
-  ArrowRight, 
   UserMinus,
   Briefcase
 } from "lucide-react";
@@ -22,7 +19,7 @@ export default function SettlementReports() {
   const fetchEmployees = async () => {
     setLoading(true);
     try {
-      const data = await getSettlementReadyEmployeesApi();
+      const data = await getSettlementReportApi();
       setEmployees(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch settlement employees:", err);
@@ -121,12 +118,12 @@ export default function SettlementReports() {
                         </div>
                       </td>
                       <td style={styles.td}>
-                        <StatusBadge status={emp.status} />
+                        <StatusBadge status={emp.emp_status} />
                       </td>
-                      <td style={styles.td}>{emp.salary_type}</td>
-                      <td style={styles.td}>{emp.nic}</td>
+                      <td style={styles.td}>{emp.emp_status === 'RESIGNED' ? 'Resigned' : 'Terminated'}</td>
+                      <td style={styles.td}>{emp.settlement_status || 'NOT STARTED'}</td>
                       <td style={styles.td}>
-                        {new Date(emp.effective_date).toLocaleDateString()}
+                        {emp.last_working_date ? new Date(emp.last_working_date).toLocaleDateString() : 'N/A'}
                       </td>
                     </tr>
                   ))

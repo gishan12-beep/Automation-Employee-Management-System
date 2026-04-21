@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Eye, EyeOff } from "lucide-react";
 import { resetPasswordApi } from "../../services/authService";
 
 export default function ResetPassword() {
@@ -13,6 +14,8 @@ export default function ResetPassword() {
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [msg, setMsg] = useState({ type: "", text: "" });
   const [loading, setLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState("");
@@ -114,34 +117,64 @@ export default function ResetPassword() {
 
             <div style={styles.inputGroup}>
               <label style={styles.label}>New Password</label>
-              <input
-                type="password"
-                style={{
-                  ...styles.input,
-                  ...(focusedInput === "new" ? styles.inputFocused : {}),
-                }}
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                onFocus={() => setFocusedInput("new")}
-                onBlur={() => setFocusedInput("")}
-                placeholder="Ej: Hello@123"
-              />
+              <div style={styles.passwordWrapper}>
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  style={{
+                    ...styles.input,
+                    ...(focusedInput === "new" ? styles.inputFocused : {}),
+                    paddingRight: "48px",
+                  }}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  onFocus={() => setFocusedInput("new")}
+                  onBlur={() => setFocusedInput("")}
+                  placeholder="Ej: Hello@123"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                  style={{
+                    ...styles.eyeButton,
+                    color: focusedInput === "new" ? "#4a7c4e" : "#9ca3af",
+                  }}
+                  tabIndex="-1"
+                  aria-label={showNewPassword ? "Hide password" : "Show password"}
+                >
+                  {showNewPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
             </div>
 
             <div style={styles.inputGroup}>
               <label style={styles.label}>Confirm Password</label>
-              <input
-                type="password"
-                style={{
-                  ...styles.input,
-                  ...(focusedInput === "confirm" ? styles.inputFocused : {}),
-                }}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                onFocus={() => setFocusedInput("confirm")}
-                onBlur={() => setFocusedInput("")}
-                placeholder="Re-enter password"
-              />
+              <div style={styles.passwordWrapper}>
+                <input
+                  type={showConfirmPassword ? "text" : "password"}
+                  style={{
+                    ...styles.input,
+                    ...(focusedInput === "confirm" ? styles.inputFocused : {}),
+                    paddingRight: "48px",
+                  }}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onFocus={() => setFocusedInput("confirm")}
+                  onBlur={() => setFocusedInput("")}
+                  placeholder="Re-enter password"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  style={{
+                    ...styles.eyeButton,
+                    color: focusedInput === "confirm" ? "#4a7c4e" : "#9ca3af",
+                  }}
+                  tabIndex="-1"
+                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                >
+                  {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              </div>
             </div>
 
             <div style={styles.rules}>
@@ -264,6 +297,25 @@ const styles = {
   brandTagline: { fontSize: "14px", color: "#6b7280", fontWeight: "500" },
 
   inputGroup: { marginBottom: "20px" },
+  passwordWrapper: {
+    position: "relative",
+    display: "flex",
+    alignItems: "center",
+  },
+  eyeButton: {
+    position: "absolute",
+    right: "14px",
+    background: "none",
+    border: "none",
+    padding: "4px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "all 0.2s ease",
+    borderRadius: "8px",
+    zIndex: 3,
+  },
   label: { display: "block", marginBottom: "8px", fontSize: "13px", fontWeight: "600", color: "#374151", textTransform: "uppercase" },
   input: {
     width: "100%",

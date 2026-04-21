@@ -3,6 +3,7 @@ import {
     getLeaveRequests,
     updateLeaveRequestStatus,
     fetchLeaveTypes,
+    deleteLeave
 } from "../controllers/leaveController.js";
 import { requireAuth, requireRole } from "../middleware/authMiddleware.js";
 
@@ -21,5 +22,8 @@ router.patch(
 
 // Manager gets leave types
 router.get("/leave-types", requireAuth, requireRole("MANAGER"), fetchLeaveTypes);
+
+// Manager deletes a leave request
+router.delete("/leaves/:id", requireAuth, requireRole("MANAGER"), deleteLeave);
 
 export default router;
