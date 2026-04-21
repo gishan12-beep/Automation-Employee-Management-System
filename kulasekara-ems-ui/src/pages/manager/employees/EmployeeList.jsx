@@ -24,10 +24,10 @@ import {
 } from "lucide-react";
 
 /**
- * ✅ Employee table:
+ * Employee table:
  * employee(employee_id, department_id, first_name, last_name, nic, email, phone, status, created_at)
  *
- * ✅ Salary configurations table:
+ * Salary configurations table:
  * salary_configurations(config_id, employee_id, salary_type, basic_rate, is_epf_eligible, effective_date)
  */
 
