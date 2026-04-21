@@ -2,12 +2,7 @@
 import bcrypt from "bcrypt";
 import { pool } from "../config/db.js";
 
-/**
- * ✅ First-login password change (NO current password)
- * POST /api/auth/change-password-first-login
- * Body: { newPassword }
- * Requires: JWT (requireAuth)
- */
+// This section handles the very first time a new employee sets their own password.
 export const changePasswordFirstLogin = async (req, res) => {
   try {
     const { newPassword } = req.body;
@@ -22,7 +17,7 @@ export const changePasswordFirstLogin = async (req, res) => {
     const userId = req.user?.user_id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    // ✅ allow only if must_change_password = 1
+    // Make sure this person is actually required to change their password right now.
     const [rows] = await pool.query(
       `SELECT must_change_password FROM user WHERE user_id = ? LIMIT 1`,
       [userId]
@@ -36,7 +31,7 @@ export const changePasswordFirstLogin = async (req, res) => {
 
     const newHash = await bcrypt.hash(String(newPassword), 10);
 
-    // ✅ Update hash and RESET ALL FLAGS
+    // Save the new password and mark that the person has completed their required update.
     await pool.query(
       `UPDATE user
        SET password_hash = ?, 
@@ -53,11 +48,7 @@ export const changePasswordFirstLogin = async (req, res) => {
   }
 };
 
-/**
- * ✅ 2) VOLUNTARY PASSWORD CHANGE (Requires current password)
- * POST /api/auth/change-password
- * Body: { currentPassword, newPassword }
- */
+// This section allows a user to change their password at any time.
 export const changePassword = async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -72,20 +63,20 @@ export const changePassword = async (req, res) => {
     const userId = req.user?.user_id;
     if (!userId) return res.status(401).json({ message: "Unauthorized" });
 
-    // 1) Fetch current user
+    // Get the current password from the system to make sure the user knows it.
     const [rows] = await pool.query(
       `SELECT password_hash FROM user WHERE user_id = ? LIMIT 1`,
       [userId]
     );
     if (rows.length === 0) return res.status(404).json({ message: "User not found" });
 
-    // 2) Verify current password
+    // Match the typed "current password" with what we have in our records.
     const ok = await bcrypt.compare(String(currentPassword), rows[0].password_hash);
     if (!ok) {
       return res.status(401).json({ message: "Incorrect current password" });
     }
 
-    // 3) Hash and Update
+    // Secure and save the new password in the system.
     const newHash = await bcrypt.hash(String(newPassword), 10);
     await pool.query(
       `UPDATE user

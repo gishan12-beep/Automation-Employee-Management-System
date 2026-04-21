@@ -5,7 +5,7 @@ import { changePasswordFirstLoginApi } from "../../../services/authService";
 export default function ChangePassword() {
   const navigate = useNavigate();
 
-  // ✅ read from localStorage (matches Login.jsx & PrivateRoute approach)
+  // Check the computer's memory to see who is logged in.
   const token = localStorage.getItem("token") || "";
   const username =
     localStorage.getItem("role") === "EMPLOYEE"
@@ -20,6 +20,7 @@ export default function ChangePassword() {
   const [err, setErr] = useState("");
   const [msg, setMsg] = useState("");
 
+  // This runs when you click the "Update Password" button. It makes sure everything is filled out correctly.
   const onSubmit = async (e) => {
     e.preventDefault();
     setErr("");
@@ -45,10 +46,10 @@ export default function ChangePassword() {
     try {
       setLoading(true);
 
-      // ✅ First-login change password (no current password needed)
+      // Send the new password to the system to be saved.
       await changePasswordFirstLoginApi(token, newPassword);
 
-      // ✅ unlock employee routes (AppRoutes reads this)
+      // Mark that the password has been changed so the system lets you into the dashboard.
       localStorage.setItem("must_change_password", "0");
 
       setMsg("Password updated successfully. Redirecting...");
@@ -60,6 +61,7 @@ export default function ChangePassword() {
     }
   };
 
+  // This clears all your login info and takes you back to the login screen.
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("role");

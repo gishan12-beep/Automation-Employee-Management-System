@@ -5,9 +5,11 @@ import AppLayout from "../../../components/layout/AppLayout";
 import { ArrowLeft } from "lucide-react";
 import { getCashPayoutReportApi } from "../../../services/reportService";
 
+// Formats numeric values into a localized LKR currency string for display in the payout report
 const formatLKR = (n) =>
   new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(Number(n || 0));
 
+// Component for generating a detailed list of cash-based salary payouts for a specific period
 export default function CashSalaryPayoutReport() {
   const [month, setMonth] = useState(getMonthKey(new Date()));
   const [status, setStatus] = useState("ALL"); // ALL | PAID | PENDING
@@ -19,15 +21,18 @@ export default function CashSalaryPayoutReport() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  // Fetches initial cash payout data whenever the selected month period is changed
   useEffect(() => {
     fetchCashPayouts();
   }, [month]);
 
+  // Retrieves cash payout records from the backend API for the selected month and year
   const fetchCashPayouts = async () => {
     setLoading(true);
     setError(null);
     try {
       const [yearStr, monthStr] = month.split("-");
+      // Calls the report service to get cash-specific payroll data
       const data = await getCashPayoutReportApi(parseInt(monthStr, 10), parseInt(yearStr, 10));
       setCashData(data);
     } catch (err) {
@@ -39,12 +44,13 @@ export default function CashSalaryPayoutReport() {
     }
   };
 
+  // Processes and filters raw cash payout data based on status and search queries
   const rows = useMemo(() => {
     let list = cashData.map(item => ({
       id: item.payroll_id,
       employeeId: item.employee_id,
       employeeName: `${item.first_name} ${item.last_name}`,
-      salaryType: item.department || "N/A", // Reusing department as salary type proxy if missing
+      salaryType: item.department || "N/A", // Reusing department as salary type proxy if specific type is missing
       netPay: Number(item.net_pay || 0),
       status: item.status,
       paidOn: item.generated_at ? new Date(item.generated_at).toLocaleDateString() : "",
@@ -52,8 +58,10 @@ export default function CashSalaryPayoutReport() {
       voucherNo: `VCH-${item.payroll_id}`
     }));
 
+    // Applies payment status filtering
     if (status !== "ALL") list = list.filter((p) => p.status === status);
     
+    // Applies text search filtering against name, ID, and voucher number
     if (q.trim()) {
       const s = q.trim().toLowerCase();
       list = list.filter(
@@ -67,13 +75,16 @@ export default function CashSalaryPayoutReport() {
     return list;
   }, [cashData, status, q]);
 
+  // Calculates financial totals for paid and pending statuses for the dashboard summary
   const totals = useMemo(() => {
     const paid = rows.filter((r) => r.status === "PAID").reduce((s, r) => s + r.netPay, 0);
     const pending = rows.filter((r) => r.status !== "PAID").reduce((s, r) => s + r.netPay, 0);
     return { paid, pending, count: rows.length };
   }, [rows]);
 
+  // Placeholder for the report export functionality
   const onExport = () => alert("Export will be added after backend integration");
+  // Triggers the standard browser print dialog for the report
   const onPrint = () => window.print();
 
   return (

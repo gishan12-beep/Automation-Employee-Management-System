@@ -2,6 +2,7 @@ import React from "react";
 import AppLayout from "../../../components/layout/AppLayout";
 import { useNavigate } from "react-router-dom";
 
+// Component that acts as a navigation hub for various payroll and contribution reports
 export default function Reports() {
   const navigate = useNavigate();
 
@@ -37,6 +38,7 @@ export default function Reports() {
   );
 }
 
+// Reusable card component for report categories with a title and description
 function ReportCard({ title, desc, onClick }) {
   return (
     <div style={styles.card} onClick={onClick} role="button" tabIndex={0}>

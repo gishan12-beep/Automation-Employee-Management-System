@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import AppLayout from "../../components/layout/AppLayout";
 import { getEmployeeDashboardStats, getRecentActivity as getRecentActivityApi } from "../../services/dashboardService";
 
+// Safely parses a JSON string into an object, returning null if parsing fails
 function safeParse(json) {
   try {
     return JSON.parse(json);
@@ -12,7 +13,7 @@ function safeParse(json) {
   }
 }
 
-// ✅ prevent showing "manager" / "employee" as a "name"
+// Sanitizes a name string by ensuring it doesn't contain generic role identifiers
 function cleanName(name) {
   const n = String(name || "").trim();
   if (!n) return "";
@@ -23,6 +24,7 @@ function cleanName(name) {
   return n;
 }
 
+// Constructs a complete display name for a user by prioritizing various name fields and fallback options
 function buildDisplayName(userObj) {
   if (!userObj) return "";
 
@@ -47,6 +49,7 @@ function buildDisplayName(userObj) {
 }
 
 
+// Main dashboard component for the employee role, providing statistics, quick actions, and recent activity
 export default function EmployeeDashboard() {
   const employeeIdLS = localStorage.getItem("employee_id") || localStorage.getItem("employeeId") || "";
   const [user, setUser] = useState(() => safeParse(localStorage.getItem("user") || "null"));
@@ -65,12 +68,14 @@ export default function EmployeeDashboard() {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Synchronizes user state with local storage on component mount
   useEffect(() => {
     const u = safeParse(localStorage.getItem("user") || "null");
     if (u) setUser(u);
     fetchData();
   }, []);
 
+  // Retrieves dashboard performance metrics and recent application activity from backend services
   const fetchData = async () => {
     setLoading(true);
     try {
@@ -91,11 +96,12 @@ export default function EmployeeDashboard() {
     }
   };
 
+  // Computes a normalized employee profile object by merging fetched data with local storage fallbacks
   const employee = useMemo(() => {
     // Prioritize fetched data from database, fallback to localStorage
     const p = fetchedProfile || user || {};
     
-    // build name
+    // build name using helper function to ensure it's not a generic role string
     const first = cleanName(p.firstName || p.first_name);
     const last = cleanName(p.lastName || p.last_name);
     const full = `${first} ${last}`.trim() || cleanName(p.name) || cleanName(p.username) || p.email || "Employee";
@@ -338,6 +344,7 @@ export default function EmployeeDashboard() {
     notiDesc: { marginTop: 3, fontSize: 12, opacity: 0.78 },
   };
 
+  // Determines the visual state (pill color) based on the record status
   const pillType = (status) => {
     const s = String(status || "").toUpperCase();
     if (s === "PRESENT") return "ok";
@@ -346,6 +353,7 @@ export default function EmployeeDashboard() {
     return "info";
   };
 
+  // Converts a raw date string into a user-friendly localized format (DD MMM YYYY)
   const formatDate = (dateStr) => {
     if (!dateStr) return "—";
     try {
@@ -356,6 +364,7 @@ export default function EmployeeDashboard() {
     }
   };
 
+  // Calculates and returns a relative time string (e.g., '2h ago') based on the provided timestamp
   const formatTimeAgo = (timeStr) => {
     if (!timeStr) return "—";
     try {

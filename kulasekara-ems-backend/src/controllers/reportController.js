@@ -1,15 +1,21 @@
 import { pool } from "../config/db.js";
 
 /**
- * GET /api/manager/reports/attendance
- * Returns monthly summary for all employees
+ * Generates a monthly attendance summary report for all employees.
+ * Aggregates present/absent/late days and total OT hours.
+ * 
+ * @param {Object} req - request object with query { month, year }
+ * @param {Object} res - Response object
  */
 export const getAttendanceSummaryReport = async (req, res) => {
     try {
         const { month, year } = req.query;
-        if (!month || !year) return res.status(400).json({ message: "Month and Year are required" });
+        if (!month || !year) {
+            return res.status(400).json({ message: "Month and Year are required parameters." });
+        }
 
-        const [rows] = await pool.query(`
+        // Fetch aggregated attendance data joined with salary config for employee type
+        const [reportRows] = await pool.query(`
             SELECT 
                 e.employee_id, 
                 e.first_name, 
@@ -20,66 +26,76 @@ export const getAttendanceSummaryReport = async (req, res) => {
                 COUNT(CASE WHEN a.status = 'LATE' THEN 1 END) as late_days,
                 SUM(COALESCE(ot.ot_hours, 0)) as total_ot_hours
             FROM employee e
-            LEFT JOIN salary_configurations sc ON e.employee_id = sc.employee_id AND sc.effective_date <= LAST_DAY(STR_TO_DATE(CONCAT(?, '-', ?, '-01'), '%Y-%m-%d'))
-            LEFT JOIN attendance a ON e.employee_id = a.employee_id AND MONTH(a.date) = ? AND YEAR(a.date) = ?
-            LEFT JOIN overtime_records ot ON e.employee_id = ot.employee_id AND MONTH(ot.date) = ? AND YEAR(ot.date) = ?
+            LEFT JOIN salary_configurations sc ON e.employee_id = sc.employee_id 
+                AND sc.effective_date <= LAST_DAY(STR_TO_DATE(CONCAT(?, '-', ?, '-01'), '%Y-%m-%d'))
+            LEFT JOIN attendance a ON e.employee_id = a.employee_id 
+                AND MONTH(a.date) = ? AND YEAR(a.date) = ?
+            LEFT JOIN overtime_records ot ON e.employee_id = ot.employee_id 
+                AND MONTH(ot.date) = ? AND YEAR(ot.date) = ?
             GROUP BY e.employee_id, e.first_name, e.last_name
-            ORDER BY e.first_name
+            ORDER BY e.first_name ASC
         `, [year, month, month, year, month, year]);
 
-        // Note: The salary_type join might pick multiple configs if not handled carefully, 
-        // but for a summary, picking the latest effective one is usually enough.
-        // Using common pattern from other controllers.
-        
-        res.json(rows);
+        return res.json(reportRows);
     } catch (err) {
-        console.error("Attendance Report Error:", err);
-        res.status(500).json({ message: "Internal server error" });
+        console.error("[REPORT] Attendance Report Error:", err);
+        return res.status(500).json({ message: "Failed to generate attendance report." });
     }
 };
 
 /**
- * GET /api/manager/reports/issues
+ * Generates a report of all employee issues/complaints.
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
  */
 export const getIssueSummaryReport = async (req, res) => {
     try {
-        const [rows] = await pool.query(`
+        const [issueRows] = await pool.query(`
             SELECT i.*, e.first_name, e.last_name, d.name as department
             FROM issues i
             JOIN employee e ON i.employee_id = e.employee_id
             LEFT JOIN departments d ON e.department_id = d.id
             ORDER BY i.created_at DESC
         `);
-        res.json(rows);
+        return res.json(issueRows);
     } catch (err) {
-        res.status(500).json({ message: "Error fetching issues report" });
+        console.error("[REPORT] Issue Report Error:", err);
+        return res.status(500).json({ message: "Failed to fetch issues report." });
     }
 };
 
 /**
- * GET /api/manager/reports/leaves
+ * Generates a report of all leave requests.
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
  */
 export const getLeaveSummaryReport = async (req, res) => {
     try {
-        const [rows] = await pool.query(`
+        const [leaveRows] = await pool.query(`
             SELECT lr.*, e.first_name, e.last_name, lt.type_name as leave_type
             FROM leave_requests lr
             JOIN employee e ON lr.employee_id = e.employee_id
             JOIN leave_types lt ON lr.leave_type_id = lt.id
             ORDER BY lr.start_date DESC
         `);
-        res.json(rows);
+        return res.json(leaveRows);
     } catch (err) {
-        res.status(500).json({ message: "Error fetching leaves report" });
+        console.error("[REPORT] Leave Report Error:", err);
+        return res.status(500).json({ message: "Failed to fetch leaves report." });
     }
 };
 
 /**
- * GET /api/manager/reports/settlements
+ * Generates a report of employees ready for final settlement (Resigned/Terminated).
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
  */
 export const getSettlementSummaryReport = async (req, res) => {
     try {
-        const [rows] = await pool.query(`
+        const [settlementRows] = await pool.query(`
             SELECT e.employee_id, e.first_name, e.last_name, e.status as emp_status,
                    fs.settlement_id, fs.status as settlement_status, fs.net_settlement_amount, fs.last_working_date
             FROM employee e
@@ -87,21 +103,28 @@ export const getSettlementSummaryReport = async (req, res) => {
             WHERE e.status IN ('RESIGNED', 'TERMINATED', 'INACTIVE')
             ORDER BY e.employee_id DESC
         `);
-        res.json(rows);
+        return res.json(settlementRows);
     } catch (err) {
-        res.status(500).json({ message: "Error fetching settlement report" });
+        console.error("[REPORT] Settlement Report Error:", err);
+        return res.status(500).json({ message: "Failed to fetch settlement report." });
     }
 };
 
 /**
- * GET /api/manager/reports/cash-payout?month=X&year=Y
+ * Generates a cash payout report including currency denomination breakdown.
+ * Used for physical cash payment distribution.
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
  */
 export const getCashPayoutReport = async (req, res) => {
     try {
         const { month, year } = req.query;
-        if (!month || !year) return res.status(400).json({ message: "Month and Year required" });
+        if (!month || !year) {
+            return res.status(400).json({ message: "Month and Year are required." });
+        }
 
-        const [rows] = await pool.query(`
+        const [payrollRows] = await pool.query(`
             SELECT pr.*, e.first_name, e.last_name, d.name as department
             FROM payroll_runs pr
             JOIN employee e ON pr.employee_id = e.employee_id
@@ -109,35 +132,39 @@ export const getCashPayoutReport = async (req, res) => {
             WHERE pr.month = ? AND pr.year = ? AND pr.status IN ('READY', 'PAID')
         `, [month, year]);
 
-        // Calc denominations for each row
+        // Currency denominations used in Sri Lanka (LKR)
         const denominations = [5000, 1000, 500, 100, 50, 20, 10, 5, 2, 1];
         
-        const reportData = rows.map(r => {
-            let remain = Math.floor(r.net_pay);
+        const reportWithBreakdown = payrollRows.map(row => {
+            let remainingAmount = Math.floor(row.net_pay);
             const breakdown = {};
-            denominations.forEach(d => {
-                breakdown[d] = Math.floor(remain / d);
-                remain %= d;
+            denominations.forEach(denom => {
+                breakdown[denom] = Math.floor(remainingAmount / denom);
+                remainingAmount %= denom;
             });
-            return { ...r, denominations: breakdown };
+            return { ...row, denominations: breakdown };
         });
 
-        res.json(reportData);
+        return res.json(reportWithBreakdown);
     } catch (err) {
-        res.status(500).json({ message: "Error calculating cash payout" });
+        console.error("[REPORT] Cash Payout Error:", err);
+        return res.status(500).json({ message: "Failed to calculate cash payout denominations." });
     }
 };
 
 /**
- * DELETE /api/manager/reports/settlements/:id
+ * Deletes a final settlement record.
+ * 
+ * @param {Object} req 
+ * @param {Object} res 
  */
 export const deleteSettlement = async (req, res) => {
     try {
         const { id } = req.params;
         await pool.query("DELETE FROM final_settlements WHERE settlement_id = ?", [id]);
-        res.json({ message: "Settlement record deleted successfully" });
+        return res.json({ message: "Settlement record deleted successfully." });
     } catch (err) {
-        console.error("Delete settlement Error:", err);
-        res.status(500).json({ message: "Internal server error" });
+        console.error("[REPORT] Delete Settlement Error:", err);
+        return res.status(500).json({ message: "Internal server error." });
     }
 };

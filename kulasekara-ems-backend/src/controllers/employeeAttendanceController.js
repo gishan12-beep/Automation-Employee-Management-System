@@ -1,9 +1,6 @@
 import { pool } from "../config/db.js";
 
-/**
- * GET /api/employee/attendance/today
- * - Get today's attendance record for the logged-in employee
- */
+// Retrieves current day's attendance record (if any) for the logged-in employee
 export const getTodayAttendance = async (req, res) => {
     const employee_id = req.user.employee_id;
     const today = new Date().toISOString().slice(0, 10);
@@ -24,10 +21,7 @@ export const getTodayAttendance = async (req, res) => {
     }
 };
 
-/**
- * POST /api/employee/attendance/check-in
- * - Create a new attendance record for today with check_in time
- */
+// Records the check-in time for the employee for the current day
 export const markCheckIn = async (req, res) => {
     const employee_id = req.user.employee_id;
     const today = new Date().toISOString().slice(0, 10);
@@ -36,7 +30,7 @@ export const markCheckIn = async (req, res) => {
 
     const conn = await pool.getConnection();
     try {
-        // Check if already checked in
+        // Prevent duplicate check-ins for the same day
         const [existing] = await conn.query(
             "SELECT attendance_id FROM attendance WHERE employee_id = ? AND date = ?",
             [employee_id, today]
@@ -47,6 +41,7 @@ export const markCheckIn = async (req, res) => {
             return res.status(400).json({ message: "Attendance record already exists for today" });
         }
 
+        // Insert new record with status PRESENT
         await conn.query(
             `INSERT INTO attendance (employee_id, date, check_in, status)
        VALUES (?, ?, ?, 'PRESENT')`,
@@ -61,10 +56,7 @@ export const markCheckIn = async (req, res) => {
     }
 };
 
-/**
- * PUT /api/employee/attendance/check-out
- * - Update today's attendance record with check_out time
- */
+// Records the check-out time for the employee for the current day
 export const markCheckOut = async (req, res) => {
     const employee_id = req.user.employee_id;
     const today = new Date().toISOString().slice(0, 10);
@@ -73,7 +65,7 @@ export const markCheckOut = async (req, res) => {
 
     const conn = await pool.getConnection();
     try {
-        // Check if record exists
+        // Ensure an attendance record exists before allowing check-out
         const [existing] = await conn.query(
             "SELECT attendance_id, check_out FROM attendance WHERE employee_id = ? AND date = ?",
             [employee_id, today]
@@ -84,11 +76,13 @@ export const markCheckOut = async (req, res) => {
             return res.status(400).json({ message: "No attendance record found for today. Please check in first." });
         }
 
+        // Prevent multiple check-outs
         if (existing[0].check_out) {
             conn.release();
             return res.status(400).json({ message: "Already checked out for today" });
         }
 
+        // Update existing record with check-out time
         await conn.query(
             "UPDATE attendance SET check_out = ? WHERE attendance_id = ?",
             [timeString, existing[0].attendance_id]

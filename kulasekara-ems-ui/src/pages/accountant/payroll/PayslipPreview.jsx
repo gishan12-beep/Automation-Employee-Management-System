@@ -6,6 +6,7 @@ const fmt = (n) =>
     maximumFractionDigits: 2,
   });
 
+// Component that renders a detailed payslip preview and provides functionality to download it as a PDF
 export default function PayslipPreview({ employee, period, base, overrides, totals }) {
   const slipRef = useRef(null);
   const [downloading, setDownloading] = useState(false);
@@ -13,11 +14,11 @@ export default function PayslipPreview({ employee, period, base, overrides, tota
   const incentiveRows = overrides?.incentives || [];
   const deductionRows = overrides?.deductions || [];
 
+  // Captures the payslip HTML element, converts it to an image, and saves it as a PDF file
   const download = async () => {
     setDownloading(true);
     try {
-      // Optional PDF export if installed:
-      // npm i html2canvas jspdf
+      // Dynamic imports for library bundles to optimize initial page load speed
       const [{ default: html2canvas }, { jsPDF }] = await Promise.all([
         import("html2canvas"),
         import("jspdf"),
@@ -40,6 +41,7 @@ export default function PayslipPreview({ employee, period, base, overrides, tota
       pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
       heightLeft -= pageHeight;
 
+      // Handle multi-page PDF generation if the content exceeds a single A4 page
       while (heightLeft > 0) {
         position -= pageHeight;
         pdf.addPage();
@@ -49,7 +51,7 @@ export default function PayslipPreview({ employee, period, base, overrides, tota
 
       pdf.save(`Payslip_${employee?.employeeID || employee?.id || "EMP"}_${period?.start}_${period?.end}.pdf`);
     } catch (e) {
-      // Fallback: print -> Save as PDF
+      // Fallback: Trigger standard browser print dialog which allows "Save as PDF"
       window.print();
     } finally {
       setDownloading(false);

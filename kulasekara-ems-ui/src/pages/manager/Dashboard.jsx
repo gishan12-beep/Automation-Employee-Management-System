@@ -21,6 +21,7 @@ import {
   ChevronRight
 } from "lucide-react";
 
+// Main dashboard component for the Manager role, providing an overview of team operations and quick actions
 function Dashboard() {
   const navigate = useNavigate();
   const [hoveredCard, setHoveredCard] = useState(null);
@@ -38,7 +39,7 @@ function Dashboard() {
     check_out: "",
   });
 
-  // Fetch stats on mount
+  // Fetches core dashboard metrics (employee count, attendance, etc.) upon component mount
   useEffect(() => {
     (async () => {
       try {
@@ -50,7 +51,7 @@ function Dashboard() {
     })();
   }, []);
 
-  // Fetch employees when modal opens
+  // Retrieves the full employee list for the attendance marking modal when it is opened
   useEffect(() => {
     if (isAttModalOpen && employees.length === 0) {
       (async () => {
@@ -64,20 +65,24 @@ function Dashboard() {
     }
   }, [isAttModalOpen, employees]);
 
+  // Updates the attendance form state when input fields are modified
   const handleAttChange = (e) => {
     const { name, value } = e.target;
     setAttForm((p) => ({ ...p, [name]: value }));
   };
 
+  // Submits the attendance record to the backend and resets the form upon success
   const submitAttendance = async () => {
     if (!attForm.employee_id) return alert("Please select an employee");
     if (!attForm.date) return alert("Please select a date");
 
     try {
+      // Calls the attendance service to store the record in the database
       await markAttendanceApi(attForm);
       alert("Attendance marked successfully!");
-      setIsAttModalOpen(false);
-      // Reset form
+      setIsAttModalOpen(false); // Close the modal
+      
+      // Reset form to default values for the next entry
       setAttForm({
         employee_id: "",
         date: new Date().toISOString().slice(0, 10),

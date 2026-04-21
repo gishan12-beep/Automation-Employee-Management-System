@@ -4,27 +4,32 @@ import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import { getCashPayoutReportApi } from "../../../services/reportService";
 
+// Formats numeric values into a localized LKR currency string for consistent financial display
 const formatLKR = (n) =>
   new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(Number(n || 0));
 
+// Dashboard component for tracking cash disbursements and coin-level breakdown for payroll
 export default function CashCoinDashboard() {
   const navigate = useNavigate();
 
-  const [month, setMonth] = useState(getMonthKey(new Date())); // "YYYY-MM"
+  const [month, setMonth] = useState(getMonthKey(new Date())); // Period selection state in "YYYY-MM" format
 
   const [cashData, setCashData] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Re-fetches cash payout data whenever the selected month period changes
   useEffect(() => {
     fetchCashData();
   }, [month]);
 
+  // Retrieves cash payout reports from the backend service for the selected period
   const fetchCashData = async () => {
     setLoading(true);
     setError(null);
     try {
       const [yearStr, monthStr] = month.split("-");
+      // Calls the report service to get specific cash-based salary data
       const res = await getCashPayoutReportApi(parseInt(monthStr, 10), parseInt(yearStr, 10));
       setCashData(res);
     } catch (err) {
@@ -36,28 +41,34 @@ export default function CashCoinDashboard() {
     }
   };
 
+  // Computes relevant financial metrics and status counts for the dashboard KPIs
   const kpis = useMemo(() => {
-    // We don't have withdrawals table yet, so 0 for now or fetch if available
+    // Current placeholder for total cash withdrawn from bank records
     const cashWithdrawn = 0; 
     
+    // Sums up all net salaries that have reached the 'PAID' status
     const cashPaid = cashData
       .filter((p) => p.status === "PAID")
       .reduce((s, p) => s + Number(p.net_pay || 0), 0);
 
+    // Sums up all net salaries still pending actual cash disbursement
     const cashPending = cashData
       .filter((p) => p.status !== "PAID")
       .reduce((s, p) => s + Number(p.net_pay || 0), 0);
 
+    // Determines the unique count of employees successfully paid in cash
     const employeesPaidCash = new Set(
       cashData.filter((p) => p.status === "PAID").map((p) => p.employee_id)
     ).size;
 
+    // Calculates the discrepancy between withdrawn cash and distributed payouts
     const diff = cashWithdrawn - cashPaid;
     const avgCash = employeesPaidCash > 0 ? cashPaid / employeesPaidCash : 0;
 
     return { cashWithdrawn, cashPaid, cashPending, diff, employeesPaidCash, avgCash };
   }, [cashData]);
 
+  // Flags a potential financial risk if withdrawal and payout totals mismatch
   const risk = kpis.diff !== 0;
 
   return (

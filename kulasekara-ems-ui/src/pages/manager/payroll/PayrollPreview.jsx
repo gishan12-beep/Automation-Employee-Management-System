@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 
+// Formats numeric values into a localized LKR currency string for display within the preview
 const LKR = (n) =>
   new Intl.NumberFormat("en-LK", {
     style: "currency",
@@ -7,6 +8,7 @@ const LKR = (n) =>
     maximumFractionDigits: 0,
   }).format(Number(n || 0));
 
+// Modal component that provides a read-only preview of an employee's calculated payroll breakdown
 export default function PayrollPreview({ employee, payroll, onClose }) {
   const [tab, setTab] = useState("Breakdown");
 
@@ -71,6 +73,7 @@ export default function PayrollPreview({ employee, payroll, onClose }) {
   );
 }
 
+// UI container component to group related payroll data points into a distinct panel
 function Panel({ title, children }) {
   return (
     <div style={styles.panel}>
@@ -80,6 +83,7 @@ function Panel({ title, children }) {
   );
 }
 
+// Functional component for rendering a single labeled row of financial data
 function Row({ label, value, strong }) {
   return (
     <div style={styles.row}>

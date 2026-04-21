@@ -9,10 +9,12 @@ const mockPayroll = [
   { id: "PAY-003", month: "Nov 2025", employees: 17, net: 730000, status: "Draft", updated: "2025-11-19" },
 ];
 
+// Component for viewing and managing historical payroll batches and their completion statuses
 export default function PayrollManagementAccountant() {
   const navigate = useNavigate();
   const [q, setQ] = useState("");
 
+  // Filters the mock payroll data based on the user's search query (ID, month, or status)
   const rows = useMemo(() => {
     const s = q.trim().toLowerCase();
     if (!s) return mockPayroll;
@@ -92,6 +94,7 @@ export default function PayrollManagementAccountant() {
   );
 }
 
+// Small UI component to display a status label with color-coded background
 function StatusPill({ status }) {
   const s = String(status).toLowerCase();
   const isProcessed = s === "processed";

@@ -1,6 +1,6 @@
 import * as payrollService from "../services/payrollService.js";
 
-// ✅ POST /api/payroll/process/:month/:year (Manager)
+// Initiates monthly payroll processing for all active employees for the specified month and year
 export const processPayroll = async (req, res) => {
     try {
         const { month: mInput, year: yInput } = req.params;
@@ -28,7 +28,7 @@ export const processPayroll = async (req, res) => {
     }
 };
 
-// ✅ POST /api/payroll/process/:month/:year/:employeeId (Manager)
+// Processes payroll for a single specific employee for the specified month and year
 export const processSingleEmployee = async (req, res) => {
     try {
         const { month: mInput, year: yInput, employeeId } = req.params;
@@ -57,7 +57,7 @@ export const processSingleEmployee = async (req, res) => {
     }
 };
 
-// ✅ GET /api/payroll/me/:month/:year (Employee)
+// Retrieves the payroll history/payslip for the currently logged-in employee
 export const getMyPayroll = async (req, res) => {
     try {
         const employeeId = req.user.employee_id;
@@ -76,7 +76,7 @@ export const getMyPayroll = async (req, res) => {
     }
 };
 
-// ✅ GET /api/payroll/summary/:month/:year (Accountant)
+// Returns a high-level summary of all payroll runs for a given month/year (Accountant access)
 export const getSummary = async (req, res) => {
     try {
         const { month, year } = req.params;
@@ -95,7 +95,7 @@ export const getSummary = async (req, res) => {
     }
 };
 
-// ✅ GET /api/payroll/details/:month/:year/:employeeId (Accountant)
+// Retrieves the detailed calculation breakdown of a specific employee's payroll run
 export const getPayrollDetails = async (req, res) => {
     try {
         const { month, year, employeeId } = req.params;
@@ -108,7 +108,7 @@ export const getPayrollDetails = async (req, res) => {
     }
 };
 
-// ✅ PATCH /api/payroll/:payrollId (Accountant)
+// Updates an existing payroll run with manual adjustments or full edits (Accountant access)
 export const updatePayrollRun = async (req, res) => {
     try {
         const { payrollId } = req.params;
@@ -148,7 +148,7 @@ export const updatePayrollRun = async (req, res) => {
     }
 };
 
-// ✅ POST /api/payroll/approve/:payrollId (Accountant)
+// Approves a payroll run, signaling it is ready for payout
 export const approvePayroll = async (req, res) => {
     try {
         const { payrollId } = req.params;

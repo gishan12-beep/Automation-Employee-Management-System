@@ -7,19 +7,23 @@ import {
   Briefcase
 } from "lucide-react";
 
+// Component for tracking and reporting on employees eligible for final financial settlement
 export default function SettlementReports() {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // Fetches the list of resigned or terminated employees when the component mounts
   useEffect(() => {
     fetchEmployees();
   }, []);
 
+  // Retrieves settlement-eligible employee data from the report analytics service
   const fetchEmployees = async () => {
     setLoading(true);
     try {
       const data = await getSettlementReportApi();
+      // Updates state with the array of employees pending settlement
       setEmployees(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch settlement employees:", err);
@@ -28,6 +32,7 @@ export default function SettlementReports() {
     }
   };
 
+  // Filters the settlement list based on name, employee ID, or department keywords
   const filteredEmployees = employees.filter(emp => {
     return (
       emp.first_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||

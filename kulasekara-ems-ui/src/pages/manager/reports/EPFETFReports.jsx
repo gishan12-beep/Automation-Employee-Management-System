@@ -4,9 +4,11 @@ import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import { getEPFETFReportApi } from "../../../services/reportService";
 
+// Formats numeric values into a localized LKR currency string for compliance reporting
 const formatLKR = (n) =>
   new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(Number(n || 0));
 
+// Main component for generating monthly EPF and ETF contribution reports for management
 export default function EPFETFReports() {
   const [month, setMonth] = useState(getMonthKey(new Date()));
   const [q, setQ] = useState("");
@@ -16,11 +18,13 @@ export default function EPFETFReports() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  // Memoized function to fetch statutory contribution data from the backend
   const fetchData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const [yearStr, monthStr] = month.split("-");
+      // Calls the report service to retrieve EPF/ETF specific metrics for the period
       const data = await getEPFETFReportApi(parseInt(monthStr, 10), parseInt(yearStr, 10));
       setReportData(data);
     } catch (err) {
@@ -32,10 +36,12 @@ export default function EPFETFReports() {
     }
   }, [month]);
 
+  // Triggers data re-fetching whenever the selected report month is changed
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
+  // Processes raw report data into a structured format and applies search filtering
   const rows = useMemo(() => {
     const dataArray = Array.isArray(reportData) ? reportData : [];
     let list = dataArray.map(item => ({
@@ -47,6 +53,7 @@ export default function EPFETFReports() {
       etf: Number(item.etf_employer || 0)
     }));
 
+    // Applies name or employee ID search filter
     if (q.trim()) {
       const s = q.trim().toLowerCase();
       list = list.filter(
@@ -58,6 +65,7 @@ export default function EPFETFReports() {
     return list;
   }, [reportData, q]);
 
+  // Computes aggregate totals for employee/employer EPF and total ETF for dashboard display
   const kpis = useMemo(() => {
     const empEpf = rows.reduce((s, r) => s + r.employeeEPF, 0);
     const erEpf = rows.reduce((s, r) => s + r.employerEPF, 0);

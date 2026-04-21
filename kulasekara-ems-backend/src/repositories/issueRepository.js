@@ -1,6 +1,6 @@
 import { pool } from "../config/db.js";
 
-// Get all issues with employee details
+// Fetches all recorded issues joined with employee and department names
 export const getAllIssues = async () => {
     const [rows] = await pool.query(`
         SELECT i.*, e.first_name, e.last_name, d.name as department
@@ -12,6 +12,7 @@ export const getAllIssues = async () => {
     return rows;
 };
 
+// Returns all issues reported by a specific employee
 export const getIssuesByEmployee = async (employeeId) => {
     const [rows] = await pool.query(
         "SELECT * FROM issues WHERE employee_id = ? ORDER BY created_at DESC",
@@ -20,6 +21,7 @@ export const getIssuesByEmployee = async (employeeId) => {
     return rows;
 };
 
+// Records a new issue or complaint in the database
 export const createIssue = async (issueData) => {
     const { employee_id, type, description } = issueData;
     const [result] = await pool.query(
@@ -29,6 +31,7 @@ export const createIssue = async (issueData) => {
     return result.insertId;
 };
 
+// Updates existing issue record with a new status (e.g. RESOLVED) and mandatory manager reply
 export const updateIssue = async (id, updateData) => {
     const { status, reply } = updateData;
     await pool.query(
@@ -37,7 +40,7 @@ export const updateIssue = async (id, updateData) => {
     );
 };
 
-
+// Retrieves a specific issue record by its primary key (issue_id)
 export const getIssueById = async (id) => {
     const [rows] = await pool.query(
         `SELECT i.*, e.first_name, e.last_name 
@@ -49,6 +52,7 @@ export const getIssueById = async (id) => {
     return rows[0];
 };
 
+// Deletes a specific issue record from the database
 export const deleteIssue = async (id) => {
     await pool.query("DELETE FROM issues WHERE issue_id = ?", [id]);
 };

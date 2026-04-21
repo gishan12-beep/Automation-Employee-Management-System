@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
 import { getMyIssuesApi, createIssueApi } from "../../../services/issueService";
 
+// Main component for employees to view the status of their reported issues and raise new ones
 export default function IssueStatus() {
   const [issues, setIssues] = useState([]);
   const [selected, setSelected] = useState(null);
@@ -15,6 +16,7 @@ export default function IssueStatus() {
     description: "",
   });
 
+  // Initializes the component by fetching existing issues and setting up responsive UI listeners
   useEffect(() => {
     fetchIssues();
     const onResize = () => setIsMobile(window.innerWidth < 900);
@@ -22,6 +24,7 @@ export default function IssueStatus() {
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  // Retrieves all issues reported by the logged-in employee from the backend service
   const fetchIssues = async () => {
     setLoading(true);
     try {
@@ -34,8 +37,10 @@ export default function IssueStatus() {
     }
   };
 
+  // Helper function to update a specific field in the issue reporting form state
   const setField = (k, v) => setForm((p) => ({ ...p, [k]: v }));
 
+  // Handles the submission of a new issue report to the management system
   const submit = async (e) => {
     e.preventDefault();
     if (!form.description.trim()) {
@@ -45,14 +50,16 @@ export default function IssueStatus() {
 
     try {
       setMsg({ text: "Submitting...", type: "info" });
+      // Calls the issue service to persist the new issue details in the database
       await createIssueApi({
         type: form.type,
         description: form.description.trim(),
       });
 
       setMsg({ text: "Issue reported successfully.", type: "success" });
-      fetchIssues();
+      fetchIssues(); // Refresh the list to show the newly added issue
 
+      // Automatically closes the modal and resets the form after a successful submission
       setTimeout(() => {
         setShowModal(false);
         setForm({ type: "PAYROLL", description: "" });

@@ -3,6 +3,7 @@ import AppLayout from "../../../components/layout/AppLayout";
 import { leaveService } from "../../../services/leaveService";
 
 // helpers
+// UI component that renders a stylized badge representing the status of a leave request
 const Badge = ({ status }) => {
   const s = (status || "PENDING").toUpperCase();
   const cfg = {
@@ -30,6 +31,7 @@ const Badge = ({ status }) => {
   );
 };
 
+// Calculates the number of days between two dates, including both the start and end days
 const daysBetweenInclusive = (from, to) => {
   const a = new Date(from);
   const b = new Date(to);
@@ -38,12 +40,14 @@ const daysBetweenInclusive = (from, to) => {
   return diff + 1;
 };
 
+// Formats a date string into a standardized ISO format (YYYY-MM-DD)
 const fmtDate = (d) => {
   const x = new Date(d);
   if (Number.isNaN(x.getTime())) return d;
   return x.toISOString().slice(0, 10);
 };
 
+// Simple card component for displaying Key Performance Indicators (KPIs) in the dashboard
 const KpiCard = ({ title, value, hint }) => (
   <div className="card kpi-card">
     <div className="kpi-label">{title}</div>
@@ -52,6 +56,7 @@ const KpiCard = ({ title, value, hint }) => (
   </div>
 );
 
+// Component that allows employees to submit leave requests and monitor the status of their previous applications
 export default function ApplyLeave() {
   const employee_id = localStorage.getItem("employee_id") || "EMP001";
 
@@ -59,16 +64,19 @@ export default function ApplyLeave() {
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Fetches required data for the leave application interface upon component initialization
   useEffect(() => {
     fetchMyLeaves();
     fetchTypes();
   }, []);
 
+  // Retrieves the available leave categories (e.g. Annual, Casual) from the backend
   const fetchTypes = async () => {
     try {
       const data = await leaveService.fetchLeaveTypes("EMPLOYEE");
       setLeaveTypes(data);
       if (data && data.length > 0) {
+        // Sets the default leave type selection to the first available option
         setForm((p) => ({ ...p, leave_type_id: data[0].id }));
       }
     } catch (err) {
@@ -76,6 +84,7 @@ export default function ApplyLeave() {
     }
   };
 
+  // Loads all historical leave requests submitted by the current employee
   const fetchMyLeaves = async () => {
     try {
       const data = await leaveService.fetchMyLeaveRequests();
@@ -97,6 +106,7 @@ export default function ApplyLeave() {
   const [errors, setErrors] = useState({});
   const [successMsg, setSuccessMsg] = useState("");
 
+  // Aggregates total counts for pending, approved, and rejected leaves for the dashboard KPIs
   const kpis = useMemo(() => {
     const pending = myRequests.filter((r) => r.status === "PENDING").length;
     const approved = myRequests.filter((r) => r.status === "APPROVED").length;
@@ -104,6 +114,7 @@ export default function ApplyLeave() {
     return { pending, approved, rejected };
   }, [myRequests]);
 
+  // Validates the leave request form inputs for required fields and logical date ranges
   const validate = () => {
     const e = {};
     if (!form.leave_type_id) e.leave_type_id = "Leave type is required.";
@@ -113,6 +124,7 @@ export default function ApplyLeave() {
     if (form.start_date && form.end_date) {
       const a = new Date(form.start_date);
       const b = new Date(form.end_date);
+      // Ensures the end date is not scheduled before the start date
       if (b < a) e.end_date = "End date must be same or after start date.";
     }
 
@@ -121,12 +133,14 @@ export default function ApplyLeave() {
     return Object.keys(e).length === 0;
   };
 
+  // Handles the final submission of the leave request to the server
   const onSubmit = async (ev) => {
     ev.preventDefault();
     setSuccessMsg("");
     if (!validate()) return;
 
     try {
+      // Calls the leave service to store the new request in the database
       await leaveService.submitLeaveRequest({
         leave_type_id: form.leave_type_id,
         start_date: form.start_date,
@@ -134,9 +148,10 @@ export default function ApplyLeave() {
         reason: form.reason?.trim() || null,
       });
 
-      // Refresh list
+      // Refreshes the request list to display the newly submitted application
       await fetchMyLeaves();
 
+      // Resets the form state and displays a temporary success confirmation message
       setForm({ leave_type_id: leaveTypes.length > 0 ? leaveTypes[0].id : "", start_date: "", end_date: "", reason: "" });
       setErrors({});
       setSuccessMsg("Leave request submitted successfully.");

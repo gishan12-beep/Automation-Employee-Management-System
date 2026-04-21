@@ -1,3 +1,4 @@
+// Returns a mocked summary for the accountant dashboard including totals and recent payroll records
 export const getAccountantDashboardSummary = async () => {
   // UI mock (later replace with API call)
   return {

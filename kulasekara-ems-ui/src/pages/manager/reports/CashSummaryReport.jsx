@@ -5,9 +5,11 @@ import AppLayout from "../../../components/layout/AppLayout";
 import { ArrowLeft } from "lucide-react";
 import { getCashPayoutReportApi } from "../../../services/reportService";
 
+// Formats numeric values into a localized LKR currency string for consistent financial reporting
 const formatLKR = (n) =>
   new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR" }).format(Number(n || 0));
 
+// Component for a summary report comparing cash withdrawals against actual salary payouts
 export default function CashSummaryReport() {
   const [month, setMonth] = useState(getMonthKey(new Date()));
   const [note, setNote] = useState("");
@@ -17,15 +19,18 @@ export default function CashSummaryReport() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  // Fetches initial reconciliation data whenever the month selection is changed
   useEffect(() => {
     fetchCashSummary();
   }, [month]);
 
+  // Retrieves cash payout data from the backend to calculate reconciliation metrics
   const fetchCashSummary = async () => {
     setLoading(true);
     setError(null);
     try {
       const [yearStr, monthStr] = month.split("-");
+      // Calls the report service to get cash-based payroll data for the period
       const res = await getCashPayoutReportApi(parseInt(monthStr, 10), parseInt(yearStr, 10));
       setCashData(res);
     } catch (err) {
@@ -37,19 +42,27 @@ export default function CashSummaryReport() {
     }
   };
 
+  // Computes relevant financial metrics including total paid, pending and the withdrawal discrepancy
   const kpis = useMemo(() => {
-    const cashWithdrawn = 0; // No withdrawal table yet
+    // Current placeholder for cash withdrawn from the bank (manual or retrieved from DB)
+    const cashWithdrawn = 0; 
+    
+    // Sums up net pay for all successfully disbursed cash salaries
     const cashPaid = cashData
       .filter((p) => p.status === "PAID")
       .reduce((s, p) => s + Number(p.net_pay || 0), 0);
+      
+    // Sums up net pay for cash salaries awaiting disbursement
     const cashPending = cashData
       .filter((p) => p.status !== "PAID")
       .reduce((s, p) => s + Number(p.net_pay || 0), 0);
 
+    // Determines the discrepancy between withdrawn cash and distributed salary
     const diff = cashWithdrawn - cashPaid;
     return { cashWithdrawn, cashPaid, cashPending, diff };
   }, [cashData]);
 
+  // Flags a potential reconciliation risk if the withdrawals and actual payouts do not match
   const risk = kpis.diff !== 0;
 
   return (

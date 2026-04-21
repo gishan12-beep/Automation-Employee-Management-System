@@ -3,15 +3,18 @@ import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import { getEpfEtfReportApi } from "../../../services/accountantPayrollService";
 
+// Formats a numeric value into a localized LKR currency string with two decimal places
 const fmt = (n) =>
   Number(n || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// Generates a standardized YYYY-MM string representing the current or provided month
 const monthValue = (d = new Date()) => {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   return `${y}-${m}`;
 };
 
+// Component for generating and viewing monthly EPF/ETF contribution reports
 export default function EPFETF() {
   const navigate = useNavigate();
 
@@ -20,9 +23,10 @@ export default function EPFETF() {
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState("");
 
-  const [rows, setRows] = useState([]); // employee EPF base salary + flags
+  const [rows, setRows] = useState([]); // raw employee payroll data for contributions
 
   useEffect(() => {
+    // Loads the statutory contribution data from the backend for the selected month
     const load = async () => {
       setLoading(true);
       setToast("");
@@ -39,10 +43,11 @@ export default function EPFETF() {
     load();
   }, [month]);
 
+  // Processes raw data to compute specific employee and employer contribution amounts
   const computedRows = useMemo(() => {
-    // Filter & compute EPF/ETF amounts
     const keyword = q.trim().toLowerCase();
 
+    // Filters the list based on search criteria (ID, name, or department)
     const filtered = rows.filter((r) => {
       if (!keyword) return true;
       return (
@@ -55,7 +60,7 @@ export default function EPFETF() {
     return filtered.map((r) => {
       const base = Number(r.epfBase || 0);
 
-      // EPF employee 8%, employer 12%, ETF employer 3%
+      // Calculates contributions if eligible: 8% employee EPF, 12% employer EPF, 3% employer ETF
       const epfEmployee = r.isEligible ? base * 0.08 : 0;
       const epfEmployer = r.isEligible ? base * 0.12 : 0;
       const etfEmployer = r.isEligible ? base * 0.03 : 0;
@@ -71,6 +76,7 @@ export default function EPFETF() {
     });
   }, [rows, q]);
 
+  // Aggregates the computed rows into high-level KPI summaries for the report header
   const kpis = useMemo(() => {
     const eligibleCount = computedRows.filter((r) => r.isEligible).length;
 
@@ -82,6 +88,7 @@ export default function EPFETF() {
     return { eligibleCount, epfEmp, epfEr, etfEr, total };
   }, [computedRows]);
 
+  // Triggers the browser's print dialog to allow saving the report as a PDF
   const printReport = () => window.print();
 
   return (

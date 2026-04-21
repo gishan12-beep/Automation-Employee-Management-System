@@ -17,11 +17,12 @@ import {
   UserCheck
 } from "lucide-react";
 
+// Central navigation hub for various management reports and analytics
 export default function ReportsDashboard() {
   const navigate = useNavigate();
 
+  // Defines the available report categories with titles, descriptions, and their routes
   const reportCategories = [
-
     {
       key: "payroll",
       title: "Payroll Summaries",

@@ -1,32 +1,40 @@
 import { pool } from "../config/db.js";
 import * as payrollRepo from "../repositories/payrollRepository.js";
 
-// ✅ Process Monthly Payroll
+/**
+ * Processes the monthly payroll for all active employees.
+ * Calculates basic earnings, incentives (perfect attendance), deductions (late fines),
+ * OT pay, and statutory contributions (EPF/ETF).
+ * 
+ * @param {number} month - The month of the payroll (1-12)
+ * @param {number} year - The year of the payroll
+ * @returns {Promise<Object>} - Processing summary { processedCount, skippedCount, details }
+ */
 export const processMonthlyPayroll = async (month, year) => {
-    const conn = await pool.getConnection();
+    const connection = await pool.getConnection();
 
     let processedCount = 0;
     let skippedCount = 0;
-    const results = [];
+    const processingResults = [];
 
     try {
-        await conn.beginTransaction();
+        await connection.beginTransaction();
 
-        const employees = await payrollRepo.getActiveEmployees();
+        const activeEmployees = await payrollRepo.getActiveEmployees();
 
-        // Find total days in month for "derived from total working days" logic
+        // Find total days in month for "pro-rata deduction" logic
         const totalDaysInMonth = new Date(year, month, 0).getDate();
 
-        for (const emp of employees) {
-            console.log(`[PAYROLL] Processing employee: ${emp.employee_id}`);
+        for (const employee of activeEmployees) {
+            console.log(`[PAYROLL] Processing employee: ${employee.employee_id}`);
 
             // 1. Check if record exists
-            const existingId = await payrollRepo.checkExistingPayroll(emp.employee_id, month, year);
+            const existingPayrollId = await payrollRepo.checkExistingPayroll(employee.employee_id, month, year);
 
-            // 2. Fetch Salary Config
-            const salaryConfig = await payrollRepo.getSalaryConfig(emp.employee_id, month, year);
+            // 2. Fetch Salary Configuration
+            const salaryConfig = await payrollRepo.getSalaryConfig(employee.employee_id, month, year);
             if (!salaryConfig) {
-                console.warn(`No salary config for employee ${emp.employee_id}`);
+                console.warn(`No salary config found for employee ${employee.employee_id}`);
                 skippedCount++;
                 continue;
             }
@@ -40,15 +48,17 @@ export const processMonthlyPayroll = async (month, year) => {
 
             // 3. Compute Basic Earnings and dynamic rules
             if (isMonthly) {
-                const unapprovedAbsences = await payrollRepo.getUnapprovedAbsentDays(emp.employee_id, month, year);
+                const unapprovedAbsences = await payrollRepo.getUnapprovedAbsentDays(employee.employee_id, month, year);
                 const basicRate = Number(salaryConfig.basic_rate) || 0;
+                // Calculate monthly earnings minus unapproved absent days
                 basicEarnings = basicRate - (unapprovedAbsences * (basicRate / totalDaysInMonth));
             } else if (isDaily) {
-                basicEarnings = await payrollRepo.getWorkLogsTotalAmount(emp.employee_id, month, year);
+                // For daily workers, basic earnings is the sum of approved work logs
+                basicEarnings = await payrollRepo.getWorkLogsTotalAmount(employee.employee_id, month, year);
             }
 
             // 4. Perfect Attendance Bonus Logic
-            const isDisqualifiedForBonus = await payrollRepo.checkPerfectAttendanceDisqualifier(emp.employee_id, month, year);
+            const isDisqualifiedForBonus = await payrollRepo.checkPerfectAttendanceDisqualifier(employee.employee_id, month, year);
             if (!isDisqualifiedForBonus) {
                 const perfAttRule = await payrollRepo.getIncentiveRule('PERFECT_ATTENDANCE');
                 if (perfAttRule) {
@@ -56,8 +66,8 @@ export const processMonthlyPayroll = async (month, year) => {
                 }
             }
 
-            // 5. Late Deduction Logic
-            const lateCount = await payrollRepo.getLateDaysCount(emp.employee_id, month, year);
+            // 5. Late Deduction Logic (Late Fines)
+            const lateCount = await payrollRepo.getLateDaysCount(employee.employee_id, month, year);
             if (lateCount > 0) {
                 const lateFineRule = await payrollRepo.getDeductionRule('LATE_FINE');
                 if (lateFineRule) {
@@ -65,18 +75,18 @@ export const processMonthlyPayroll = async (month, year) => {
                 }
             }
 
-            // 6. Aggregate other components
-            const otPay = Number(await payrollRepo.getOvertimeTotal(emp.employee_id, month, year)) || 0;
-            const manualIncentives = Number(await payrollRepo.getIncentivesTotal(emp.employee_id, month, year)) || 0;
-            const manualDeductions = Number(await payrollRepo.getDeductionsTotal(emp.employee_id, month, year)) || 0;
+            // 6. Aggregate other components (OT, Manual Incentives/Deductions)
+            const overtimePay = Number(await payrollRepo.getOvertimeTotal(employee.employee_id, month, year)) || 0;
+            const manualIncentives = Number(await payrollRepo.getIncentivesTotal(employee.employee_id, month, year)) || 0;
+            const manualDeductions = Number(await payrollRepo.getDeductionsTotal(employee.employee_id, month, year)) || 0;
 
             const totalIncentives = dynamicIncentives + manualIncentives;
             const totalDeductions = dynamicDeductions + manualDeductions;
 
-            // 7. Gross Pay
-            const grossPay = (Number(basicEarnings) || 0) + otPay + totalIncentives;
+            // 7. Gross Pay Calculation
+            const grossPay = (Number(basicEarnings) || 0) + overtimePay + totalIncentives;
 
-            // 8. EPF/ETF Logic
+            // 8. Statutory Contributions (EPF/ETF)
             let epfEmployee = 0;
             let epfEmployer = 0;
             let etfEmployer = 0;
@@ -87,25 +97,25 @@ export const processMonthlyPayroll = async (month, year) => {
                 etfEmployer = basicEarnings * 0.03;
             }
 
-            // 9. Net Pay (Base)
+            // 9. Net Pay Calculation
             let netPay = grossPay - epfEmployee - totalDeductions;
 
             // 9b. Incorporate existing manual adjustments if re-generating
-            if (existingId) {
-                const adjustmentTotal = await payrollRepo.getAdjustmentsTotal(existingId);
+            if (existingPayrollId) {
+                const adjustmentTotal = await payrollRepo.getAdjustmentsTotal(existingPayrollId);
                 netPay += adjustmentTotal;
             }
 
             if (netPay < 0) netPay = 0;
 
-            // 10. Snapshot Record
+            // 10. Prepare Snapshot Record
             const safeBasic = Number(basicEarnings) || 0;
             const payrollRecord = {
-                employee_id: emp.employee_id,
+                employee_id: employee.employee_id,
                 month,
                 year,
                 basic_earnings: parseFloat((safeBasic).toFixed(2)),
-                total_ot_pay: parseFloat((otPay || 0).toFixed(2)),
+                total_ot_pay: parseFloat((overtimePay || 0).toFixed(2)),
                 total_incentives: parseFloat((totalIncentives || 0).toFixed(2)),
                 total_deductions: parseFloat((totalDeductions || 0).toFixed(2)),
                 gross_pay: parseFloat((grossPay || 0).toFixed(2)),
@@ -116,48 +126,56 @@ export const processMonthlyPayroll = async (month, year) => {
                 status: 'PENDING'
             };
 
-            if (existingId) {
-                await payrollRepo.updatePayrollRunFull({ ...payrollRecord, payroll_id: existingId }, conn);
+            // 11. Save to Database
+            if (existingPayrollId) {
+                await payrollRepo.updatePayrollRunFull({ ...payrollRecord, payroll_id: existingPayrollId }, connection);
             } else {
-                await payrollRepo.insertPayrollRun(payrollRecord, conn);
+                await payrollRepo.insertPayrollRun(payrollRecord, connection);
             }
 
-            results.push({
+            processingResults.push({
                 ...payrollRecord,
-                first_name: emp.first_name,
-                last_name: emp.last_name
+                first_name: employee.first_name,
+                last_name: employee.last_name
             });
 
             processedCount++;
         }
 
-        await conn.commit();
-        return { processedCount, skippedCount, details: results };
+        await connection.commit();
+        return { processedCount, skippedCount, details: processingResults };
 
     } catch (error) {
-        await conn.rollback();
+        await connection.rollback();
         throw error;
     } finally {
-        conn.release();
+        connection.release();
     }
 };
 
-// ✅ Process Single Employee Payroll
+/**
+ * Processes payroll for a specific individual employee.
+ * 
+ * @param {string} employeeId - The unique ID of the employee
+ * @param {number} month - The payroll month
+ * @param {number} year - The payroll year
+ * @returns {Promise<Object>} - Status and details of the processed payroll
+ */
 export const processSingleEmployeePayroll = async (employeeId, month, year) => {
-    const conn = await pool.getConnection();
+    const connection = await pool.getConnection();
 
     try {
-        await conn.beginTransaction();
+        await connection.beginTransaction();
 
         // 1. Check if record exists
-        const existingId = await payrollRepo.checkExistingPayroll(employeeId, month, year);
+        const existingPayrollId = await payrollRepo.checkExistingPayroll(employeeId, month, year);
 
         // 2. Fetch Employee details
-        const [empRows] = await conn.query(`SELECT first_name, last_name, employee_id FROM employee WHERE employee_id = ?`, [employeeId]);
-        if (empRows.length === 0) {
+        const [employeeRows] = await connection.query(`SELECT first_name, last_name, employee_id FROM employee WHERE employee_id = ?`, [employeeId]);
+        if (employeeRows.length === 0) {
             return { success: false, message: `Employee ${employeeId} not found` };
         }
-        const emp = empRows[0];
+        const employee = employeeRows[0];
 
         // 3. Fetch Salary Config
         const salaryConfig = await payrollRepo.getSalaryConfig(employeeId, month, year);
@@ -201,7 +219,7 @@ export const processSingleEmployeePayroll = async (employeeId, month, year) => {
         }
 
         // 7. Aggregate other components
-        const otPay = Number(await payrollRepo.getOvertimeTotal(employeeId, month, year)) || 0;
+        const overtimePay = Number(await payrollRepo.getOvertimeTotal(employeeId, month, year)) || 0;
         const manualIncentives = Number(await payrollRepo.getIncentivesTotal(employeeId, month, year)) || 0;
         const manualDeductions = Number(await payrollRepo.getDeductionsTotal(employeeId, month, year)) || 0;
 
@@ -209,7 +227,7 @@ export const processSingleEmployeePayroll = async (employeeId, month, year) => {
         const totalDeductions = dynamicDeductions + manualDeductions;
 
         // 8. Gross Pay
-        const grossPay = (Number(basicEarnings) || 0) + otPay + totalIncentives;
+        const grossPay = (Number(basicEarnings) || 0) + overtimePay + totalIncentives;
 
         // 9. EPF/ETF Logic
         let epfEmployee = 0;
@@ -222,25 +240,25 @@ export const processSingleEmployeePayroll = async (employeeId, month, year) => {
             etfEmployer = basicEarnings * 0.03;
         }
 
-        // 10. Net Pay (Base)
+        // 10. Net Pay
         let netPay = grossPay - epfEmployee - totalDeductions;
 
         // 10b. Incorporate existing manual adjustments if re-generating
-        if (existingId) {
-            const adjustmentTotal = await payrollRepo.getAdjustmentsTotal(existingId);
+        if (existingPayrollId) {
+            const adjustmentTotal = await payrollRepo.getAdjustmentsTotal(existingPayrollId);
             netPay += adjustmentTotal;
         }
 
         if (netPay < 0) netPay = 0;
 
-        // 11. Snapshot Record
+        // 11. Prepare Snapshot Record
         const safeBasic = Number(basicEarnings) || 0;
         const payrollRecord = {
             employee_id: employeeId,
             month,
             year,
             basic_earnings: parseFloat((safeBasic).toFixed(2)),
-            total_ot_pay: parseFloat((otPay || 0).toFixed(2)),
+            total_ot_pay: parseFloat((overtimePay || 0).toFixed(2)),
             total_incentives: parseFloat((totalIncentives || 0).toFixed(2)),
             total_deductions: parseFloat((totalDeductions || 0).toFixed(2)),
             gross_pay: parseFloat((grossPay || 0).toFixed(2)),
@@ -251,44 +269,57 @@ export const processSingleEmployeePayroll = async (employeeId, month, year) => {
             status: 'PENDING'
         };
 
-        let resultId = existingId;
-        if (existingId) {
-            await payrollRepo.updatePayrollRunFull({ ...payrollRecord, payroll_id: existingId }, conn);
+        let finalPayrollId = existingPayrollId;
+        if (existingPayrollId) {
+            await payrollRepo.updatePayrollRunFull({ ...payrollRecord, payroll_id: existingPayrollId }, connection);
         } else {
-            resultId = await payrollRepo.insertPayrollRun(payrollRecord, conn);
+            finalPayrollId = await payrollRepo.insertPayrollRun(payrollRecord, connection);
         }
 
-        await conn.commit();
+        await connection.commit();
         return {
             success: true,
-            message: existingId ? "Payroll updated successfully" : "Payroll processed successfully",
-            payrollId: resultId,
+            message: existingPayrollId ? "Payroll updated successfully" : "Payroll processed successfully",
+            payrollId: finalPayrollId,
             details: {
                 ...payrollRecord,
-                first_name: emp.first_name,
-                last_name: emp.last_name
+                first_name: employee.first_name,
+                last_name: employee.last_name
             }
         };
 
     } catch (error) {
-        await conn.rollback();
+        await connection.rollback();
         throw error;
     } finally {
-        conn.release();
+        connection.release();
     }
 };
 
-// ✅ Get Employee Payroll History
+/**
+ * Retrieves the payroll record for a specific employee.
+ * 
+ * @param {string} employeeId 
+ * @param {number} month 
+ * @param {number} year 
+ * @returns {Promise<Object>}
+ */
 export const getEmployeePayroll = async (employeeId, month, year) => {
     return await payrollRepo.getPayrollByEmployee(employeeId, month, year);
 };
 
-// ✅ Get Payroll Summary
+/**
+ * Generates a summary of all payroll runs for a given month/year.
+ * 
+ * @param {number} month 
+ * @param {number} year 
+ * @returns {Promise<Object>}
+ */
 export const getPayrollSummary = async (month, year) => {
-    const runs = await payrollRepo.getPayrollSummary(month, year);
+    const payrollRuns = await payrollRepo.getPayrollSummary(month, year);
 
-    // Calculate totals safely
-    const totals = runs.reduce((acc, run) => {
+    // Calculate accumulation totals
+    const accumulation = payrollRuns.reduce((acc, run) => {
         acc.total_gross += Number(run.gross_pay) || 0;
         acc.total_net += Number(run.net_pay) || 0;
         acc.total_epf_employee += Number(run.epf_employee) || 0;
@@ -303,130 +334,145 @@ export const getPayrollSummary = async (month, year) => {
         total_etf: 0
     });
 
-    return { summary: totals, details: runs };
+    return { summary: accumulation, details: payrollRuns };
 };
 
-// ✅ Get Full Details for a Payroll Run (including itemized incentives/deductions)
+/**
+ * Fetches detailed itemized information for a specific payroll run.
+ * 
+ * @param {string} employeeId 
+ * @param {number} month 
+ * @param {number} year 
+ * @returns {Promise<Object|null>}
+ */
 export const getPayrollRunDetails = async (employeeId, month, year) => {
-    const run = await payrollRepo.checkExistingPayroll(employeeId, month, year);
-    if (!run) return null;
+    const payrollId = await payrollRepo.checkExistingPayroll(employeeId, month, year);
+    if (!payrollId) return null;
 
-    const payrollRun = await payrollRepo.getPayrollRunById(run);
-    const [empRows] = await pool.query(`SELECT first_name, last_name, employee_id FROM employee WHERE employee_id = ?`, [employeeId]);
+    const payrollRun = await payrollRepo.getPayrollRunById(payrollId);
+    const [employeeRows] = await pool.query(`SELECT first_name, last_name, employee_id FROM employee WHERE employee_id = ?`, [employeeId]);
     
     const incentives = await payrollRepo.getIncentivesByEmployee(employeeId, month, year);
     const deductions = await payrollRepo.getDeductionsByEmployee(employeeId, month, year);
 
     return {
         payroll: payrollRun,
-        employee: empRows[0],
+        employee: employeeRows[0],
         incentives,
         deductions
     };
 };
 
-// ✅ Edit Payroll Run (Accountant via Full Edit or Adjustments)
+/**
+ * Allows an Accountant to manually edit or adjust a payroll run.
+ * Supports single adjustments (Bonus/Deduction) or full payslip modification.
+ * 
+ * @param {number} payrollId 
+ * @param {Object} patch - The data to update
+ * @param {Object} editedByUser - The user performing the edit
+ * @returns {Promise<Object>}
+ */
 export const editPayrollRun = async (payrollId, patch, editedByUser) => {
-    const conn = await pool.getConnection();
+    const connection = await pool.getConnection();
 
     try {
-        await conn.beginTransaction();
+        await connection.beginTransaction();
 
         const existingRun = await payrollRepo.getPayrollRunById(payrollId);
         if (!existingRun) {
             throw new Error("Payroll run not found");
         }
 
-        let newRecord = { ...existingRun };
+        let updatedRecord = { ...existingRun };
 
-        // If it's a legacy simple adjustment (BONUS/DEDUCTION)
+        // Handle simple adjustments (BONUS or DEDUCTION)
         if (patch.adjustment_type === 'BONUS' || patch.adjustment_type === 'DEDUCTION') {
             const adjustmentAmount = Number(patch.amount);
 
-            // Audit Record
+            // Create Audit/Trace Record
             await payrollRepo.insertPayrollAdjustment({
                 payroll_id: payrollId,
                 adjusted_by_user_id: editedByUser.user_id,
                 adjustment_type: patch.adjustment_type,
                 amount: adjustmentAmount,
                 reason: patch.reason
-            }, conn);
+            }, connection);
 
-            // Sync with Incentives/Deductions tables
-            const adjustmentDate = new Date(existingRun.year, existingRun.month - 1, 1); // Use 1st of the payroll month
+            // Sync with dedicated Incentives/Deductions tables
+            const transactionDate = new Date(existingRun.year, existingRun.month - 1, 1);
 
             if (patch.adjustment_type === 'BONUS') {
                 await payrollRepo.insertIncentive({
                     employee_id: existingRun.employee_id,
-                    date: adjustmentDate,
+                    date: transactionDate,
                     amount: adjustmentAmount,
-                    description: patch.reason || "Accountant Adjustment"
-                }, conn);
-                newRecord.total_incentives = (Number(newRecord.total_incentives) || 0) + adjustmentAmount;
+                    description: patch.reason || "Manual Adjustment"
+                }, connection);
+                updatedRecord.total_incentives = (Number(updatedRecord.total_incentives) || 0) + adjustmentAmount;
             } else if (patch.adjustment_type === 'DEDUCTION') {
                 await payrollRepo.insertDeduction({
                     employee_id: existingRun.employee_id,
-                    date: adjustmentDate,
+                    date: transactionDate,
                     amount: adjustmentAmount,
-                    reason: patch.reason || "Accountant Adjustment"
-                }, conn);
-                newRecord.total_deductions = (Number(newRecord.total_deductions) || 0) + adjustmentAmount;
+                    reason: patch.reason || "Manual Adjustment"
+                }, connection);
+                updatedRecord.total_deductions = (Number(updatedRecord.total_deductions) || 0) + adjustmentAmount;
             }
 
             // Recalculate Totals
-            newRecord.gross_pay = (Number(newRecord.basic_earnings) || 0) + (Number(newRecord.total_ot_pay) || 0) + (Number(newRecord.total_incentives) || 0);
-            newRecord.net_pay = Number(newRecord.gross_pay) - Number(newRecord.total_deductions) - Number(newRecord.epf_employee);
-            if (newRecord.net_pay < 0) newRecord.net_pay = 0;
+            updatedRecord.gross_pay = (Number(updatedRecord.basic_earnings) || 0) + (Number(updatedRecord.total_ot_pay) || 0) + (Number(updatedRecord.total_incentives) || 0);
+            updatedRecord.net_pay = Number(updatedRecord.gross_pay) - Number(updatedRecord.total_deductions) - Number(updatedRecord.epf_employee);
+            if (updatedRecord.net_pay < 0) updatedRecord.net_pay = 0;
 
-            await payrollRepo.updatePayrollRunFull(newRecord, conn);
+            await payrollRepo.updatePayrollRunFull(updatedRecord, connection);
         }
-        // Else it's a full payslip edit
+        // Handle full payslip field modification
         else {
-            // Update snapshot fields (Basic remains untouched)
-            if (patch.total_ot_pay !== undefined) newRecord.total_ot_pay = Number(patch.total_ot_pay);
-            if (patch.total_incentives !== undefined) newRecord.total_incentives = Number(patch.total_incentives);
-            if (patch.total_deductions !== undefined) newRecord.total_deductions = Number(patch.total_deductions);
-            if (patch.epf_employee !== undefined) newRecord.epf_employee = Number(patch.epf_employee);
-            if (patch.epf_employer !== undefined) newRecord.epf_employer = Number(patch.epf_employer);
-            if (patch.etf_employer !== undefined) newRecord.etf_employer = Number(patch.etf_employer);
+            if (patch.total_ot_pay !== undefined) updatedRecord.total_ot_pay = Number(patch.total_ot_pay);
+            if (patch.total_incentives !== undefined) updatedRecord.total_incentives = Number(patch.total_incentives);
+            if (patch.total_deductions !== undefined) updatedRecord.total_deductions = Number(patch.total_deductions);
+            if (patch.epf_employee !== undefined) updatedRecord.epf_employee = Number(patch.epf_employee);
+            if (patch.epf_employer !== undefined) updatedRecord.epf_employer = Number(patch.epf_employer);
+            if (patch.etf_employer !== undefined) updatedRecord.etf_employer = Number(patch.etf_employer);
 
             // Recalculate Totals
-            newRecord.gross_pay = Number(newRecord.basic_earnings) + Number(newRecord.total_ot_pay) + Number(newRecord.total_incentives);
-            newRecord.net_pay = Number(newRecord.gross_pay) - Number(newRecord.total_deductions) - Number(newRecord.epf_employee);
+            updatedRecord.gross_pay = Number(updatedRecord.basic_earnings) + Number(updatedRecord.total_ot_pay) + Number(updatedRecord.total_incentives);
+            updatedRecord.net_pay = Number(updatedRecord.gross_pay) - Number(updatedRecord.total_deductions) - Number(updatedRecord.epf_employee);
 
-            // Adjust for any existing manual adjustments in the adjustments table? 
-            // Usually, if they are doing a "full edit", we might want to preserve the previous adjustments 
-            // or just let them overwrite everything. 
-            // Given "edit the whole payslip", we'll just recalculate from these fields.
-            if (newRecord.net_pay < 0) newRecord.net_pay = 0;
+            if (updatedRecord.net_pay < 0) updatedRecord.net_pay = 0;
 
-            // Audit Record (Full Edit)
+            // Log Audit Record for Full Edit
             await payrollRepo.insertPayrollAdjustment({
                 payroll_id: payrollId,
                 adjusted_by_user_id: editedByUser.user_id,
                 adjustment_type: 'CORRECTION',
-                amount: 0, // Not a single amount change
-                reason: patch.reason || "Full payslip modification by accountant"
-            }, conn);
+                amount: 0,
+                reason: patch.reason || "Full payslip modification"
+            }, connection);
 
-            await payrollRepo.updatePayrollRunFull(newRecord, conn);
+            await payrollRepo.updatePayrollRunFull(updatedRecord, connection);
         }
 
-        await conn.commit();
-        return newRecord;
+        await connection.commit();
+        return updatedRecord;
 
     } catch (err) {
-        await conn.rollback();
+        await connection.rollback();
         throw err;
     } finally {
-        conn.release();
+        connection.release();
     }
 };
 
-// ✅ Approve Payroll Run (Accountant sets status to READY)
+/**
+ * Approves a payroll run, marking it as 'READY' for payment.
+ * 
+ * @param {number} payrollId 
+ * @returns {Promise<Object>}
+ */
 export const approvePayrollRun = async (payrollId) => {
-    const run = await payrollRepo.getPayrollRunById(payrollId);
-    if (!run) throw new Error("Payroll run not found");
+    const payrollRun = await payrollRepo.getPayrollRunById(payrollId);
+    if (!payrollRun) throw new Error("Payroll run not found");
     
     await payrollRepo.updatePayrollStatus(payrollId, 'READY');
     return { success: true, message: "Payroll approved and marked as READY" };

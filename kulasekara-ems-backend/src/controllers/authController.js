@@ -2,6 +2,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { pool } from "../config/db.js";
 
+// This section checks the user's name and password when they try to log in.
 export const login = async (req, res) => {
   try {
     const { emailOrUsername, password } = req.body;
@@ -12,6 +13,7 @@ export const login = async (req, res) => {
         .json({ message: "emailOrUsername and password required" });
     }
 
+    // Look for the user in our database using the name or email they provided.
     const [rows] = await pool.query(
       `SELECT user_id, employee_id, username, email, password_hash, role, is_active, must_change_password
        FROM user
@@ -27,13 +29,15 @@ export const login = async (req, res) => {
     if (user.is_active !== 1)
       return res.status(403).json({ message: "Account inactive" });
 
+    // Check if the password they typed matches the one we have on file.
     const ok = await bcrypt.compare(password, user.password_hash);
     if (!ok) return res.status(401).json({ message: "Invalid credentials" });
 
+    // Create a secure digital "key" (token) so the system remembers who is logged in.
     const token = jwt.sign(
       {
         user_id: user.user_id,
-        role: String(user.role || "").toUpperCase(), // optional but good
+        role: String(user.role || "").toUpperCase(),
         employee_id: user.employee_id,
       },
       process.env.JWT_SECRET,
@@ -48,7 +52,7 @@ export const login = async (req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
-        must_change_password: user.must_change_password, // ✅ NEW
+        must_change_password: user.must_change_password,
       },
     });
   } catch (err) {
@@ -57,6 +61,7 @@ export const login = async (req, res) => {
   }
 };
 
+// This helps the system double-check that the user is still correctly logged in.
 export const me = async (req, res) => {
   return res.json({ user: req.user });
 };

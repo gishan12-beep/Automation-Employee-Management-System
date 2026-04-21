@@ -4,6 +4,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { login as loginApi } from "../../services/authService";
 
+// This is the main piece of the login screen that checks who you are and starts your session.
 function Login() {
   const [emailOrUsername, setEmailOrUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -14,6 +15,7 @@ function Login() {
   const [hoveredLink, setHoveredLink] = useState(false);
   const navigate = useNavigate();
 
+  // This helps the system decide which dashboard to show you based on your job role.
   const routeByRole = (role) => {
     const r = (role || "").toUpperCase();
     if (r === "MANAGER") return "/manager/dashboard";
@@ -22,6 +24,7 @@ function Login() {
     return "/";
   };
 
+  // This runs when you click the "Sign In" button. It checks your details and logs you in.
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -33,6 +36,7 @@ function Login() {
     try {
       setLoading(true);
 
+      // Send your name and password to the server to see if they are correct.
       const data = await loginApi(emailOrUsername, password);
 
       if (!data?.token || !data?.user) {
@@ -43,6 +47,7 @@ function Login() {
       const role = (data.user.role || "").toUpperCase();
       const mustChange = Number(data.user.must_change_password) === 1;
 
+      // Save your login info on this computer so you don't have to log in constantly.
       localStorage.clear();
       localStorage.setItem("token", data.token);
       localStorage.setItem("role", role);
@@ -51,11 +56,13 @@ function Login() {
       localStorage.setItem("user", JSON.stringify(data.user));
       localStorage.setItem("must_change_password", mustChange ? "1" : "0");
 
+      // If this is your first time logging in, send you to the "Change Password" screen.
       if (role === "EMPLOYEE" && mustChange) {
         navigate("/employee/change-password", { replace: true });
         return;
       }
 
+      // Otherwise, send you straight to your main dashboard.
       navigate(routeByRole(role), { replace: true });
     } catch (err) {
       const msg =

@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { getAttendanceReportApi } from "../../../services/reportService";
 
+// Main component for generating and viewing workforce attendance reports
 export default function AttendanceReports() {
   const [month, setMonth] = useState(getMonthKey(new Date()));
   const [type, setType] = useState("ALL"); // ALL | Permanent | Daily Wage
@@ -26,11 +27,13 @@ export default function AttendanceReports() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // Memoized function to fetch attendance report data from the backend based on the selected month
   const fetchAttendance = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const [yearStr, monthStr] = month.split("-");
+      // Calls the report service to retrieve attendance metrics for the specific period
       const data = await getAttendanceReportApi(parseInt(monthStr, 10), parseInt(yearStr, 10));
       setAttendanceData(data);
     } catch (err) {
@@ -42,10 +45,12 @@ export default function AttendanceReports() {
     }
   }, [month]);
 
+  // Triggers data fetching whenever the month filter is changed
   useEffect(() => {
     fetchAttendance();
   }, [fetchAttendance]);
 
+  // Processes and filters raw attendance data based on staff category and search query
   const rows = useMemo(() => {
     let list = attendanceData.map(item => ({
       id: item.employee_id,
@@ -55,11 +60,13 @@ export default function AttendanceReports() {
       presentDays: Number(item.present_days || 0),
       absentDays: Number(item.absent_days || 0),
       lateDays: Number(item.late_days || 0),
-      workHours: Number(item.present_days || 0) * 8, // Assuming 8h per present day for summary
+      workHours: Number(item.present_days || 0) * 8, // Assuming 8-hour standard workday for summary
       overtimeHours: Number(item.total_ot_hours || 0)
     }));
 
+    // Applies staff category filter
     if (type !== "ALL") list = list.filter((r) => r.employeeType === type);
+    // Applies name or ID search filter
     if (q.trim()) {
       const s = q.trim().toLowerCase();
       list = list.filter(
@@ -71,12 +78,14 @@ export default function AttendanceReports() {
     return list;
   }, [attendanceData, type, q]);
 
+  // Computes aggregate totals and averages for the dashboard KPI cards
   const kpis = useMemo(() => {
     const totalEmp = rows.length;
     const totalPresent = rows.reduce((s, r) => s + r.presentDays, 0);
     const totalAbsent = rows.reduce((s, r) => s + r.absentDays, 0);
     const totalLate = rows.reduce((s, r) => s + r.lateDays, 0);
     const totalOT = rows.reduce((s, r) => s + r.overtimeHours, 0);
+    // Calculates the percentage of presence versus total scheduled days
     const avgPresenceRate = totalEmp > 0 ? Math.round((totalPresent / (totalPresent + totalAbsent || 1)) * 100) : 0;
     return { totalEmp, totalPresent, totalAbsent, totalLate, totalOT, avgPresenceRate };
   }, [rows]);

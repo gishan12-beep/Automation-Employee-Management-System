@@ -1,6 +1,6 @@
 // src/services/authService.js
 
-// ✅ Base API URL (supports both CRA and Vite)
+// Determines the base API URL by checking environment variables or defaulting to localhost
 const API_BASE =
   (typeof import.meta !== "undefined" &&
     import.meta.env &&
@@ -8,9 +8,7 @@ const API_BASE =
   process.env.REACT_APP_API_URL ||
   "http://localhost:5000/api";
 
-/** ---------------------------
- * Helpers
- * --------------------------*/
+// Retrieves all stored authentication data (token, role, IDs, flags) from LocalStorage
 export const getAuth = () => {
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
@@ -20,6 +18,7 @@ export const getAuth = () => {
   return { token, role, user_id, employee_id, must_change_password };
 };
 
+// Returns a subset of auth data specifically for the current user's identity and role
 export const getCurrentUser = () => {
   return {
     user_id: localStorage.getItem("user_id"),
@@ -28,6 +27,7 @@ export const getCurrentUser = () => {
   };
 };
 
+// Maps a user's role to their specific dashboard landing page route
 export const routeByRole = (role) => {
   const r = (role || "").toUpperCase();
   if (r === "MANAGER") return "/manager/dashboard";
@@ -36,9 +36,7 @@ export const routeByRole = (role) => {
   return "/";
 };
 
-/** ---------------------------
- * Auth APIs
- * --------------------------*/
+// Performs a login request to the backend with email/username and password
 export const login = async (emailOrUsername, password) => {
   const res = await fetch(`${API_BASE}/auth/login`, {
     method: "POST",
@@ -51,6 +49,7 @@ export const login = async (emailOrUsername, password) => {
   return data; // { token, user }
 };
 
+// Clears all authentication-related items from LocalStorage to log the user out
 export const logout = () => {
   localStorage.removeItem("token");
   localStorage.removeItem("role");
@@ -59,10 +58,7 @@ export const logout = () => {
   localStorage.removeItem("must_change_password");
 };
 
-/**
- * ✅ First-login password change (NO currentPassword)
- * Backend endpoint: POST /api/auth/change-password-first-login
- */
+// Handles the mandatory first-time password update for new accounts using only the new password
 export const changePasswordFirstLoginApi = async (token, newPassword) => {
   const res = await fetch(`${API_BASE}/auth/change-password-first-login`, {
     method: "POST",
@@ -78,11 +74,7 @@ export const changePasswordFirstLoginApi = async (token, newPassword) => {
   return data;
 };
 
-/**
- * ✅ Normal change password (requires current password)
- * Backend endpoint: POST /api/auth/change-password
- * (Keep this for “Change password” feature later)
- */
+// Handles a standard password change that requires verifying the user's current password
 export const changePasswordApi = async (token, currentPassword, newPassword) => {
   const res = await fetch(`${API_BASE}/auth/change-password`, {
     method: "POST",
@@ -98,9 +90,7 @@ export const changePasswordApi = async (token, currentPassword, newPassword) => 
   return data;
 };
 
-/** ---------------------------
- * Forgot/Reset password (existing)
- * --------------------------*/
+// Sends a request to start the password recovery process via email
 export const requestPasswordResetApi = async (email) => {
   const res = await fetch(`${API_BASE}/auth/forgot-password`, {
     method: "POST",
@@ -113,6 +103,7 @@ export const requestPasswordResetApi = async (email) => {
   return data;
 };
 
+// Completes the password reset process using a reset token and a new password
 export const resetPasswordApi = async (token, newPassword) => {
   const res = await fetch(`${API_BASE}/auth/reset-password`, {
     method: "POST",

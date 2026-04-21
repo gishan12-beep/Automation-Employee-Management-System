@@ -22,6 +22,7 @@ import SalarySlipGenerator from "./SalarySlipGenerator";
 import { processPayrollApi, getPayrollSummaryApi, processSingleEmployeeApi, getPayrollDetailsApi } from "../../../services/payrollService";
 import { getEmployeesApi } from "../../../services/managerEmployeeService";
 
+// Formats numeric values into a localized LKR (Sri Lankan Rupee) currency string with no decimals
 const LKR = (n) =>
   new Intl.NumberFormat("en-LK", {
     style: "currency",
@@ -29,6 +30,7 @@ const LKR = (n) =>
     maximumFractionDigits: 0,
   }).format(Number(n || 0));
 
+// Main component for managers and accountants to review processed payroll summaries and generate payslips
 export default function ProcessPayroll() {
   const [activeTab, setActiveTab] = useState("MONTHLY"); // "MONTHLY" | "OTHER"
   const [department, setDepartment] = useState("All");
@@ -47,7 +49,7 @@ export default function ProcessPayroll() {
   const [detailsMap, setDetailsMap] = useState({});
   const [fetchingDetail, setFetchingDetail] = useState(false);
 
-  // Role detection
+  // Role detection for access control logic
   const userRole = (localStorage.getItem("role") || "MANAGER").toUpperCase();
   const isAccountant = userRole === "ACCOUNTANT" || userRole === "ADMIN";
 
@@ -60,6 +62,7 @@ export default function ProcessPayroll() {
   const filterRef = useRef(null);
   const [showFilterMenu, setShowFilterMenu] = useState(false);
 
+  // Fetches itemized payroll details (incentives/deductions) when a specific employee is selected
   useEffect(() => {
     async function fetchItemizedDetails() {
       if (!selectedId || !monthPeriod) return;
@@ -68,6 +71,7 @@ export default function ProcessPayroll() {
       setFetchingDetail(true);
       try {
         const [year, month] = monthPeriod.split("-");
+        // Calls the payroll service to get granular details for the specific period
         const details = await getPayrollDetailsApi(month, year, selectedId);
         setDetailsMap(prev => ({ ...prev, [selectedId]: details }));
       } catch (err) {
@@ -79,6 +83,7 @@ export default function ProcessPayroll() {
     fetchItemizedDetails();
   }, [selectedId, monthPeriod, detailsMap]);
 
+  // Global listener to close dropdowns and filter menus when clicking outside of them
   useEffect(() => {
     function handleClickOutside(event) {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -94,22 +99,26 @@ export default function ProcessPayroll() {
     };
   }, []);
 
+  // Toggles the visibility of the action dropdown for a specific employee row
   const toggleDropdown = (id, e) => {
     e.stopPropagation();
     setActiveDropdown(activeDropdown === id ? null : id);
   };
 
+  // Displays a temporary success or error toast message to the user
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast({ message: "", type: "" }), 5000);
   };
 
+  // Retrieves the complete payroll summary for all active employees for the selected month
   const loadPayrollSummary = async () => {
     setLoading(true);
     try {
       if (!monthPeriod) return;
       const [y, m] = monthPeriod.split("-");
 
+      // Concurrently fetches basic employee info and processed payroll data
       const [allEmployees, summaryData] = await Promise.all([
         getEmployeesApi(),
         getPayrollSummaryApi(m, y)
@@ -118,6 +127,7 @@ export default function ProcessPayroll() {
       const summaryMap = new Map();
       summaryData.forEach(e => summaryMap.set(String(e.employeeId), e));
 
+      // Maps raw data into a consistent UI object, handling both 'READY' and 'PENDING' states
       const mappedEmps = allEmployees
         .filter(emp => emp.status === "ACTIVE")
         .map(emp => {
@@ -143,6 +153,7 @@ export default function ProcessPayroll() {
             };
           }
 
+          // Returns a default pending structure if no payroll record exists yet
           return {
             employeeID: emp.employee_id,
             name: `${emp.first_name || ""} ${emp.last_name || ""}`.trim(),
@@ -164,6 +175,7 @@ export default function ProcessPayroll() {
 
       setEmployees(mappedEmps);
 
+      // Extracts unique department names for the filtering dropdown
       const uniqueDepts = [...new Set(mappedEmps.map(e => e.department))].sort();
       setDepts(uniqueDepts);
     } catch (err) {
@@ -174,17 +186,20 @@ export default function ProcessPayroll() {
     }
   };
 
+  // Re-loads the summary whenever the month selection changes
   useEffect(() => {
     loadPayrollSummary();
   }, [monthPeriod]);
 
+  // Standardizes the department list for the filter options
   const departmentsList = useMemo(() => {
     return ["All", ...depts];
   }, [depts]);
 
+  // Filters the employee list to only show those with finalized (approved) payrolls
   const filtered = useMemo(() => {
     return employees
-      .filter((e) => e.isFinalized) // Only show approved payrolls
+      .filter((e) => e.isFinalized) 
       .filter((e) => (department === "All" ? true : e.department === department))
       .filter((e) =>
         query.trim()
@@ -193,10 +208,12 @@ export default function ProcessPayroll() {
       );
   }, [employees, department, query]);
 
+  // Identifies the full data object for the row currently selected by the user
   const selectedData = useMemo(() => {
     return filtered.find(e => String(e.employeeID) === String(selectedId)) || null;
   }, [filtered, selectedId]);
 
+  // Calculates aggregate totals for Gross, Net, and EPF for the currently filtered view
   const totals = useMemo(() => {
     let gross = 0, net = 0, epf = 0;
     filtered.forEach((e) => {
@@ -207,7 +224,9 @@ export default function ProcessPayroll() {
     return { gross, net, epf };
   }, [filtered]);
 
+  // Opens the payslip generator modal for the selected employee
   const openSlip = (emp) => setSlipEmployee(emp);
+  // Closes the payslip generator modal
   const closeSlip = () => setSlipEmployee(null);
 
   return (

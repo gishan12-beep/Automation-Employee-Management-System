@@ -7,7 +7,7 @@ import {
     deleteLeaveRequest,
 } from "../repositories/leaveRepository.js";
 
-// Fetch leave types
+// Retrieves all available leave types from the database
 export const fetchLeaveTypes = async (req, res) => {
     try {
         const types = await getLeaveTypes();
@@ -18,7 +18,7 @@ export const fetchLeaveTypes = async (req, res) => {
     }
 };
 
-// Manager deletes a leave request
+// Permanently removes a leave request (Manager access)
 export const deleteLeave = async (req, res) => {
     const { id } = req.params;
     try {
@@ -30,7 +30,7 @@ export const deleteLeave = async (req, res) => {
     }
 };
 
-// Manager gets all leave requests
+// Fetches all leave requests for all employees (Manager access)
 export const getLeaveRequests = async (req, res) => {
     try {
         const leaves = await getAllLeaveRequests();
@@ -41,11 +41,11 @@ export const getLeaveRequests = async (req, res) => {
     }
 };
 
-// Manager updates the status of a leave request
+// Updates a leave request status (APPROVED/REJECTED) and adds an optional remark
 export const updateLeaveRequestStatus = async (req, res) => {
     try {
         const leaveId = req.params.id;
-        const { status, remark } = req.body; // we can log remark if needed later or add it to DB if schema changes
+        const { status, remark } = req.body;
 
         if (!["PENDING", "APPROVED", "REJECTED"].includes(status)) {
             return res.status(400).json({ error: "Invalid status" });
@@ -64,7 +64,7 @@ export const updateLeaveRequestStatus = async (req, res) => {
     }
 };
 
-// Employee gets their own leave requests
+// Returns a list of leave requests for the currently logged-in employee
 export const getEmployeeLeaves = async (req, res) => {
     try {
         const employeeId = req.user.employee_id;
@@ -76,7 +76,7 @@ export const getEmployeeLeaves = async (req, res) => {
     }
 };
 
-// Employee submits a leave request
+// Creates and submits a new leave request for an employee
 export const submitLeaveRequest = async (req, res) => {
     try {
         const employeeId = req.user.employee_id;

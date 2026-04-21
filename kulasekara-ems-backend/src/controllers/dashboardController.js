@@ -1,12 +1,8 @@
 import { pool } from "../config/db.js";
 import * as payrollRepo from "../repositories/payrollRepository.js";
-import * as issueRepo from "../repositories/issueRepository.js";
-import * as leaveRepo from "../repositories/leaveRepository.js";
 
-/**
- * GET /api/employee/dashboard/stats
- * returns consolidated stats for the logged in employee
- */
+
+// Gathers and returns all key performance indicators (KPIs) for an employee's dashboard
 export const getEmployeeStats = async (req, res) => {
     try {
         const employeeId = req.user.employee_id;
@@ -16,7 +12,7 @@ export const getEmployeeStats = async (req, res) => {
         const monthPadded = String(month).padStart(2, '0');
         const startOfMonth = `${year}-${monthPadded}-01`;
 
-        // 0. Profile Info
+        // Retrieve basic profile and department info
         const [profileRows] = await pool.query(
             `SELECT e.*, d.name as department_name 
              FROM employee e 
@@ -26,7 +22,7 @@ export const getEmployeeStats = async (req, res) => {
         );
         const profile = profileRows[0] || null;
 
-        // 1. Attendance Stats (Present/Absent/Late)
+        // Aggregate monthly attendance counts (Present, Absent, Late)
         const [attendanceRows] = await pool.query(
             `SELECT status, COUNT(*) as count 
              FROM attendance 
@@ -48,7 +44,7 @@ export const getEmployeeStats = async (req, res) => {
             if (row.status === 'ABSENT') absentDays += row.count;
         });
 
-        // 2. OT Hours
+        // Sum total overtime hours clocked in the current month
         const [otRows] = await pool.query(
             `SELECT SUM(ot_hours) as total_hours FROM overtime_records 
              WHERE employee_id = ? AND MONTH(date) = ? AND YEAR(date) = ?`,
@@ -56,7 +52,7 @@ export const getEmployeeStats = async (req, res) => {
         );
         const otHours = otRows[0].total_hours || 0;
 
-        // 3. Approved Leaves
+        // Calculate total days of approved leave within the current month
         const [leaveRows] = await pool.query(
             `SELECT SUM(DATEDIFF(LEAST(end_date, LAST_DAY(STR_TO_DATE(?, '%Y-%m-%d'))), GREATEST(start_date, STR_TO_DATE(?, '%Y-%m-%d'))) + 1) as total_days
              FROM leave_requests
@@ -64,21 +60,21 @@ export const getEmployeeStats = async (req, res) => {
                AND start_date <= LAST_DAY(STR_TO_DATE(?, '%Y-%m-%d'))
                AND end_date >= STR_TO_DATE(?, '%Y-%m-%d')`,
             [
-                startOfMonth, startOfMonth, 
-                employeeId, 
+                startOfMonth, startOfMonth,
+                employeeId,
                 startOfMonth, startOfMonth
             ]
         );
         const approvedLeaves = leaveRows[0].total_days || 0;
 
-        // 4. Pending Issues
+        // Count active pending issues or complaints
         const [issueRows] = await pool.query(
             "SELECT COUNT(*) as count FROM issues WHERE employee_id = ? AND status = 'PENDING'",
             [employeeId]
         );
         const pendingIssues = issueRows[0].count || 0;
 
-        // 5. Estimated Net Salary (from processed payroll if available, else zero)
+        // Fetch the net salary from the most recent processed payroll run
         const existingPayrollId = await payrollRepo.checkExistingPayroll(employeeId, month, year);
         let thisMonthNet = 0;
         if (existingPayrollId) {
@@ -102,30 +98,30 @@ export const getEmployeeStats = async (req, res) => {
     }
 };
 
-/**
- * GET /api/employee/dashboard/recent-activity
- */
+// Returns recent activity feeds including last 5 attendance logs and status updates
 export const getRecentActivity = async (req, res) => {
     try {
         const employeeId = req.user.employee_id;
 
-        // 1. Recent Attendance
+        // Fetch last 5 attendance records
         const [attendance] = await pool.query(
             "SELECT date, check_in as `in`, check_out as `out`, status FROM attendance WHERE employee_id = ? ORDER BY date DESC LIMIT 5",
             [employeeId]
         );
 
-        // 2. Recent Notifications (Leave/Issue updates)
+        // Fetch latest 3 leave request updates
         const [leaves] = await pool.query(
             "SELECT 'Leave Request' as title, CONCAT('Your leave request for ', DATE_FORMAT(start_date, '%b %d'), ' is ', status) as description, updated_at as time FROM leave_requests WHERE employee_id = ? ORDER BY updated_at DESC LIMIT 3",
             [employeeId]
         );
 
+        // Fetch latest 3 issue updates
         const [issues] = await pool.query(
             "SELECT 'Issue Update' as title, CONCAT('Your issue \"', title, '\" is now ', status) as description, updated_at as time FROM issues WHERE employee_id = ? ORDER BY updated_at DESC LIMIT 3",
             [employeeId]
         );
 
+        // Merge and sort leave/issue updates by timestamp
         const notifications = [...leaves, ...issues].sort((a, b) => new Date(b.time) - new Date(a.time)).slice(0, 5);
 
         res.json({

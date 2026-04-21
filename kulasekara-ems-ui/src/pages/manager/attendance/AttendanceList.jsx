@@ -29,6 +29,7 @@ import {
   Edit3
 } from "lucide-react";
 
+// Main component for managers to monitor personnel attendance and manage daily work logs for daily-wage workers
 export default function AttendanceList() {
   const [employees, setEmployees] = useState([]);
   const [search, setSearch] = useState("");
@@ -39,6 +40,7 @@ export default function AttendanceList() {
   const [showModal, setShowModal] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Monitors the selected employee and fetches their attendance check-in/out stats for the current day
   useEffect(() => {
     if (!selectedEmployee) {
       setAttendanceStats({ checkIn: "-", checkOut: "-" });
@@ -50,6 +52,7 @@ export default function AttendanceList() {
         const res = await getEmployeeAttendanceStatsApi(selectedEmployee.employeeID);
         const record = res.attendance;
         if (record) {
+          // Extracts HH:MM from the ISO timestamp for a cleaner UI display
           setAttendanceStats({
             checkIn: record.check_in ? record.check_in.slice(0, 5) : "-",
             checkOut: record.check_out ? record.check_out.slice(0, 5) : "-",
@@ -64,6 +67,7 @@ export default function AttendanceList() {
     })();
   }, [selectedEmployee]);
 
+  // Fetches detailed work logs for daily-wage employees based on the selected personnel and date
   useEffect(() => {
     if (!selectedEmployee) {
       setWorkDetails([]);
@@ -81,12 +85,14 @@ export default function AttendanceList() {
     })();
   }, [selectedEmployee, workDate]);
 
+  // Initializes the dashboard by fetching the full list of employees and departments on mount
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
         let depts = [];
         try {
+          // Retrieves department names to map internal IDs to human-readable labels
           const dRes = await getDepartmentsApi();
           depts = Array.isArray(dRes) ? dRes : dRes.departments || [];
         } catch (e) {
@@ -95,9 +101,11 @@ export default function AttendanceList() {
         const deptMap = {};
         depts.forEach((d) => { deptMap[d.id] = d.name; });
 
+        // Retrieves the master list of all employees
         const res = await getEmployeesApi();
         const rawEmps = Array.isArray(res) ? res : res.employees || [];
 
+        // Normalizes raw backend data into a consistent UI-friendly employee object structure
         const mapped = rawEmps.map((e) => ({
           id: e.employee_id,
           employeeID: e.employee_id,
@@ -112,6 +120,7 @@ export default function AttendanceList() {
         }));
 
         setEmployees(mapped);
+        // Automatically selects the first employee in the list as the default view
         if (mapped.length > 0) setSelectedEmployee(mapped[0]);
       } catch (err) {
         console.error("Failed to load employees", err);
@@ -121,8 +130,10 @@ export default function AttendanceList() {
     })();
   }, []);
 
+  // Simple check to determine if an employee is compensated on a daily wage basis
   const isDayWorker = (emp) => (emp?.salaryType || "").toLowerCase().includes("daily");
 
+  // Filters the master employee list based on the user's search query across multiple fields
   const filteredEmployees = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return employees;
@@ -132,6 +143,7 @@ export default function AttendanceList() {
     });
   }, [employees, search]);
 
+  // Computes aggregate totals for work logs, including total quantity and output value
   const workSummary = useMemo(() => {
     const totalQty = workDetails.reduce((sum, r) => sum + Number(r.quantity || 0), 0);
     const totalValue = workDetails.reduce((sum, r) => sum + Number(r.total_amount || 0), 0);
@@ -139,11 +151,13 @@ export default function AttendanceList() {
     return { totalQty, totalValue, tasks };
   }, [workDetails]);
 
+  // Opens the work logging modal only if a daily-wage employee is currently selected
   const openAddWork = () => {
     if (!selectedEmployee || !isDayWorker(selectedEmployee)) return;
     setShowModal(true);
   };
 
+  // Callback function to refresh the work log list after a new task has been successfully saved
   const handleSaveWorkDetail = async () => {
     try {
       const res = await getEmployeeWorkLogsApi(selectedEmployee.employeeID, workDate);
@@ -396,6 +410,7 @@ export default function AttendanceList() {
   );
 }
 
+// Helper component to render a labeled information block with an icon
 function InfoItem({ icon, label, value }) {
   return (
     <div style={styles.infoItem}>

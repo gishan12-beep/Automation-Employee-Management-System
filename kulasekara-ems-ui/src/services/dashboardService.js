@@ -1,8 +1,6 @@
 import api from "./api";
 
-/**
- * Fetch consolidated dashboard stats for the logged-in employee
- */
+// Fetches consolidated KPI statistics (attendance, leave, etc.) for the logged-in employee
 export const getEmployeeDashboardStats = async () => {
   try {
     const res = await api.get("/employee/dashboard/stats");
@@ -13,9 +11,7 @@ export const getEmployeeDashboardStats = async () => {
   }
 };
 
-/**
- * Fetch recent attendance and notifications for the logged-in employee
- */
+// Retrieves a list of recent events and notifications for the employee's dashboard
 export const getRecentActivity = async () => {
   try {
     const res = await api.get("/employee/dashboard/recent-activity");

@@ -10,6 +10,7 @@ const LKR = (n) =>
     maximumFractionDigits: 0,
   }).format(Number(n || 0));
 
+// Main component for the Accountant to manually adjust and override payroll components
 export default function PayrollEditor() {
   const { employeeId: paramEmployeeId } = useParams();
   const [searchParams] = useSearchParams();
@@ -21,6 +22,7 @@ export default function PayrollEditor() {
   const [y, m] = defaultMonth.split("-");
   const startD = new Date(Number(y), Number(m) - 1, 1);
 
+  // Helper utility to format a date object into a YYYY-MM-DD string
   const fmtDate = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 
   const [employeeId, setEmployeeId] = useState(paramEmployeeId || "EMP001");
@@ -33,7 +35,6 @@ export default function PayrollEditor() {
   const [draft, setDraft] = useState(null);
   const [reason, setReason] = useState("");
 
-  // Full Edit Fields
   const [fields, setFields] = useState({
     total_ot_pay: 0,
     total_incentives: 0,
@@ -46,16 +47,17 @@ export default function PayrollEditor() {
   const [toast, setToast] = useState({ message: "", type: "" });
   const [validationErrors, setValidationErrors] = useState({});
 
-  // Add Item States
   const [showAddIncentive, setShowAddIncentive] = useState(false);
   const [showAddDeduction, setShowAddDeduction] = useState(false);
   const [newItem, setNewItem] = useState({ amount: "", reason: "" });
 
+  // Displays a temporary status message to the user
   const showToast = (message, type = "success") => {
     setToast({ message, type });
     setTimeout(() => setToast({ message: "", type: "" }), 5000);
   };
 
+  // Fetches the specific payroll draft/record for the selected employee and period
   const loadDraft = async () => {
     setLoading(true);
     setValidationErrors({});
@@ -63,7 +65,7 @@ export default function PayrollEditor() {
       const res = await getPayrollDraftApi({ employeeId, periodStart });
       setEmployee(res.employee);
       setDraft(res.draft);
-      // Initialize fields from draft
+      // Synchronize the editable fields with the fetched data
       setFields({
         total_ot_pay: res.draft.total_ot_pay || 0,
         total_incentives: res.draft.total_incentives || 0,
@@ -72,7 +74,7 @@ export default function PayrollEditor() {
         epf_employer: res.draft.epf_employer || 0,
         etf_employer: res.draft.etf_employer || 0
       });
-      setReason(""); // Reset reason on load
+      setReason(""); 
     } catch (e) {
       console.error(e);
       showToast("Failed to load payroll draft. Does it exist?", "error");
@@ -87,10 +89,11 @@ export default function PayrollEditor() {
     }
   }, [employeeId, periodStart]);
 
-  // Derived Values
+  // Performs live calculations for the projected payout summary
   const liveGross = Number(draft?.basic_earnings || 0) + Number(fields.total_ot_pay) + Number(fields.total_incentives);
   const liveNet = liveGross - Number(fields.total_deductions) - Number(fields.epf_employee);
 
+  // Adds a new itemized bonus or deduction to the payroll run
   const handleAddItem = async (type) => {
     if (!newItem.amount || Number(newItem.amount) <= 0 || !newItem.reason) {
       alert("Please provide valid amount and reason.");
@@ -109,7 +112,7 @@ export default function PayrollEditor() {
       setNewItem({ amount: "", reason: "" });
       setShowAddIncentive(false);
       setShowAddDeduction(false);
-      loadDraft(); // Refresh to get new items and totals
+      loadDraft(); // Refresh the entire record to recalculate totals
     } catch (e) {
       console.error(e);
       showToast(e.response?.data?.message || "Failed to add item.", "error");
@@ -118,6 +121,7 @@ export default function PayrollEditor() {
     }
   };
 
+  // Persists the manually updated payroll totals and audit reason to the database
   const handleSave = async () => {
     setValidationErrors({});
 
@@ -133,6 +137,7 @@ export default function PayrollEditor() {
 
     setSaving(true);
     try {
+      // Updates the payroll run with the new totals and audit note
       const res = await adjustPayrollApi(draft.payrollId, {
         ...fields,
         reason: reason.trim()
@@ -140,8 +145,8 @@ export default function PayrollEditor() {
 
       showToast("Payroll totals updated successfully!");
       setDraft(res.payroll);
-      setReason(""); // Clear reason after success
-      loadDraft(); // Refresh itemized view too
+      setReason(""); 
+      loadDraft(); 
     } catch (e) {
       console.error(e);
       showToast(e.response?.data?.message || "Failed to save changes.", "error");

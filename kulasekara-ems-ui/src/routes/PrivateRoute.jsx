@@ -10,22 +10,22 @@ export default function PrivateRoute({ allowedRoles = [], children }) {
 
   const isChangePasswordRoute = location.pathname.startsWith("/employee/change-password");
 
-  // ❌ Not logged in
+  // ❌ If you aren't logged in, send you back to the login page.
   if (!token) {
     return <Navigate to="/" replace state={{ from: location.pathname }} />;
   }
 
-  // ❌ Role not allowed
+  // ❌ If your job role isn't allowed to see this page, show an "Access Denied" message.
   if (allowedRoles.length && !allowedRoles.map(r => r.toUpperCase()).includes(role)) {
     return <Navigate to="/unauthorized" replace />;
   }
 
-  // 🔒 Employee MUST change password
+  // 🔒 If you are an employee and haven't set your own password yet, force you to do that now.
   if (role === "EMPLOYEE" && mustChange && !isChangePasswordRoute) {
     return <Navigate to="/employee/change-password" replace />;
   }
 
-  // ✅ Password already changed → block access to change-password page
+  // ✅ Once you have set your password, you no longer need to see the "Change Password" screen.
   if (role === "EMPLOYEE" && !mustChange && isChangePasswordRoute) {
     return <Navigate to="/employee/dashboard" replace />;
   }

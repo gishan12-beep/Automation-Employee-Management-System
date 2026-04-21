@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import AppLayout from "../../../components/layout/AppLayout";
 
+// Placeholder component for generating and downloading various system reports in different formats
 export default function Reports() {
   const [showPdf, setShowPdf] = useState(false);
   const [showExcel, setShowExcel] = useState(false);
@@ -28,6 +29,7 @@ export default function Reports() {
   );
 }
 
+// Modal component that simulates the report export process and placeholders for API calls
 function ExportModal({ title, onClose }) {
   return (
     <div style={styles.overlay}>

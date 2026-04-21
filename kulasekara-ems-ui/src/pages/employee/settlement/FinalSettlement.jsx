@@ -4,11 +4,13 @@ import AppLayout from "../../../components/layout/AppLayout";
 import { getMyFinalSettlementPreview } from "../../../services/payrollService";
 import { formatLKR } from "../../../utils/salaryUtils";
 
+// Component that provides a detailed preview of an employee's final payroll settlement including earnings and deductions
 export default function FinalSettlement() {
   const [data, setData] = useState(undefined);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Fetches the final settlement summary data from the payroll service for the authenticated user
   const fetchSettlement = async () => {
     setLoading(true);
     try {
@@ -21,16 +23,19 @@ export default function FinalSettlement() {
     }
   };
 
+  // Triggers the initial settlement data fetch when the component mounts
   useEffect(() => {
     fetchSettlement();
   }, []);
 
+  // Aggregates sub-totals for earnings and deductions to calculate the final net settlement amount
   const totals = useMemo(() => {
     if (!data) return null;
 
     const e = data.earnings || {};
     const d = data.deductions || {};
 
+    // Sums up all positive earning components like unpaid salary, overtime, and bonuses
     const totalEarnings =
       (e.unpaidSalary || 0) +
       (e.overtime || 0) +
@@ -38,6 +43,7 @@ export default function FinalSettlement() {
       (e.bonus || 0) +
       (e.other || 0);
 
+    // Sums up all negative deduction components like advances, loans, and statutory adjustments
     const totalDeductions =
       (d.advances || 0) +
       (d.loans || 0) +
@@ -160,10 +166,12 @@ export default function FinalSettlement() {
   );
 }
 
+// Determines if the viewport is narrow (e.g., mobile or tablet) to adjust layout density
 function isCompact() {
     return window.innerWidth < 800;
 }
 
+// UI helper component for rendering a consistent horizontal alignment for label-value pairs
 function Row({ label, value, strong }) {
   return (
     <div style={{ display: "flex", justifyContent: "space-between", padding: "8px 0" }}>

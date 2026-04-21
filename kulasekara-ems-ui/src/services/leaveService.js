@@ -1,6 +1,6 @@
 import axios from "axios";
 
-// Helper function to get the auth headers
+// Helper function to generate standardized authentication headers containing the JWT token
 const getAuthHeaders = () => {
     const token = localStorage.getItem("token");
     return {
@@ -10,10 +10,11 @@ const getAuthHeaders = () => {
     };
 };
 
-const MANAGER_API_URL = "http://localhost:5000/api/manager/leaves"; // update port if needed
+const MANAGER_API_URL = "http://localhost:5000/api/manager/leaves"; 
 const EMPLOYEE_API_URL = "http://localhost:5000/api/employee/leaves";
+
 export const leaveService = {
-    // Fetch all leave requests
+    // Retrieves all leave requests submitted by any employee (Manager access)
     fetchLeaveRequests: async () => {
         try {
             const response = await axios.get(MANAGER_API_URL, getAuthHeaders());
@@ -24,7 +25,7 @@ export const leaveService = {
         }
     },
 
-    // Update a leave request status
+    // Approves or rejects a specific leave request and adds an optional manager's remark
     updateLeaveRequestStatus: async (leaveId, status, remark) => {
         try {
             const response = await axios.patch(
@@ -39,7 +40,7 @@ export const leaveService = {
         }
     },
 
-    // Get my leave requests (employee)
+    // Fetches the leave request history for the currently logged-in employee
     fetchMyLeaveRequests: async () => {
         try {
             const response = await axios.get(EMPLOYEE_API_URL, getAuthHeaders());
@@ -50,7 +51,7 @@ export const leaveService = {
         }
     },
 
-    // Submit a new leave request
+    // Submits a new leave request including type, dates, and reason
     submitLeaveRequest: async (leaveData) => {
         try {
             const response = await axios.post(EMPLOYEE_API_URL, leaveData, getAuthHeaders());
@@ -61,7 +62,7 @@ export const leaveService = {
         }
     },
 
-    // Fetch leave types (employee or manager, endpoint differs slightly, using manager as default fallback or generic)
+    // Retrieves the available types of leave from the server based on the user's role
     fetchLeaveTypes: async (role = "MANAGER") => {
         try {
             const URL = role === "EMPLOYEE"

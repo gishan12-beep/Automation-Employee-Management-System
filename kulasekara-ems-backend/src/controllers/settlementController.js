@@ -1,9 +1,6 @@
 import { pool } from "../config/db.js";
 
-/**
- * GET /api/employee/settlement-preview
- * - Returns the final settlement record for the logged-in employee if it exists.
- */
+// Returns a detailed settlement preview for the logged-in employee who is resigned or terminated
 export const getMySettlementPreview = async (req, res) => {
     const employeeId = req.user.employee_id;
 
@@ -12,6 +9,7 @@ export const getMySettlementPreview = async (req, res) => {
     }
 
     try {
+        // Fetch the settlement record from the database with basic employee info
         const [rows] = await pool.query(
             `SELECT fs.*, e.first_name, e.last_name, d.name as department_name
              FROM final_settlements fs
@@ -28,19 +26,19 @@ export const getMySettlementPreview = async (req, res) => {
 
         const s = rows[0];
 
-        // Format for the frontend FinalSettlement UI
+        // Structure the flat database row into a grouped object suitable for the frontend UI
         const responseData = {
             employeeId: s.employee_id,
             employeeName: `${s.first_name} ${s.last_name}`,
             designation: s.department_name || "Employee",
             lastWorkingDate: s.last_working_date,
-            settlementDate: s.settled_date || s.last_working_date, // Fallback if not yet settled
+            settlementDate: s.settled_date || s.last_working_date, 
             status: s.status,
             earnings: {
                 unpaidSalary: Number(s.basic_payable) || 0,
-                overtime: 0, // Not explicitly in final_settlements table fields but could be aggregated
+                overtime: 0, 
                 leaveEncashment: Number(s.leave_encashment) || 0,
-                bonus: Number(s.gratuity_amount) || 0, // Using gratuity as primary bonus component
+                bonus: Number(s.gratuity_amount) || 0, 
                 other: Number(s.other_dues) || 0,
             },
             deductions: {

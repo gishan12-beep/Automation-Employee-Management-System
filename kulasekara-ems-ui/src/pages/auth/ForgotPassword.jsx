@@ -3,6 +3,7 @@ import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import { requestPasswordResetApi } from "../../services/authService";
 
+// Main component for the "Forgot Password" page, allowing users to request a recovery email
 export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [status, setStatus] = useState("");
@@ -12,8 +13,10 @@ export default function ForgotPassword() {
   const [hoveredButton, setHoveredButton] = useState(false);
   const [hoveredLink, setHoveredLink] = useState(false);
 
+  // Helper utility to validate the email format using a regular expression
   const isValidEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(e || "").trim());
 
+  // Handles the form submission to send a password reset link to the specified email
   const onSubmit = async (e) => {
     e.preventDefault();
     setError("");
@@ -24,6 +27,7 @@ export default function ForgotPassword() {
 
     try {
       setLoading(true);
+      // Calls the authentication API to trigger a reset email
       const res = await requestPasswordResetApi(email.trim());
       setStatus(res?.message || "If this email exists, a reset link has been sent.");
     } catch (err) {

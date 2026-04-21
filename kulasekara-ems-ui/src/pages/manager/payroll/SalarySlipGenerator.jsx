@@ -1,5 +1,6 @@
 import React, { useMemo } from "react";
 
+// Formats numeric values into a localized LKR currency string for display on the salary slip
 const LKR = (n) =>
   new Intl.NumberFormat("en-LK", {
     style: "currency",
@@ -7,14 +8,17 @@ const LKR = (n) =>
     maximumFractionDigits: 0,
   }).format(Number(n || 0));
 
+// Modal component that generates a printable salary slip with detailed earnings and deductions
 export default function SalarySlipGenerator({ employee, payroll, details, onClose }) {
   // Now payroll is the exact mapped object from ProcessPayroll's summary API
   // details is { incentives: [], deductions: [] } (optional)
 
+  // Generates a unique slip identifier based on employee ID and current timestamp
   const slipNo = useMemo(() => {
     return `SLIP-${employee.employeeID}-${Date.now().toString().slice(-6)}`;
   }, [employee.employeeID]);
 
+  // Triggers the browser's native print dialog to print the salary slip
   const onPrint = () => window.print();
 
   const incentives = details?.incentives || [];
@@ -141,6 +145,7 @@ export default function SalarySlipGenerator({ employee, payroll, details, onClos
   );
 }
 
+// Utility component for rendering formatted employee metadata on the salary slip
 function Info({ label, value }) {
   return (
     <div style={styles.info}>
@@ -150,6 +155,7 @@ function Info({ label, value }) {
   );
 }
 
+// Functional component for rendering a single financial line item with optional bolding
 function Line({ label, value, strong }) {
   return (
     <div style={styles.line}>

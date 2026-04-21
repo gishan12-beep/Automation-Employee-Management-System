@@ -3,10 +3,12 @@ import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Eye, EyeOff } from "lucide-react";
 import { resetPasswordApi } from "../../services/authService";
 
+// Component for resetting the user's password using a secure token from a reset email
 export default function ResetPassword() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Extracts the specific security token from the URL query parameters
   const token = useMemo(() => {
     const sp = new URLSearchParams(location.search);
     return sp.get("token") || "";
@@ -20,6 +22,7 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [focusedInput, setFocusedInput] = useState("");
 
+  // Enforces a strong password policy by checking various complexity constraints
   const validateStrongPassword = (p) => {
     if (p.length < 8) return "Password must be at least 8 characters.";
     if (p.length > 64) return "Password must be less than 65 characters.";
@@ -31,6 +34,7 @@ export default function ResetPassword() {
     return "";
   };
 
+  // Handles the form submission to apply the new password using the reset token
   const onSubmit = async (e) => {
     e.preventDefault();
     setMsg({ type: "", text: "" });
@@ -48,9 +52,11 @@ export default function ResetPassword() {
 
     try {
       setLoading(true);
+      // Calls the auth API to confirm the reset token and update the password
       const res = await resetPasswordApi(token, newPassword);
       setMsg({ type: "ok", text: res?.message || "Password updated successfully." });
 
+      // Automatically redirects the user back to the login page after a brief delay
       setTimeout(() => navigate("/"), 1200);
     } catch (err) {
       setMsg({

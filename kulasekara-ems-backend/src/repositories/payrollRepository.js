@@ -1,6 +1,6 @@
 import { pool } from "../config/db.js";
 
-// ✅ Get active employees
+// Returns a list of all currently active employees
 export const getActiveEmployees = async () => {
     const [rows] = await pool.query(
         "SELECT employee_id, first_name, last_name, email, department_id, status FROM employee WHERE status = 'ACTIVE'"
@@ -8,28 +8,19 @@ export const getActiveEmployees = async () => {
     return rows;
 };
 
-// ✅ Get latest salary config effectively for the month
+// Retrieves the salary configuration for an employee that was effective during the specified month/year
 export const getSalaryConfig = async (employeeId, month, year) => {
-    // Construct the last day of the given month to ensure we pick the config active by then
-    // Format: 'YYYY-MM-DD'
     const lastDay = new Date(year, month, 0).toISOString().slice(0, 10);
-    console.log(`[REPO] Fetching salary config for ${employeeId} effective by ${lastDay}`);
-
     const [rows] = await pool.query(
         `SELECT * FROM salary_configurations 
      WHERE employee_id = ? AND effective_date <= ? 
      ORDER BY effective_date DESC LIMIT 1`,
         [employeeId, lastDay]
     );
-    const config = rows[0] || null;
-    console.log(`[REPO] Config retrieved for ${employeeId}:`, config);
-    return config;
+    return rows[0] || null;
 };
 
-// ✅ Get unapproved absent days for a specific month/year
-// Defines "Unapproved Absence" as any day where:
-// 1. Status is 'ABSENT' in attendance table
-// 2. AND there is no 'APPROVED' leave request covering that date
+// Calculates the number of days an employee was absent without an approved leave request
 export const getUnapprovedAbsentDays = async (employeeId, month, year) => {
     const [rows] = await pool.query(
         `SELECT COUNT(*) as count 
@@ -49,7 +40,7 @@ export const getUnapprovedAbsentDays = async (employeeId, month, year) => {
     return rows[0].count;
 };
 
-// ✅ Count Late Days for a specific month/year
+// Counts the total number of days an employee was marked as LATE in a given month
 export const getLateDaysCount = async (employeeId, month, year) => {
     const [rows] = await pool.query(
         `SELECT COUNT(*) as count 
@@ -63,16 +54,8 @@ export const getLateDaysCount = async (employeeId, month, year) => {
     return rows[0].count;
 };
 
-// ✅ Check for ANY attendance issues that disqualify for Perfect Attendance
+// Checks if an employee had any attendance issues (Late, Absent, Half-Day) that disqualify them from a perfect attendance bonus
 export const checkPerfectAttendanceDisqualifier = async (employeeId, month, year) => {
-    // Disqualified if ANY of these exist:
-    // 1. Attendance status in ('ABSENT', 'LATE', 'HALF_DAY')
-    // 2. OR unapproved leaves? User said: "ABSENT, LATE, HALF_DAY, or unapproved leave"
-    // Technically ABSENT covers unapproved leave if they didn't show up. If they took an APPROVED leave, they might or might not be disqualified based on company policy.
-    // The prompt says: "if no ABSENT, LATE, HALF_DAY, or unapproved leave". 
-    // This strictly means they CAN have an APPROVED leave and still get the perfect attendance if they weren't late.
-
-    // We check attendance specifically for the disqualifying statuses.
     const [rows] = await pool.query(
         `SELECT COUNT(*) as count 
          FROM attendance a
@@ -91,10 +74,10 @@ export const checkPerfectAttendanceDisqualifier = async (employeeId, month, year
            )`,
         [employeeId, month, year]
     );
-    return rows[0].count > 0; // True if disqualified
+    return rows[0].count > 0;
 };
 
-// ✅ Sum work logs total_amount for daily workers
+// Calculates the total earnings from piece-rate work logs for a specific month
 export const getWorkLogsTotalAmount = async (employeeId, month, year) => {
     const [rows] = await pool.query(
         `SELECT COALESCE(SUM(quantity * applied_rate), 0) as total 
@@ -105,7 +88,7 @@ export const getWorkLogsTotalAmount = async (employeeId, month, year) => {
     return rows[0].total;
 };
 
-// ✅ Sum overtime amount
+// Sums the total overtime pay earned by an employee in a specific month
 export const getOvertimeTotal = async (employeeId, month, year) => {
     const [rows] = await pool.query(
         `SELECT COALESCE(SUM(total_amount), 0) as total FROM overtime_records 
@@ -115,7 +98,7 @@ export const getOvertimeTotal = async (employeeId, month, year) => {
     return rows[0].total;
 };
 
-// ✅ Sum incentives amount (excluding automatic attendance bonus if we want to avoid double counting during re-runs)
+// Sums all monetary incentives awarded to an employee in a specific month
 export const getIncentivesTotal = async (employeeId, month, year) => {
     const [rows] = await pool.query(
         `SELECT COALESCE(SUM(amount), 0) as total FROM incentives 
@@ -125,7 +108,7 @@ export const getIncentivesTotal = async (employeeId, month, year) => {
     return rows[0].total;
 };
 
-// ✅ Get Incentive Rule
+// Fetches an incentive rule definition by its unique code
 export const getIncentiveRule = async (ruleCode) => {
     const [rows] = await pool.query(
         `SELECT * FROM incentive_rules WHERE rule_code = ? AND is_active = 1 LIMIT 1`,
@@ -134,7 +117,7 @@ export const getIncentiveRule = async (ruleCode) => {
     return rows[0] || null;
 };
 
-// ✅ Get Deduction Rule
+// Fetches a deduction rule definition by its unique code
 export const getDeductionRule = async (ruleCode) => {
     const [rows] = await pool.query(
         `SELECT * FROM deduction_rules WHERE rule_code = ? AND is_active = 1 LIMIT 1`,
@@ -143,7 +126,7 @@ export const getDeductionRule = async (ruleCode) => {
     return rows[0] || null;
 };
 
-// ✅ Sum deductions amount
+// Sums all deductions applied to an employee in a specific month
 export const getDeductionsTotal = async (employeeId, month, year) => {
     const [rows] = await pool.query(
         `SELECT COALESCE(SUM(amount), 0) as total FROM deductions 
@@ -153,7 +136,7 @@ export const getDeductionsTotal = async (employeeId, month, year) => {
     return rows[0].total;
 };
 
-// ✅ Get individual incentives for an employee/month/year
+// Retrieves all individual incentive records for an employee in a specific month
 export const getIncentivesByEmployee = async (employeeId, month, year) => {
     const [rows] = await pool.query(
         `SELECT * FROM incentives 
@@ -164,7 +147,7 @@ export const getIncentivesByEmployee = async (employeeId, month, year) => {
     return rows;
 };
 
-// ✅ Get individual deductions for an employee/month/year
+// Retrieves all individual deduction records for an employee in a specific month
 export const getDeductionsByEmployee = async (employeeId, month, year) => {
     const [rows] = await pool.query(
         `SELECT * FROM deductions 
@@ -175,7 +158,7 @@ export const getDeductionsByEmployee = async (employeeId, month, year) => {
     return rows;
 };
 
-// ✅ Check existing payroll run - now returns the payroll_id
+// Checks if a payroll record already exists for an employee in a given month/year
 export const checkExistingPayroll = async (employeeId, month, year) => {
     const [rows] = await pool.query(
         `SELECT payroll_id FROM payroll_runs 
@@ -185,7 +168,7 @@ export const checkExistingPayroll = async (employeeId, month, year) => {
     return rows.length > 0 ? rows[0].payroll_id : null;
 };
 
-// ✅ Update a full payroll record
+// Updates an entire payroll run record with new calculated values
 export const updatePayrollRunFull = async (payrollData, conn) => {
     const db = conn || pool;
     await db.query(
@@ -203,7 +186,7 @@ export const updatePayrollRunFull = async (payrollData, conn) => {
     );
 };
 
-// ✅ Sum all adjustments for a payroll_id
+// Calculates the net sum of all accountant adjustments (Bonuses vs Deductions) for a payroll run
 export const getAdjustmentsTotal = async (payrollId) => {
     const [rows] = await pool.query(
         `SELECT SUM(CASE WHEN adjustment_type = 'BONUS' THEN amount ELSE -amount END) as total 
@@ -214,17 +197,9 @@ export const getAdjustmentsTotal = async (payrollId) => {
     return Number(rows[0].total) || 0;
 };
 
-// ✅ Insert payroll run
+// Inserts a new payroll run record into the database
 export const insertPayrollRun = async (payrollData, conn) => {
     const db = conn || pool;
-
-    // TRACE LOG
-    console.log(`[REPO] SQL INSERT for ${payrollData.employee_id}:`, {
-        basic: payrollData.basic_earnings,
-        gross: payrollData.gross_pay,
-        net: payrollData.net_pay
-    });
-
     const [result] = await db.query(
         `INSERT INTO payroll_runs (
           employee_id, month, year, 
@@ -242,9 +217,8 @@ export const insertPayrollRun = async (payrollData, conn) => {
     return result.insertId;
 };
 
-// ✅ Get payroll history for employee
+// Fetches payroll records for a specific employee, optionally filtered by month and year
 export const getPayrollByEmployee = async (employeeId, month, year) => {
-    // If month/year provided, filter by it, else all
     let query = `SELECT * FROM payroll_runs WHERE employee_id = ?`;
     let params = [employeeId];
 
@@ -258,9 +232,8 @@ export const getPayrollByEmployee = async (employeeId, month, year) => {
     return rows;
 };
 
-// ✅ Get payroll summary for month/year
+// Retrieves a summary of all payroll runs for a month, including employee and department details
 export const getPayrollSummary = async (month, year) => {
-    // Join with salary_configurations to get the salary_type active at the end of that month
     const [rows] = await pool.query(
         `SELECT pr.*, e.first_name, e.last_name, d.name as department, s.salary_type
      FROM payroll_runs pr
@@ -280,7 +253,7 @@ export const getPayrollSummary = async (month, year) => {
     return rows;
 };
 
-// ✅ Get single payroll run
+// Fetches a single payroll run record by its ID
 export const getPayrollRunById = async (payrollId) => {
     const [rows] = await pool.query(
         `SELECT * FROM payroll_runs WHERE payroll_id = ?`,
@@ -289,7 +262,7 @@ export const getPayrollRunById = async (payrollId) => {
     return rows[0] || null;
 };
 
-// ✅ Update payroll run (ONLY Net Pay via Patches)
+// Updates only the net pay field of a specific payroll run
 export const updatePayrollRunNetPay = async (payrollId, newNetPay, conn) => {
     const db = conn || pool;
     await db.query(
@@ -303,7 +276,7 @@ export const updatePayrollRunNetPay = async (payrollId, newNetPay, conn) => {
     );
 };
 
-// ✅ Insert Accountant Adjustment to payroll_adjustments
+// Records a manual adjustment made by an accountant to a specific payroll run
 export const insertPayrollAdjustment = async (adjustmentData, conn) => {
     const db = conn || pool;
     await db.query(
@@ -320,7 +293,7 @@ export const insertPayrollAdjustment = async (adjustmentData, conn) => {
     );
 };
 
-// ✅ Insert into incentives table
+// Inserts a record into the incentives table for an employee
 export const insertIncentive = async (incentiveData, conn) => {
     const db = conn || pool;
     await db.query(
@@ -335,7 +308,7 @@ export const insertIncentive = async (incentiveData, conn) => {
     );
 };
 
-// ✅ Insert into deductions table
+// Inserts a record into the deductions table for an employee
 export const insertDeduction = async (deductionData, conn) => {
     const db = conn || pool;
     await db.query(
@@ -349,6 +322,8 @@ export const insertDeduction = async (deductionData, conn) => {
         ]
     );
 };
+
+// Updates the status (e.g., PENDING, READY, PAID) of a specific payroll run
 export async function updatePayrollStatus(payrollId, status, conn) {
     const db = conn || pool;
     await db.query(

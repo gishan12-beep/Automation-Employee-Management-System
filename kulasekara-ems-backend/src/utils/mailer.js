@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
+// Configures the nodemailer transporter with Gmail service and authentication from environment variables
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
@@ -14,7 +15,7 @@ const transporter = nodemailer.createTransport({
   socketTimeout: 20_000,
 });
 
-
+// Sends a password reset email with a specific reset link to the user
 export async function sendResetPasswordEmail(toEmail, resetLink) {
   await transporter.sendMail({
     from: `"Kulasekara EMS" <${process.env.MAIL_USER}>`,
@@ -45,6 +46,7 @@ export async function sendResetPasswordEmail(toEmail, resetLink) {
   });
 }
 
+// Sends an initial welcome email with temporary login credentials when a new employee account is created
 export async function sendCredentialsEmail(toEmail, username, tempPassword) {
   try {
     await transporter.sendMail({

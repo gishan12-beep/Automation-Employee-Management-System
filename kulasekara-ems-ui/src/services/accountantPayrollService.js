@@ -1,6 +1,6 @@
 import api from "./api";
 
-// Re-use or re-implement summary fetch
+// Fetches the payroll summary for a given month and year, mapping it to the accountant's detailed view
 export async function getPayrollSummaryApi({ month }) {
   // month is "YYYY-MM"
   const [y, m] = month.split("-");
@@ -40,8 +40,8 @@ export async function getPayrollSummaryApi({ month }) {
   };
 }
 
+// Retrieves the itemized calculation breakdown for a specific employee's payroll run
 export async function getPayrollDraftApi({ employeeId, periodStart }) {
-  // Fetch specific run
   const date = new Date(periodStart);
   const m = String(date.getMonth() + 1).padStart(2, "0");
   const y = date.getFullYear();
@@ -74,22 +74,21 @@ export async function getPayrollDraftApi({ employeeId, periodStart }) {
   };
 }
 
+// Applies a manual adjustment (bonus or deduction) to an existing payroll run
 export async function adjustPayrollApi(payrollId, payload) {
-  // payload: { adjustment_type, amount, reason }
   const res = await api.patch(`/payroll/${payrollId}`, payload);
   return res.data;
 }
 
+// Handles complex overrides and updates for a payslip, typically used by accountants for manual edits
 export async function saveFinalPayslipApi(payload) {
-  // Keeping this for backward compatibility if used elsewhere, but adjustPayrollApi is preferred now.
   const { overrides, payrollId } = payload;
   const updateData = {
-    adjustment_type: "ADDITION", // Mocking to ADDITION if using the old UI, but the new UI will use adjustPayrollApi directly
+    adjustment_type: "ADDITION", 
     amount: overrides.incentives.reduce((s, i) => s + Number(i.amount), 0) - overrides.deductions.reduce((s, d) => s + Number(d.amount), 0),
     reason: overrides.notes || "Edited by Accountant",
   };
 
-  // Convert negative amounts to deduction
   if (updateData.amount < 0) {
     updateData.adjustment_type = "DEDUCTION";
     updateData.amount = Math.abs(updateData.amount);
@@ -105,6 +104,7 @@ export async function saveFinalPayslipApi(payload) {
   return { ok: true };
 }
 
+// Generates an EPF/ETF contribution report (Mocked placeholder currently)
 export async function getEpfEtfReportApi({ month }) {
   return {
     rows: [
@@ -115,18 +115,21 @@ export async function getEpfEtfReportApi({ month }) {
   };
 }
 
+// Initiates the batch payroll calculation process for a specified month
 export async function processPayrollApi({ month }) {
   const [y, m] = month.split("-");
   const res = await api.post(`/payroll/process/${m}/${y}`);
   return res.data;
 }
 
+// Triggers the payroll calculation process for an individual employee
 export async function processSinglePayrollApi({ month, employeeId }) {
   const [y, m] = month.split("-");
   const res = await api.post(`/payroll/process/${m}/${y}/${employeeId}`);
   return res.data;
 }
 
+// Finalizes and approves a specific payroll run for payment
 export async function approvePayrollApi(payrollId) {
   const res = await api.post(`/payroll/approve/${payrollId}`);
   return res.data;

@@ -8,15 +8,18 @@ import {
 } from "../../../services/accountantPayrollService";
 import { getEmployeesApi } from "../../../services/managerEmployeeService";
 
+// Formats a numeric value into a localized LKR currency string with two decimal places
 const fmt = (n) =>
   Number(n || 0).toLocaleString("en-LK", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
+// Generates a standardized YYYY-MM string representing the current or provided month
 const monthValue = (d = new Date()) => {
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   return `${y}-${m}`;
 };
 
+// Main component for the accountant's payroll summary view, allowing batch processing and review
 export default function PayrollSummary() {
   const navigate = useNavigate();
 
@@ -34,6 +37,7 @@ export default function PayrollSummary() {
     loadSummary();
   }, [month]);
 
+  // Fetches the payroll summary for the month and joins it with the active employee list
   const loadSummary = async () => {
     setLoading(true);
     setToast("");
@@ -47,6 +51,7 @@ export default function PayrollSummary() {
       const summaryMap = new Map();
       summaryData.forEach(e => summaryMap.set(String(e.employeeId), e));
 
+      // Map every active employee to either their existing payroll record or a pending placeholder
       const mappedEmps = allEmployees
         .filter(emp => emp.status === "ACTIVE")
         .map(emp => {
@@ -79,6 +84,7 @@ export default function PayrollSummary() {
     }
   };
 
+  // Triggers the bulk payroll generation for all active employees for the selected month
   const handleGenerateAll = async () => {
     if (!window.confirm(`Generate payroll for all employees for ${month}?`)) return;
     setProcessing(true);
@@ -96,6 +102,7 @@ export default function PayrollSummary() {
     }
   };
 
+  // Approves a specific payroll record, marking it as finalized for manager review
   const handleApprove = async (payrollId) => {
     if (!window.confirm("Approve this payroll run? This will make it visible to the Manager.")) return;
     setProcessing(true);
@@ -419,6 +426,7 @@ export default function PayrollSummary() {
   );
 }
 
+// Reusable UI component that renders a table of payroll records with action buttons for approval and adjustment
 function PayrollTable({ rows, processing, onApprove, openBuilder }) {
   return (
     <div className="tableWrap">

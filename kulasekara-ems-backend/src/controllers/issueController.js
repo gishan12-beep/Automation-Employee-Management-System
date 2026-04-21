@@ -1,6 +1,6 @@
 import * as issueRepo from "../repositories/issueRepository.js";
 
-// Manager gets all issues
+// Fetches all issues/complaints reported by any employee (Manager access)
 export const getIssues = async (req, res) => {
     try {
         const issues = await issueRepo.getAllIssues();
@@ -10,7 +10,7 @@ export const getIssues = async (req, res) => {
     }
 };
 
-// Manager resolves an issue
+// Updates an issue status (e.g., to RESOLVED) and adds a manager reply
 export const resolveIssue = async (req, res) => {
     const { id } = req.params;
     const { status, reply } = req.body;
@@ -22,9 +22,9 @@ export const resolveIssue = async (req, res) => {
     }
 };
 
-// Employee gets their issues
+// Returns a list of issues reported by the currently logged-in employee
 export const getMyIssues = async (req, res) => {
-    const { employee_id } = req.user; // from auth middleware
+    const { employee_id } = req.user;
     try {
         const issues = await issueRepo.getIssuesByEmployee(employee_id);
         res.json(issues);
@@ -33,7 +33,7 @@ export const getMyIssues = async (req, res) => {
     }
 };
 
-// Employee reports an issue
+// Allows an employee to submit a new issue or complaint
 export const reportIssue = async (req, res) => {
     const { employee_id } = req.user;
     const { type, description } = req.body;
@@ -44,6 +44,8 @@ export const reportIssue = async (req, res) => {
         res.status(500).json({ message: "Failed to report issue", error: err.message });
     }
 };
+
+// Retrieves a specific issue record by its ID
 export const getIssueById = async (req, res) => {
     const { id } = req.params;
 
@@ -56,7 +58,7 @@ export const getIssueById = async (req, res) => {
     }
 };
 
-// Manager deletes an issue
+// Permanently deletes an issue record (Manager access)
 export const deleteIssue = async (req, res) => {
     const { id } = req.params;
     try {

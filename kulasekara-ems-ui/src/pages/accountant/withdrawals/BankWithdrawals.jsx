@@ -7,9 +7,11 @@ import {
   deleteWithdrawalApi,
 } from "../../../services/accountantWithdrawalService";
 
+// Converts a month number (1-12) into its full localized English name
 const monthName = (m) =>
   new Date(2000, m - 1, 1).toLocaleString("en", { month: "long" });
 
+// Formats a date object or string into a standardized ISO format (YYYY-MM-DD) for form inputs
 const toISODate = (d) => {
   const dt = d ? new Date(d) : new Date();
   const y = dt.getFullYear();
@@ -18,6 +20,7 @@ const toISODate = (d) => {
   return `${y}-${m}-${day}`;
 };
 
+// Formats a numeric value into a localized LKR currency string with dual decimal precision
 const formatLKR = (n) => {
   const num = Number(n || 0);
   return `LKR ${num.toLocaleString("en-LK", {
@@ -26,6 +29,7 @@ const formatLKR = (n) => {
   })}`;
 };
 
+// Component for managing bank withdrawal records for cash reconciliation
 export default function BankWithdrawals() {
   const now = new Date();
   const [month, setMonth] = useState(now.getMonth() + 1);
@@ -46,10 +50,12 @@ export default function BankWithdrawals() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
+  // Memoized calculation for the total withdrawal amount in the selected month
   const totalForMonth = useMemo(() => {
     return rows.reduce((sum, r) => sum + Number(r.amount || 0), 0);
   }, [rows]);
 
+  // Fetches withdrawal records from the backend based on the selected month and year
   const fetchData = async () => {
     setLoading(true);
     setError("");
@@ -70,6 +76,7 @@ export default function BankWithdrawals() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [month, year]);
 
+  // Resets the internal form state back to default values
   const resetForm = () => {
     setDate(toISODate(new Date()));
     setBankRef("");
@@ -80,11 +87,13 @@ export default function BankWithdrawals() {
     setError("");
   };
 
+  // Prepares the form for atmospheric entry of a new withdrawal record
   const openCreate = () => {
     resetForm();
     setOpen(true);
   };
 
+  // Populates the form with existing data to allow editing of a withdrawal record
   const openEdit = (r) => {
     setMode("edit");
     setEditingId(r.id);
@@ -96,6 +105,7 @@ export default function BankWithdrawals() {
     setOpen(true);
   };
 
+  // Validates the withdrawal form inputs for required fields and data types
   const validate = () => {
     if (!date) return "Date is required.";
     if (!bankRef.trim()) return "Bank Reference is required.";
@@ -105,6 +115,7 @@ export default function BankWithdrawals() {
     return "";
   };
 
+  // Handles the persistent save operation for both creating and updating withdrawals
   const onSave = async () => {
     const msg = validate();
     if (msg) {
@@ -123,14 +134,16 @@ export default function BankWithdrawals() {
       };
 
       if (mode === "create") {
+        // Calls the service to store a new withdrawal in the database
         await createWithdrawalApi(payload);
       } else {
+        // Calls the service to update an existing record by its ID
         await updateWithdrawalApi(editingId, payload);
       }
 
       setOpen(false);
       resetForm();
-      await fetchData();
+      await fetchData(); // Refresh the list to reflect changes
     } catch (e) {
       setError(e?.response?.data?.message || e?.message || "Save failed.");
     } finally {
@@ -138,6 +151,7 @@ export default function BankWithdrawals() {
     }
   };
 
+  // Requests the deletion of a withdrawal record after user confirmation
   const onDelete = async (r) => {
     const ok = window.confirm(`Delete ${r.bank_ref} (${formatLKR(r.amount)})?`);
     if (!ok) return;

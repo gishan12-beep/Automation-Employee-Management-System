@@ -9,20 +9,24 @@ import {
   XCircle
 } from "lucide-react";
 
+// Component for generating a detailed summary of all employee leave applications
 export default function LeaveReports() {
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
+  // Fetches the complete leave history from the backend when the component is initially loaded
   useEffect(() => {
     fetchLeaves();
   }, []);
 
+  // Retrieves leave request records using the report analytics service
   const fetchLeaves = async () => {
     setLoading(true);
     try {
       const data = await getLeaveReportApi();
+      // Updates state with the retrieved data array
       setLeaves(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch leaves report:", err);
@@ -31,12 +35,15 @@ export default function LeaveReports() {
     }
   };
 
+  // Filters the list of leave applications based on keyword matching and status selection
   const filteredLeaves = leaves.filter(leave => {
+    // Searches against the reason for leave, employee ID, and specific leave type
     const matchesSearch = 
       leave.reason?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       leave.employee_id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       leave.leave_type?.toLowerCase().includes(searchTerm.toLowerCase());
     
+    // Checks if the leave matches the current status filter (ALL, PENDING, APPROVED, REJECTED)
     const matchesStatus = statusFilter === "ALL" || leave.status === statusFilter;
     
     return matchesSearch && matchesStatus;

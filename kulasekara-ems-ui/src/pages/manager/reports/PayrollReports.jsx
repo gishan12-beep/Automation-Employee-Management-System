@@ -22,9 +22,11 @@ import {
 
 import { getPayrollSummaryApi } from "../../../services/payrollService";
 
+// Formats numeric values into localized LKR currency strings for the payroll report
 const formatLKR = (n) =>
   new Intl.NumberFormat("en-LK", { style: "currency", currency: "LKR", maximumFractionDigits: 0 }).format(Number(n || 0));
 
+// Main component for generating monthly payroll summaries and detailed employee payout reports
 export default function PayrollReports() {
   const [month, setMonth] = useState(getMonthKey(new Date()));
   const [department, setDepartment] = useState("ALL");
@@ -34,15 +36,18 @@ export default function PayrollReports() {
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
+  // Fetches aggregated payroll data whenever the selected month period is changed
   useEffect(() => {
     fetchPayrollData();
   }, [month]);
 
+  // Retrieves monthly payroll summary records from the backend payroll service
   const fetchPayrollData = async () => {
     setLoading(true);
     setError(null);
     try {
       const [yearStr, monthStr] = month.split("-");
+      // Calls the API to retrieve payroll data for the specific year and month
       const data = await getPayrollSummaryApi(parseInt(monthStr, 10), parseInt(yearStr, 10));
       setEmployeePayroll(data);
     } catch (err) {
@@ -54,9 +59,12 @@ export default function PayrollReports() {
     }
   };
 
+  // Filters and searches through the retrieved payroll records based on department and keyword
   const rows = useMemo(() => {
     let list = [...employeePayroll];
+    // Applies department-based filtering
     if (department !== "ALL") list = list.filter((r) => r.department === department);
+    // Applies case-insensitive search against employee ID and name
     if (q.trim()) {
       const s = q.trim().toLowerCase();
       list = list.filter(
@@ -68,12 +76,14 @@ export default function PayrollReports() {
     return list;
   }, [employeePayroll, department, q]);
 
+  // Computes high-level payroll KPIs including gross/net totals and completion status
   const kpis = useMemo(() => {
     const gross = rows.reduce((s, r) => s + (Number(r.gross) || 0), 0);
     const net = rows.reduce((s, r) => s + (Number(r.net) || 0), 0);
     const ot = rows.reduce((s, r) => s + (Number(r.total_ot_pay) || 0), 0);
     const incentives = rows.reduce((s, r) => s + (Number(r.total_incentives) || 0), 0);
     const deductions = rows.reduce((s, r) => s + (Number(r.total_deductions) || 0), 0);
+    // Counts the number of processed vs pending payment records
     const paidCount = rows.filter((r) => r.status === "PAID" || r.status === "READY").length;
     const pendingCount = rows.filter((r) => r.status === "PENDING").length;
     return { gross, net, ot, incentives, deductions, paidCount, pendingCount };

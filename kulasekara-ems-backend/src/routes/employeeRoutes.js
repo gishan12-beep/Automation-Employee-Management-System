@@ -7,9 +7,9 @@ import {
   markCheckIn,
   markCheckOut
 } from "../controllers/employeeAttendanceController.js";
-import { 
-  getEmployeeStats, 
-  getRecentActivity 
+import {
+  getEmployeeStats,
+  getRecentActivity
 } from "../controllers/dashboardController.js";
 
 import {
@@ -22,7 +22,7 @@ import { getMySettlementPreview } from "../controllers/settlementController.js";
 const router = express.Router();
 
 /**
- * 🔐 Employee protected routes
+ * Employee protected routes
  * - Must be logged in
  * - Must be EMPLOYEE
  * - Must have changed temp password

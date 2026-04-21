@@ -3,6 +3,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import { getIssueByIdApi, resolveIssueApi } from "../../../services/issueService";
 
+// Generates a style object for status and category badges in the detailed issue view
 function badgeStyle(type) {
   const base = {
     display: "inline-flex",
@@ -26,6 +27,7 @@ function badgeStyle(type) {
   return { ...base, background: "#f1f5f9", color: "#0f172a" };
 }
 
+// Component for viewing full issue details and submitting manager responses/resolutions
 export default function IssueDetail() {
   const { issueId } = useParams();
   const navigate = useNavigate();
@@ -36,11 +38,13 @@ export default function IssueDetail() {
   const [reply, setReply] = useState("");
   const [savedToast, setSavedToast] = useState(false);
 
+  // Fetches core issue data upon component mount or when the issueId parameter changes
   useEffect(() => {
     fetchIssue();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [issueId]);
 
+  // Retrieves specific issue data and populates the local state with details and existing replies
   const fetchIssue = async () => {
     setLoading(true);
     try {
@@ -55,14 +59,16 @@ export default function IssueDetail() {
     }
   };
 
+  // Submits the manager's review, including the updated status and final resolution reply
   async function save() {
     if (!issue) return;
 
     try {
+      // Calls the issue service to persist resolution details in the database
       await resolveIssueApi(issueId, { status: editStatus, reply });
       setSavedToast(true);
-      fetchIssue();
-      setTimeout(() => setSavedToast(false), 1200);
+      fetchIssue(); // Refresh local data to reflect saved changes
+      setTimeout(() => setSavedToast(false), 1200); // Auto-hide success toast
     } catch (err) {
       console.error("Failed to save issue:", err);
       alert("Failed to update status.");

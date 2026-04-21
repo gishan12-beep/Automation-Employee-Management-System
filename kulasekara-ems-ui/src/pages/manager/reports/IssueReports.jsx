@@ -8,20 +8,24 @@ import {
   CheckCircle2
 } from "lucide-react";
 
+// Component for generating a comprehensive report of all employee-raised issues and grievances
 export default function IssueReports() {
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("ALL");
 
+  // Fetches initial list of issues from the backend when the component mounts
   useEffect(() => {
     fetchIssues();
   }, []);
 
+  // Retrieves all issues from the analytics report service
   const fetchIssues = async () => {
     setLoading(true);
     try {
       const data = await getIssueReportApi();
+      // Ensures the received data is an array before updating the state
       setIssues(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error("Failed to fetch issues report:", err);
@@ -30,19 +34,23 @@ export default function IssueReports() {
     }
   };
 
+  // Dynamically filters the issues list based on search keywords and resolution status
   const filteredIssues = issues.filter(issue => {
     if (!issue) return false;
     
+    // Normalizes search terms and issue fields to lowercase for case-insensitive matching
     const searchLow = (searchTerm || "").toLowerCase();
     const title = (issue.title || "").toLowerCase();
     const empId = (issue.employee_id || "").toLowerCase();
     const fullName = `${issue.first_name || ""} ${issue.last_name || ""}`.toLowerCase();
 
+    // Checks if the issue title, employee ID, or full name contains the search term
     const matchesSearch = 
       title.includes(searchLow) ||
       empId.includes(searchLow) ||
       fullName.includes(searchLow);
     
+    // Checks if the issue matches the selected status filter (ALL, PENDING, RESOLVED)
     const matchesStatus = statusFilter === "ALL" || issue.status === statusFilter;
     
     return matchesSearch && matchesStatus;

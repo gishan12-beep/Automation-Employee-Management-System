@@ -1,16 +1,12 @@
 import { pool } from "../config/db.js";
 
-/**
- * Fetch all available task rates
- */
+// Fetches a list of all predefined task rates and their respective unit measurements
 export const getAllTaskRates = async () => {
     const [rows] = await pool.query("SELECT * FROM task_rates ORDER BY task_name");
     return rows;
 };
 
-/**
- * Insert a new work log record
- */
+// Inserts a record of completed piece-rate work for an employee on a specific date
 export const insertWorkLog = async (logData) => {
     const { employee_id, task_id, date, quantity, applied_rate } = logData;
     const [result] = await pool.query(
@@ -20,9 +16,7 @@ export const insertWorkLog = async (logData) => {
     return result.insertId;
 };
 
-/**
- * Get work logs for an employee on a specific date
- */
+// Returns a detail list of work logs for an employee and date, joined with task definitions
 export const getWorkLogsByEmployeeAndDate = async (employee_id, date) => {
     const [rows] = await pool.query(
         `SELECT wl.*, tr.task_name, tr.unit_measure 

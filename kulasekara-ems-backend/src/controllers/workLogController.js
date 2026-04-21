@@ -1,8 +1,6 @@
 import * as workLogRepo from "../repositories/workLogRepository.js";
 
-/**
- * Controller to fetch all task rates
- */
+// Fetches all available piece-rate task definitions and their rates
 export const getTasks = async (req, res) => {
     try {
         const tasks = await workLogRepo.getAllTaskRates();
@@ -12,9 +10,7 @@ export const getTasks = async (req, res) => {
     }
 };
 
-/**
- * Controller to fetch work logs for an employee on a specific date
- */
+// Returns all piece-rate work logs for a specific employee on a given date
 export const getEmployeeWorkLogs = async (req, res) => {
     const { employee_id, date } = req.params;
     if (!employee_id || !date) {
@@ -29,12 +25,11 @@ export const getEmployeeWorkLogs = async (req, res) => {
     }
 };
 
-/**
- * Controller to create a new work log
- */
+// Creates a new piece-rate work log entry for a specific task and employee
 export const createLog = async (req, res) => {
     const { employee_id, task_id, date, quantity, applied_rate } = req.body;
 
+    // Validate that all required data for a work log entry is present
     if (!employee_id || !task_id || !date || !quantity || applied_rate === undefined) {
         return res.status(400).json({ message: "Missing required fields for work log" });
     }

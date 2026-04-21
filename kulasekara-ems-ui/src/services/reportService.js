@@ -1,37 +1,37 @@
 import api from "./api";
 
-// Attendance Report
+// Retrieves a consolidated attendance report for all employees for a specific month
 export const getAttendanceReportApi = async (month, year) => {
   const res = await api.get(`/manager/reports/attendance?month=${month}&year=${year}`);
   return res.data;
 };
 
-// EPF/ETF Report (reusing payroll summary logic)
+// Generates an EPF/ETF contribution report by fetching payroll summary data for the month
 export const getEPFETFReportApi = async (month, year) => {
   const res = await api.get(`/payroll/summary/${month}/${year}`);
-  // Returning the details array because the component expects an array for mapping
+  // Return the details array containing individual employee contribution data
   return res.data?.details || [];
 };
 
-// Issue Report
+// Fetches a report summarizing all employee-reported issues and their current statuses
 export const getIssueReportApi = async () => {
   const res = await api.get("/manager/reports/issues");
   return res.data;
 };
 
-// Leave Report
+// Retrieves a summary report of all individual leave applications and approvals
 export const getLeaveReportApi = async () => {
   const res = await api.get("/manager/reports/leaves");
   return res.data;
 };
 
-// Settlement Report
+// Fetches a report of finalized and pending settlements for resigned/terminated employees
 export const getSettlementReportApi = async () => {
   const res = await api.get("/manager/reports/settlements");
   return res.data;
 };
 
-// Cash Payout Report
+// Generates a report specifically for employees receiving their wages via cash payout
 export const getCashPayoutReportApi = async (month, year) => {
   const res = await api.get(`/manager/reports/cash-payout?month=${month}&year=${year}`);
   return res.data;

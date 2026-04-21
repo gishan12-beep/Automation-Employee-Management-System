@@ -1,17 +1,15 @@
 import { pool } from "../config/db.js";
 
-/**
- * POST /api/manager/attendance
- * - Mark attendance for an employee
- */
+// Marks or updates an attendance record for a specific employee on a given date (Manager access)
 export const markAttendance = async (req, res) => {
     const { employee_id, date, check_in, check_out, status } = req.body;
 
+    // Required field validation
     if (!employee_id || !date || !status) {
         return res.status(400).json({ message: "Missing required fields: employee_id, date, status" });
     }
 
-    // Validate status enum
+    // Status enum validation
     const validStatuses = ['PRESENT', 'ABSENT', 'LATE', 'HALF_DAY', 'LEAVE'];
     if (!validStatuses.includes(status)) {
         return res.status(400).json({ message: "Invalid status value" });
@@ -19,14 +17,14 @@ export const markAttendance = async (req, res) => {
 
     const conn = await pool.getConnection();
     try {
-        // Check if attendance already exists for this employee on this date
+        // Find existing record to determine if this is an INSERT or UPDATE
         const [existing] = await conn.query(
             "SELECT attendance_id FROM attendance WHERE employee_id = ? AND date = ?",
             [employee_id, date]
         );
 
         if (existing.length > 0) {
-            // Update existing record
+            // Update the existing record for the same employee and date
             await conn.query(
                 `UPDATE attendance 
              SET check_in = ?, check_out = ?, status = ? 
@@ -35,7 +33,7 @@ export const markAttendance = async (req, res) => {
             );
             return res.json({ message: "Attendance updated successfully" });
         } else {
-            // Insert new record
+            // Insert a new attendance record
             await conn.query(
                 `INSERT INTO attendance (employee_id, date, check_in, check_out, status)
              VALUES (?, ?, ?, ?, ?)`,
@@ -51,15 +49,11 @@ export const markAttendance = async (req, res) => {
     }
 };
 
-/**
- * GET /api/manager/attendance/:employee_id/stats
- * - Get latest attendance info for an employee (e.g., today's or most recent)
- */
+// Retrieves the most recent attendance record for a specific employee
 export const getEmployeeAttendanceStats = async (req, res) => {
     const { employee_id } = req.params;
 
     try {
-        // Get the latest attendance record
         const [rows] = await pool.query(
             `SELECT * FROM attendance 
              WHERE employee_id = ? 

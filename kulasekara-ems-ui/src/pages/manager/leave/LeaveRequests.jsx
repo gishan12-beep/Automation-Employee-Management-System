@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 // Helpers
+// Calculates the number of days between two dates, including both the start and end days
 const daysBetweenInclusive = (from, to) => {
   const a = new Date(from);
   const b = new Date(to);
@@ -24,12 +25,14 @@ const daysBetweenInclusive = (from, to) => {
   return diff + 1;
 };
 
+// Formats a date string into a standardized ISO format (YYYY-MM-DD)
 const fmtDate = (d) => {
   const x = new Date(d);
   if (Number.isNaN(x.getTime())) return d;
   return x.toISOString().slice(0, 10);
 };
 
+// UI component that renders a stylized badge representing the status of a leave request
 const Badge = ({ status }) => {
   const s = (status || "PENDING").toUpperCase();
   const cfg = {
@@ -61,6 +64,7 @@ const Badge = ({ status }) => {
   );
 };
 
+// Simple card component for displaying Key Performance Indicators (KPIs) in the dashboard
 const KpiCard = ({ title, value, hint, color }) => (
   <div style={styles.kpiCard}>
     <div style={styles.kpiLabel}>{title}</div>
@@ -69,6 +73,7 @@ const KpiCard = ({ title, value, hint, color }) => (
   </div>
 );
 
+// Sliding drawer component for viewing and managing detailed leave request information
 const Drawer = ({ open, onClose, title, children }) => {
   if (!open) return null;
 
@@ -88,6 +93,7 @@ const Drawer = ({ open, onClose, title, children }) => {
   );
 };
 
+// Utility component for rendering a labeled data field within the UI
 const Field = ({ label, value }) => (
   <div style={styles.fieldGroup}>
     <div style={styles.label}>{label}</div>
@@ -95,16 +101,19 @@ const Field = ({ label, value }) => (
   </div>
 );
 
+// Main component for the manager to review, filter, and respond to employee leave applications
 export default function LeaveRequests() {
   const [requests, setRequests] = useState([]);
   const [leaveTypes, setLeaveTypes] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Fetches initial data for leave requests and types upon component mount
   useEffect(() => {
     fetchLeaves();
     fetchTypes();
   }, []);
 
+  // Retrieves the available leave categories allowed for management review
   const fetchTypes = async () => {
     try {
       const data = await leaveService.fetchLeaveTypes("MANAGER");
@@ -114,6 +123,7 @@ export default function LeaveRequests() {
     }
   };
 
+  // Retrieves the complete list of employee leave applications from the backend
   const fetchLeaves = async () => {
     try {
       const data = await leaveService.fetchLeaveRequests();
@@ -130,6 +140,7 @@ export default function LeaveRequests() {
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [remark, setRemark] = useState("");
 
+  // Filters the request pool based on search queries, status, type, and date range
   const filtered = useMemo(() => {
     const q = (filters.q || "").trim().toLowerCase();
     return requests.filter((r) => {
@@ -142,6 +153,7 @@ export default function LeaveRequests() {
     });
   }, [requests, filters]);
 
+  // Aggregates counts for pending, approved, and rejected requests for the dashboard KPIs
   const kpis = useMemo(() => {
     const pending = requests.filter((r) => r.status === "PENDING").length;
     const approved = requests.filter((r) => r.status === "APPROVED").length;
@@ -149,28 +161,33 @@ export default function LeaveRequests() {
     return { pending, approved, rejected };
   }, [requests]);
 
+  // Opens the review drawer and populates it with the selected application's details
   const openReview = (req) => {
     setSelected(req);
     setRemark(req.manager_remark || "");
     setDrawerOpen(true);
   };
 
+  // Resets the selection state and closes the review drawer
   const closeReview = () => {
     setDrawerOpen(false);
     setSelected(null);
     setRemark("");
   };
 
+  // Synchronizes the updated request status and manager remarks with the backend database
   const updateStatus = async (newStatus) => {
     if (!selected) return;
+    // Enforces mandatory remarks for rejected applications
     if (newStatus === "REJECTED" && !(remark || "").trim()) {
       alert("Please add a remark before rejecting.");
       return;
     }
 
     try {
+      // Calls the service to persist the new status and optional manager feedback
       await leaveService.updateLeaveRequestStatus(selected.leave_id, newStatus, remark);
-      // Update local state
+      // Updates the local state to reflect the change immediately in the UI
       setRequests((p) => p.map((r) => (r.leave_id === selected.leave_id ? { ...r, status: newStatus, manager_remark: remark } : r)));
       setSelected((p) => (p ? { ...p, status: newStatus, manager_remark: remark } : p));
       closeReview();

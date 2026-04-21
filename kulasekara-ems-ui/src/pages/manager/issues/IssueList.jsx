@@ -7,6 +7,7 @@ import { getIssuesApi } from "../../../services/issueService";
 const STATUS = ["ALL", "OPEN", "RESOLVED", "APPROVED", "REJECTED"];
 const CATEGORY = ["ALL", "ATTENDANCE", "PAYROLL", "OTHER"];
 
+// Returns a dynamic style object for badges based on the issue category or status type
 function badgeStyle(type) {
   const base = {
     display: "inline-flex",
@@ -20,12 +21,12 @@ function badgeStyle(type) {
     whiteSpace: "nowrap",
   };
 
-  // category
+  // Maps specific categories to a neutral background style
   if (["ATTENDANCE", "PAYROLL", "OTHER"].includes(type)) {
     return { ...base, background: "#f8fafc", color: "#0f172a" };
   }
 
-  // status
+  // Maps status types to distinct semantic colors (e.g., Red for Open, Green for Resolved)
   if (type === "OPEN") return { ...base, background: "#fff1f2", color: "#9f1239" };
   if (type === "RESOLVED") return { ...base, background: "#ecfdf5", color: "#047857" };
   if (type === "APPROVED") return { ...base, background: "#d1fae5", color: "#065f46" };
@@ -33,7 +34,9 @@ function badgeStyle(type) {
   return { ...base, background: "#f1f5f9", color: "#0f172a" };
 }
 
+// Statistics sub-component that calculates and displays core issue metrics
 function IssuesDashboard({ issues }) {
+  // Computes current counts for open and resolved issues from the total issue pool
   const stats = useMemo(() => {
     const openCount = issues.filter((i) => i.status === "OPEN").length;
     const resCount = issues.filter((i) => i.status === "RESOLVED").length;
@@ -63,6 +66,7 @@ function IssuesDashboard({ issues }) {
   );
 }
 
+// Main component that provides a searchable and filterable interface for all employee-raised issues
 export default function IssueList() {
   const navigate = useNavigate();
   const [issues, setIssues] = useState([]);
@@ -75,8 +79,10 @@ export default function IssueList() {
   const [showFilterMenu, setShowFilterMenu] = useState(false);
   const filterRef = useRef(null);
 
+  // Initializes the component by fetching data and setting up a global click listener for filter menus
   useEffect(() => {
     fetchIssues();
+    // Closes the filter dropdown if the user clicks outside of the menu area
     function handleClickOutside(event) {
       if (filterRef.current && !filterRef.current.contains(event.target)) {
         setShowFilterMenu(false);
@@ -88,6 +94,7 @@ export default function IssueList() {
     };
   }, []);
 
+  // Retrieves the full collection of employee issues from the backend service
   const fetchIssues = async () => {
     setLoading(true);
     try {
@@ -100,12 +107,14 @@ export default function IssueList() {
     }
   };
 
+  // Filters the issue list based on selected status, category, and text search input
   const filtered = useMemo(() => {
     const text = q.trim().toLowerCase();
     return issues.filter((i) => {
       const okStatus = status === "ALL" ? true : i.status === status;
       const okCat = category === "ALL" ? true : i.type === category;
 
+      // Matches against ID, employee details, and issue description
       const okSearch =
         !text ||
         String(i.issue_id || "").toLowerCase().includes(text) ||

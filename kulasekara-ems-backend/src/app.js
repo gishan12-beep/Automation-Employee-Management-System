@@ -14,11 +14,13 @@ import reportRoutes from "./routes/reportRoutes.js";
 
 dotenv.config();
 
+// Core Express application instance that serves as the entry point for API routing and middleware
 const app = express();
 
 app.use(cors({ origin: process.env.CORS_ORIGIN || "*" }));
 app.use(express.json());
 
+// Standard health check endpoint to verify that the backend server is running and reachable
 app.get("/api/health", (req, res) => res.json({ ok: true }));
 
 app.use("/api/auth", authRoutes);

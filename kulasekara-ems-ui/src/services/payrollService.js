@@ -1,6 +1,6 @@
 import api from "./api"; // Assuming api wrapper exists
 
-// Employee: Get My History/Payroll for a specific month
+// Fetches the payroll history/payslip for the logged-in employee for a specific month and year
 export const getMyPayrollApi = async (month, year) => {
   try {
     const res = await api.get(`/payroll/me/${month}/${year}`);
@@ -11,7 +11,7 @@ export const getMyPayrollApi = async (month, year) => {
   }
 };
 
-// Keeping this for SalaryHistory UI mapping if needed, but it should be replaced by getMyPayrollApi
+// Retrieves entire salary history for the employee and maps it to the frontend model
 export const getMySalaryHistory = async () => {
   try {
     const res = await api.get("/payroll/me");
@@ -32,27 +32,26 @@ export const getMySalaryHistory = async () => {
   }
 };
 
+// Finds a specific salary slip from the history by its unique generated slip ID
 export const getMySalarySlipById = async (slipId) => {
   const all = await getMySalaryHistory();
   return all.find((x) => x.slipId === slipId) || null;
 };
 
-// Manager: Process Entire Payroll
+// Requests the backend to process monthly payroll for all active employees
 export const processPayrollApi = async (month, year) => {
   await api.post(`/payroll/process/${month}/${year}`);
 };
 
-// Manager: Process Single Employee Payroll
+// Requests the backend to process monthly payroll for a single specific employee
 export const processSingleEmployeeApi = async (month, year, employeeId) => {
   const res = await api.post(`/payroll/process/${month}/${year}/${employeeId}`);
   return res.data;
 };
 
-// Shared/Manager: Get Summary
+// Fetches a summary of all payroll runs for a specific month and year (Manager/Accountant access)
 export const getPayrollSummaryApi = async (month, year) => {
   const res = await api.get(`/payroll/summary/${month}/${year}`);
-  // Mapping backend format to frontend expected format
-  // Backend returns: { summary: {...}, details: [ { payroll_id, ... } ] }
   const runs = res.data?.details || [];
   return runs.map((r) => ({
     payrollId: r.payroll_id,
@@ -72,12 +71,13 @@ export const getPayrollSummaryApi = async (month, year) => {
   }));
 };
 
-// Manager/Accountant: Get Itemized Details
+// Retrieves the detailed calculation breakdown (OT, incentives, EPF) for a specific payroll run
 export const getPayrollDetailsApi = async (month, year, employeeId) => {
   const res = await api.get(`/payroll/details/${month}/${year}/${employeeId}`);
   return res.data;
 };
 
+// Fetches the final settlement preview for an employee who has resigned or terminated
 export const getMyFinalSettlementPreview = async () => {
   try {
     const res = await api.get("/employee/settlement/preview");

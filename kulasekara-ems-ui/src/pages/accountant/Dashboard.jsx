@@ -4,10 +4,11 @@ import { useNavigate } from "react-router-dom";
 import { formatLKR } from "../../utils/salaryUtils";
 import { getPayrollSummaryApi } from "../../services/accountantPayrollService";
 
+// Main dashboard component for the accountant role, providing a high-level overview of payroll stats
 export default function Dashboard() {
   const navigate = useNavigate();
 
-  // ✅ role protection
+  // Protects the route by verifying that the logged-in user has the 'ACCOUNTANT' role
   const role = (localStorage.getItem("role") || "ACCOUNTANT").toUpperCase();
   useEffect(() => {
     if (role !== "ACCOUNTANT") navigate("/");
@@ -23,12 +24,14 @@ export default function Dashboard() {
     year: ""
   });
 
+  // Fetches current payroll summary data and updates the dashboard state
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
         const now = new Date();
         const monthStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+        // Api call specifically designed for accountant's summary view
         const res = await getPayrollSummaryApi({ month: monthStr });
 
         const summary = res.summary || {};
@@ -40,7 +43,6 @@ export default function Dashboard() {
           employees: rows.length,
           monthly,
           daily,
-          totalNet: summary.totalNet || 0,
           totalNet: summary.totalNet || 0,
           month: now.toLocaleString('default', { month: 'short' }),
           year: now.getFullYear()
@@ -54,6 +56,7 @@ export default function Dashboard() {
     load();
   }, []);
 
+  // Prepares the display-ready card data based on the fetched statistics
   const cards = useMemo(() => {
     return [
       { label: "Employees", value: `${data.monthly}M | ${data.daily}D`, hint: `Total: ${data.employees}` },
@@ -121,6 +124,7 @@ export default function Dashboard() {
   );
 }
 
+// Reusable card for dashboard actions with a title and description
 function ActionCard({ title, desc, onClick }) {
   return (
     <div style={styles.actionCard} onClick={onClick} role="button" tabIndex={0}>

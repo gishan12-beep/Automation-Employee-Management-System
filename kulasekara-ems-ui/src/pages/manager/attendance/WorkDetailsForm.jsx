@@ -12,6 +12,7 @@ import { getTasksApi, createWorkLogApi } from "../../../services/workLogService"
  *  - onClose(), onSave(payload)
  *  - tasks (optional): [{ task_id, task_name, rate_per_unit, unit_measure, description }]
  */
+// Form component for recording individual work tasks completed by daily-wage employees
 export default function WorkDetailsForm({
   employeeID,
   employeeName,
@@ -29,12 +30,13 @@ export default function WorkDetailsForm({
   const [saving, setSaving] = useState(false);
   const [loadingTasks, setLoadingTasks] = useState(true);
 
-  // Fetch tasks on mount
+  // Fetches the list of available tasks and their corresponding default rates from the database
   useEffect(() => {
     (async () => {
       try {
         const res = await getTasksApi();
         setTasks(res.tasks || []);
+        // Automatically selects the first task by default if available
         if (res.tasks?.length > 0) {
           setTaskId(String(res.tasks[0].task_id));
         }
@@ -46,17 +48,18 @@ export default function WorkDetailsForm({
     })();
   }, []);
 
-  // find selected task
+  // Identifies the currently selected task object based on the taskId in the form state
   const selectedTask = useMemo(() => {
     const idNum = Number(taskId);
     return tasks.find((t) => Number(t.task_id) === idNum) || null;
   }, [taskId, tasks]);
 
-  // auto-fill applied_rate from selected task (still editable)
+  // Synchronizes the applied rate field with the default rate of the newly selected task
   useEffect(() => {
     if (selectedTask) setAppliedRate(String(Number(selectedTask.rate_per_unit ?? 0)));
   }, [selectedTask]);
 
+  // Provides a live calculation of the total amount for the currently entered quantity and rate
   const totalPreview = useMemo(() => {
     const q = Number(quantity);
     const r = Number(appliedRate);
@@ -64,6 +67,7 @@ export default function WorkDetailsForm({
     return q * r;
   }, [quantity, appliedRate]);
 
+  // Performs client-side validation to ensure all required fields are correctly populated
   const validate = () => {
     if (!employeeID) return "employee_id is required.";
     if (!date) return "date is required.";
@@ -81,27 +85,27 @@ export default function WorkDetailsForm({
     return null;
   };
 
+  // Handles the form submission by sending the work log data to the backend API
   const handleSubmit = async (e) => {
     e.preventDefault();
     const err = validate();
     if (err) return alert(err);
 
     const payload = {
-      // ✅ matches work_logs columns (log_id is AUTO in DB)
       employee_id: employeeID,
       task_id: Number(taskId),
       date,
       quantity: Number(quantity),
       applied_rate: Number(appliedRate),
-      // total_amount is GENERATED in DB, but keeping preview is fine for UI
+      // Computed preview for UI consistency before server-side generation
       total_amount_preview: Number((Number(quantity) * Number(appliedRate)).toFixed(2)),
-      // for UI rendering if needed:
       task_name: selectedTask?.task_name,
       unit_measure: selectedTask?.unit_measure,
     };
 
     try {
       setSaving(true);
+      // Calls the work log service to persist the data in the work_logs table
       const res = await createWorkLogApi({
         employee_id: payload.employee_id,
         task_id: payload.task_id,
@@ -110,11 +114,12 @@ export default function WorkDetailsForm({
         applied_rate: payload.applied_rate
       });
 
+      // Notifies the parent component of the successful save and provides the new log ID
       onSave?.({
         ...payload,
         log_id: res.log_id
       });
-      onClose?.();
+      onClose?.(); // Closes the modal form
     } catch (err) {
       alert(err.response?.data?.message || "Failed to save work log");
     } finally {

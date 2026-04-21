@@ -2,16 +2,20 @@ import React, { useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 
+// Formats a numeric value into a localized LKR currency string with two decimal places
 const money = (n) =>
   Number(n || 0).toLocaleString("en-LK", { minimumFractionDigits: 2 });
 
+// Component that renders a detailed, printable salary slip for a specific payroll record
 export default function SalarySlipView() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Retrieves the specific payroll data passed from the navigation state
   const payrollFromState = location?.state?.payroll;
   const payroll = payrollFromState;
 
+  // Renders a fallback UI if the payroll data is unavailable in the current view state
   if (!payroll) {
     return (
       <AppLayout>
@@ -39,6 +43,7 @@ export default function SalarySlipView() {
     );
   }
 
+  // Formats the payroll period as MM/YYYY for display in the header
   const period = `${String(payroll.month).padStart(2, "0")}/${payroll.year}`;
 
   return (

@@ -3,19 +3,23 @@ import AppLayout from "../../../components/layout/AppLayout";
 import { getTodayAttendanceApi, markCheckInApi, markCheckOutApi } from "../../../services/employeeService";
 
 /* ---------------- helpers ---------------- */
+// Pads a single digit number with a leading zero to ensure a two-character string length
 const pad2 = (n) => String(n).padStart(2, "0");
 
+// Generates the current system date in a standardized ISO YYYY-MM-DD format
 const todayISO = () => {
   const d = new Date();
   return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
 };
 
+// Formats a JavaScript Date object into a simplified HH:MM string for localized display
 const formatTimeHHMM = (dateObj) => {
   const h = pad2(dateObj.getHours());
   const m = pad2(dateObj.getMinutes());
   return `${h}:${m}`;
 };
 
+// Converts a total number of seconds into a traditional HH:MM:SS clock format string
 const formatHHMMSS = (seconds) => {
   const s = Math.max(0, Math.floor(seconds));
   const h = Math.floor(s / 3600);
@@ -24,6 +28,7 @@ const formatHHMMSS = (seconds) => {
   return `${pad2(h)}:${pad2(m)}:${pad2(sec)}`;
 };
 
+// Translates a raw duration in minutes into a human-readable 'Xh Ym' string format
 const minutesToReadable = (mins) => {
   const m = Math.max(0, Math.floor(mins));
   const h = Math.floor(m / 60);
@@ -136,49 +141,42 @@ const styles = {
 };
 
 /* ---------------- component ---------------- */
+// Main component for employees to record their daily check-in and check-out times
 export default function MyAttendance() {
-  // In your real app: take this from login/session
+  // Retrieves the current employee ID from local storage for API requests
   const employeeId = (localStorage.getItem("employee_id") || "EMP001").toUpperCase();
   const today = todayISO();
 
-  // Standard work day for OT: 8h
+  // Defines the duration of a standard work day (8 hours) for overtime calculations
   const STANDARD_MINUTES = 8 * 60;
 
-  // Live clock (updates EVERY SECOND)
+  // Real-time clock state that updates every second to drive the live work timer
   const [now, setNow] = useState(new Date());
   useEffect(() => {
     const interval = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch initial state
+  // Fetches the employee's attendance record for the current day on component mount
   useEffect(() => {
     (async () => {
       try {
         const res = await getTodayAttendanceApi();
         if (res.attendance) {
-          // Backend returns HH:MM:SS, let's make it ISO for calculation if needed
-          // Or just store the raw backend record and adjust calculation.
-          // The current code expects ISO strings for calculation. 
-          // Let's assume we construct ISO from today + time string.
-
-          // Map backend record to UI state
-          // Always set date to 'today' so todayRecord finds it.
-          // This bridges any potential UTC vs specific TZ date shift for the "current shift".
-
           const rec = res.attendance;
           const toIso = (timeStr) => timeStr ? `${today}T${timeStr}` : null;
 
+          // Normalizes the backend time strings into ISO format for precise UI calculations
           setRecords([{
             attendance_id: rec.attendance_id,
             employee_id: rec.employee_id,
-            date: today, // Force match
+            date: today,
             check_in: toIso(rec.check_in),
             check_out: toIso(rec.check_out),
             status: rec.status
           }]);
         } else {
-          // No record yet
+          // Initializes a default 'Absent' record if no check-in exists for today
           setRecords([{
             attendance_id: 'temp',
             employee_id: employeeId,
@@ -194,24 +192,24 @@ export default function MyAttendance() {
     })();
   }, [today, employeeId]);
 
-  // UI-only records (store check_in/check_out as ISO timestamps for second-accurate timer)
   const [records, setRecords] = useState(() => [
     {
       attendance_id: 1,
       employee_id: employeeId,
       date: today,
-      check_in: null, // ISO string
-      check_out: null, // ISO string
+      check_in: null,
+      check_out: null,
       status: "ABSENT",
     },
   ]);
 
+  // Identifies the attendance object corresponding to the current calendar date
   const todayRecord = useMemo(
     () => records.find((r) => r.date === today),
     [records, today]
   );
 
-  // Worked seconds (live)
+  // Calculates the total elapsed seconds since check-in for the live timer display
   const workedSeconds = useMemo(() => {
     if (!todayRecord?.check_in) return 0;
 
@@ -223,16 +221,17 @@ export default function MyAttendance() {
   }, [todayRecord?.check_in, todayRecord?.check_out, now]);
 
   const workedMinutes = useMemo(() => Math.floor(workedSeconds / 60), [workedSeconds]);
+  
+  // Computes the total overtime minutes by subtracting the standard 8-hour workday
   const otMinutes = useMemo(
     () => Math.max(0, workedMinutes - STANDARD_MINUTES),
     [workedMinutes, STANDARD_MINUTES]
   );
 
-  /* -------- actions -------- */
+  // Sends a check-in request to the server and updates the local state with the precise timestamp
   const handleCheckIn = async () => {
     try {
       const res = await markCheckInApi();
-      // check_in returned as HH:MM:SS
       const timeIso = `${today}T${res.check_in}`;
 
       setRecords((prev) =>
@@ -251,10 +250,10 @@ export default function MyAttendance() {
     }
   };
 
+  // Sends a check-out request to the server and finalizes the attendance record for the day
   const handleCheckOut = async () => {
     try {
       const res = await markCheckOutApi();
-      // check_out returned as HH:MM:SS
       const timeIso = `${today}T${res.check_out}`;
 
       setRecords((prev) =>

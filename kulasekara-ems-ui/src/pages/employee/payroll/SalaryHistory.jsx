@@ -3,11 +3,14 @@ import { useNavigate } from "react-router-dom";
 import AppLayout from "../../../components/layout/AppLayout";
 import { getMyPayrollApi } from "../../../services/payrollService";
 
+// Formats a numeric value into a localized LKR currency string with two decimal places
 const money = (n) =>
   Number(n || 0).toLocaleString("en-LK", { minimumFractionDigits: 2 });
 
+// Pads a single digit number with a leading zero to ensure consistent double-digit formatting
 const pad2 = (n) => String(n).padStart(2, "0");
 
+// Component that displays the employee's historical payroll records with month/year filtering
 export default function SalaryHistory() {
   const navigate = useNavigate();
 
@@ -21,14 +24,17 @@ export default function SalaryHistory() {
   const [year, setYear] = useState(currentYear);
   const [month, setMonth] = useState(currentMonth);
 
+  // Generates a list of years for the selection dropdown (current year plus previous 5)
   const years = useMemo(() => {
     const arr = [];
     for (let y = currentYear + 1; y >= currentYear - 5; y--) arr.push(y);
     return arr;
   }, [currentYear]);
 
+  // Generates an array representing the 12 calendar months for the selection dropdown
   const months = useMemo(() => Array.from({ length: 12 }, (_, i) => i + 1), []);
 
+  // Fetches the employee's payroll history from the backend based on the selected month and year
   const loadHistory = async () => {
     setLoading(true);
     setError(null);
@@ -45,10 +51,12 @@ export default function SalaryHistory() {
     }
   };
 
+  // Triggers the data load whenever the selected month or year is updated by the user
   useEffect(() => {
     loadHistory();
   }, [month, year]);
 
+  // Computes aggregate totals (Net, Gross, OT) from the fetched history for use in dashboard KPIs
   const totals = useMemo(() => {
     const netTotal = history.reduce((s, r) => s + Number(r.net_pay || 0), 0);
     const grossTotal = history.reduce((s, r) => s + Number(r.gross_pay || 0), 0);

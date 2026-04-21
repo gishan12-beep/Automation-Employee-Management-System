@@ -31,6 +31,7 @@ import {
  * salary_configurations(config_id, employee_id, salary_type, basic_rate, is_epf_eligible, effective_date)
  */
 
+// Main component for managing the organizational employee directory and personnel records
 function EmployeeManagement() {
   const [employees, setEmployees] = useState([]);
 
@@ -60,6 +61,7 @@ function EmployeeManagement() {
   // Validation errors
   const [errors, setErrors] = useState({});
 
+  // Handles closing the action dropdown menu when clicking anywhere outside of it
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (!event.target.closest(".action-dropdown-trigger") && !event.target.closest(".action-dropdown-menu")) {
@@ -70,6 +72,7 @@ function EmployeeManagement() {
     return () => document.removeEventListener("click", handleClickOutside);
   }, []);
 
+  // Loads all department and employee data from the backend on component initialization
   useEffect(() => {
     (async () => {
       try {
@@ -86,12 +89,14 @@ function EmployeeManagement() {
     })();
   }, []);
 
+  // Creates a mapping of department IDs to their respective objects for fast lookup
   const deptMap = useMemo(() => {
     const m = new Map();
     (departments || []).forEach((d) => m.set(Number(d.id), d));
     return m;
   }, [departments]);
 
+  // Retrieves the human-readable name of a department based on its unique ID
   const getDeptName = useCallback(
     (department_id) => {
       const d = deptMap.get(Number(department_id));
@@ -100,6 +105,7 @@ function EmployeeManagement() {
     [deptMap]
   );
 
+  // Concatenates the first and last names of an employee for display purposes
   const fullName = (e) => {
     const fn = (e?.first_name || "").trim();
     const ln = (e?.last_name || "").trim();
@@ -107,6 +113,7 @@ function EmployeeManagement() {
     return n || "-";
   };
 
+  // Identifies the currently selected employee object for the detailed profile view
   const selectedEmployee = useMemo(() => {
     return (
       employees.find((e) => String(e.employee_id) === String(selectedEmpId)) ||
@@ -115,6 +122,7 @@ function EmployeeManagement() {
     );
   }, [employees, selectedEmpId]);
 
+  // Filters the complete list of employees based on a matching search query
   const filteredEmployees = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return employees;
@@ -135,6 +143,7 @@ function EmployeeManagement() {
     });
   }, [employees, search, getDeptName]);
 
+  // Opens the employee information modal in either view or edit mode
   const openModal = (emp, edit = false) => {
     setFormData({ ...emp });
     setIsEditMode(edit);
@@ -142,6 +151,7 @@ function EmployeeManagement() {
     setErrors({});
   };
 
+  // Initializes and opens the modal for creating a new employee with default values
   const openAddModal = () => {
     const todayISO = new Date().toISOString().slice(0, 10);
     const initial = {
@@ -166,6 +176,7 @@ function EmployeeManagement() {
     setErrors({});
   };
 
+  // Resets and closes the employee management modal
   const closeModal = () => {
     setIsModalOpen(false);
     setIsEditMode(false);
@@ -173,6 +184,7 @@ function EmployeeManagement() {
     setErrors({});
   };
 
+  // Performs validation on a single form field and updates the error state
   const validateField = (name, value) => {
     let error = "";
     const val = String(value || "").trim();
@@ -230,6 +242,7 @@ function EmployeeManagement() {
     return error;
   };
 
+  // Validates all collective fields in the employee form before submission
   const validateForm = () => {
     const newErrors = {};
     const fields = [
@@ -257,6 +270,7 @@ function EmployeeManagement() {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Updates the internal form state when any input field is modified by the user
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     let finalValue = value;
@@ -273,11 +287,13 @@ function EmployeeManagement() {
     }
   };
 
+  // Closes the credentials display modal after a new employee is created
   const closeCreds = () => {
     setCredsOpen(false);
     setNewCreds(null);
   };
 
+  // Formats numeric currency values into a standardized LKR representation
   const moneyText = (v) => {
     if (v === null || v === undefined || v === "") return "-";
     const n = Number(v);
@@ -285,6 +301,7 @@ function EmployeeManagement() {
     return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   };
 
+  // Persists employee data by either creating a new record or updating an existing one
   const handleSave = async () => {
     const isExisting = employees.some((emp) => String(emp.employee_id) === String(formData.employee_id));
 
@@ -316,6 +333,7 @@ function EmployeeManagement() {
           },
         };
 
+        // Calls the service to update an existing employee record in the database
         const updatedData = await updateEmployeeApi(formData.employee_id, payload);
         const updatedEmp = updatedData.employee;
 
@@ -344,6 +362,7 @@ function EmployeeManagement() {
     };
 
     try {
+      // Calls the service to create a new employee record and their login credentials
       const data = await createEmployeeApi(payload);
       const createdEmp = data?.employee || data;
       const createdSal = data?.salary_configuration || null;
@@ -356,6 +375,7 @@ function EmployeeManagement() {
       setEmployees((prev) => [...prev, newEmp]);
       setSelectedEmpId(newEmp.employee_id);
 
+      // Displays the generated credentials if they are provided in the response
       if (data?.credentials?.username && data?.credentials?.tempPassword) {
         setNewCreds({
           employee_id: newEmp.employee_id,
@@ -368,20 +388,24 @@ function EmployeeManagement() {
     } catch (err) { alert(err.message || "Create failed"); }
   };
 
+  // Prepares the deactivation modal for a specific employee
   const openRemoveModal = (emp) => {
     setRemoveTarget(emp);
     setRemoveReason("");
     setIsRemoveOpen(true);
   };
 
+  // Closes the employee deactivation modal
   const closeRemoveModal = () => {
     setIsRemoveOpen(false);
     setRemoveTarget(null);
   };
 
+  // Confirms and processes the deactivation of an employee record
   const confirmRemove = async () => {
     if (!removeTarget || !removeReason.trim()) return alert("Please enter the reason.");
     try {
+      // Calls the deactivation service to mark the employee as inactive
       await deactivateEmployeeApi(removeTarget.employee_id);
       setEmployees((prev) => prev.map((e) => String(e.employee_id) === String(removeTarget.employee_id) ? { ...e, status: "INACTIVE" } : e));
       closeRemoveModal();
